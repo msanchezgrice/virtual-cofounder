@@ -1,11 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type ViewMode = 'overview' | 'portfolio';
 
+interface Project {
+  id: string;
+  name: string;
+  domain: string | null;
+  status: string;
+  hasPosthog: boolean;
+  hasResend: boolean;
+}
+
 export default function DashboardPage() {
   const [view, setView] = useState<ViewMode>('overview');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        setProjects(data.projects || []);
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProjects();
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -34,12 +60,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Conditional Rendering */}
-      {view === 'overview' ? <OverviewView /> : <PortfolioView />}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-gray-600">Loading projects...</div>
+        </div>
+      ) : view === 'overview' ? (
+        <OverviewView projectCount={projects.length} />
+      ) : (
+        <PortfolioView projects={projects} />
+      )}
     </div>
   );
 }
 
-function OverviewView() {
+function OverviewView({ projectCount }: { projectCount: number }) {
   return (
     <div>
       <h2 className="text-2xl font-semibold mb-6">Portfolio Health Score: 87/100</h2>
@@ -95,23 +129,19 @@ function OverviewView() {
   );
 }
 
-function PortfolioView() {
-  // Mock data for now (will connect to database later)
-  const projects = [
-    { name: 'Warmstart', health: 82, status: 'Pre-Launch', issues: 3 },
-    { name: 'LaunchReady', health: 94, status: 'Healthy', issues: 0 },
-    { name: 'TalkingObject', health: 78, status: 'Needs Attention', issues: 1 },
-    { name: 'StartupMachine', health: 45, status: 'Critical', issues: 5 },
-    { name: 'SurgeryViz', health: 91, status: 'Healthy', issues: 0 },
-    { name: 'Doodad', health: 85, status: 'Needs Attention', issues: 2 },
-    { name: 'ShipShow', health: 79, status: 'Needs Attention', issues: 1 },
-    { name: 'IdearResearch', health: 88, status: 'Healthy', issues: 0 },
-  ];
+function PortfolioView({ projects }: { projects: Project[] }) {
+  // Map real projects to display format (mock health scores for now)
+  const displayProjects = projects.slice(0, 8).map((p, i) => ({
+    name: p.name,
+    health: 85 - (i * 5), // Mock health scores
+    status: p.status,
+    issues: Math.floor(Math.random() * 3) // Mock issue count
+  }));
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">All Projects (73)</h2>
+        <h2 className="text-2xl font-semibold">All Projects ({projects.length})</h2>
         <div className="flex gap-2">
           <select className="px-4 py-2 border border-gray-300 rounded-lg">
             <option>Filter: All</option>
@@ -129,16 +159,18 @@ function PortfolioView() {
 
       {/* Project Grid */}
       <div className="grid grid-cols-4 gap-4">
-        {projects.map((project) => (
+        {displayProjects.map((project) => (
           <ProjectCard key={project.name} project={project} />
         ))}
       </div>
 
-      <div className="mt-6 text-center">
-        <button className="text-brand-blue hover:underline">
-          Load More (65 remaining)
-        </button>
-      </div>
+      {projects.length > 8 && (
+        <div className="mt-6 text-center">
+          <button className="text-brand-blue hover:underline">
+            Load More ({projects.length - 8} remaining)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
