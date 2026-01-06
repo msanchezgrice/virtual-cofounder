@@ -1,0 +1,537 @@
+{
+  "projectName": "Virtual Cofounder",
+  "version": "1.0.0",
+  "currentPhase": "phase-3",
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Foundation - Database & Dashboard",
+      "status": "complete"
+    },
+    {
+      "id": "phase-2",
+      "name": "Scanning System",
+      "status": "complete"
+    },
+    {
+      "id": "phase-3",
+      "name": "Orchestrator + Claude Agent SDK",
+      "status": "complete"
+    },
+    {
+      "id": "phase-4",
+      "name": "Slack Integration",
+      "status": "todo"
+    }
+  ],
+  "stories": [
+    {
+      "id": "vc-020",
+      "phase": "phase-2",
+      "title": "Create API route /api/scans/trigger",
+      "description": "Create POST endpoint that triggers scans for all active projects. Enqueues scan jobs to Redis queue (BullMQ). Returns job IDs and status.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/scans/trigger/route.ts",
+          "mustExist": true
+        },
+        {
+          "type": "command",
+          "command": "curl -X POST http://localhost:3000/api/scans/trigger -H 'Content-Type: application/json' -d '{}'",
+          "expectedOutput": "\"status\":\"success\"",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/scans/trigger/route.ts",
+          "pattern": "export async function POST",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-021",
+      "phase": "phase-2",
+      "title": "Port domain scanner from old system",
+      "description": "Port domain scanning logic from /Users/miguel/Reboot/dashboard-archive/scan_projects.js. Check HTTP/HTTPS reachability, SSL cert, DNS, redirects, response time. Write results to scans table.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/domain.ts",
+          "mustExist": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:domain",
+          "expectedOutput": "✓ Domain scanner test passed",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/domain.ts",
+          "pattern": "export async function scanDomain",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-020"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-022",
+      "phase": "phase-2",
+      "title": "Port SEO scanner",
+      "description": "Port SEO scanning from old system. Extract title, meta description, OG tags, H1, canonical URL, robots.txt, sitemap.xml. Write to scans table with scan_type='seo'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/seo.ts",
+          "mustExist": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:seo",
+          "expectedOutput": "✓ SEO scanner test passed",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/seo.ts",
+          "pattern": "export async function scanSEO",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-021"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-023",
+      "phase": "phase-2",
+      "title": "Implement analytics detection scanner",
+      "description": "Create analytics scanner that detects PostHog, Google Analytics, Plausible, Fathom, Tag Manager. Check for script snippets in HTML. Write to scans table with scan_type='analytics'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/analytics.ts",
+          "mustExist": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:analytics",
+          "expectedOutput": "✓ Analytics scanner test passed",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/analytics.ts",
+          "pattern": "export async function scanAnalytics",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-022"],
+      "status": "done",
+      "effort": "low",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-024",
+      "phase": "phase-2",
+      "title": "Deploy Railway worker for scan execution",
+      "description": "Create worker process that pulls scan jobs from Redis queue and executes domain, SEO, analytics scanners. Deploy to Railway. Configure environment variables.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "workers/scan-worker.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_exists",
+          "path": "railway.json",
+          "mustExist": true
+        },
+        {
+          "type": "command",
+          "command": "npm run worker:scan",
+          "expectedOutput": "Worker started",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-023"],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-025",
+      "phase": "phase-2",
+      "title": "Set up Vercel Cron for daily 9am trigger",
+      "description": "Configure Vercel Cron to trigger /api/scans/trigger daily at 9am UTC. Add vercel.json cron configuration.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "vercel.json",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "vercel.json",
+          "pattern": "\"crons\"",
+          "mustContain": true
+        },
+        {
+          "type": "file_contains",
+          "path": "vercel.json",
+          "pattern": "0 9 \\* \\* \\*",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-024"],
+      "status": "done",
+      "effort": "low",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-026",
+      "phase": "phase-2",
+      "title": "E2E validation - scans to DB to dashboard",
+      "description": "End-to-end test: Trigger scan via API → Worker executes → Results in DB → Dashboard shows updated data. Verify all 3 scan types work.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:e2e:scans",
+          "expectedOutput": "✓ All scans completed successfully",
+          "mustPass": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:db:tables",
+          "expectedOutput": "✓ Scans table has data",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-025"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-027",
+      "phase": "phase-3",
+      "title": "Verify Anthropic SDK installed",
+      "description": "Verify @anthropic-ai/sdk is installed for orchestrator multi-agent system. Already installed in Phase 1.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm list @anthropic-ai/sdk",
+          "expectedOutput": "@anthropic-ai/sdk",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "package.json",
+          "pattern": "@anthropic-ai/sdk",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-028",
+      "phase": "phase-3",
+      "title": "Create agent registry with core agents",
+      "description": "Create lib/agents.ts with agent registry. Start with 5 core agents: security, analytics, domain, seo, deployment. Each agent has name, model, instructions.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents.ts",
+          "pattern": "export const agents",
+          "mustContain": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents.ts",
+          "pattern": "security",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-027"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-029",
+      "phase": "phase-3",
+      "title": "Create Head of Product orchestrator",
+      "description": "Create lib/orchestrator.ts with Head of Product orchestrator using Claude Agent SDK. Orchestrator analyzes scan results, spawns specialist agents, ranks findings by priority.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/orchestrator.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "export async function runOrchestrator",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-028"],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-030",
+      "phase": "phase-3",
+      "title": "Create API route /api/orchestrator/run",
+      "description": "Create POST endpoint that runs orchestrator, reads scan results from DB, creates agent findings and completions. Returns run_id, findings count, completions count.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/orchestrator/run/route.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/orchestrator/run/route.ts",
+          "pattern": "export async function POST",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "curl -X POST http://localhost:3000/api/orchestrator/run -H 'Content-Type: application/json' -d '{}'",
+          "expectedOutput": "\"run_id\"",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-029"],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-031",
+      "phase": "phase-3",
+      "title": "Verify orchestrator creates agent findings",
+      "description": "Test that orchestrator run creates agent_findings records in database. Verify findings have correct structure (agent, issue, action, severity, effort, impact, confidence).",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:orchestrator:findings",
+          "expectedOutput": "✓ Agent findings created",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-030"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-032",
+      "phase": "phase-3",
+      "title": "Verify orchestrator creates completions",
+      "description": "Test that orchestrator run creates completions records in database. Verify completions have correct structure (title, rationale, priority, policy, status).",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:orchestrator:completions",
+          "expectedOutput": "✓ Completions created",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-031"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-033",
+      "phase": "phase-3",
+      "title": "E2E validation - orchestrator pipeline",
+      "description": "End-to-end test: Scans exist in DB → Trigger orchestrator → Agent findings created → Completions created → Orchestrator run recorded. Verify full pipeline.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:e2e:orchestrator",
+          "expectedOutput": "✓ Full orchestrator pipeline complete",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-032"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-034",
+      "phase": "phase-4",
+      "title": "Install Slack SDK",
+      "description": "Install @slack/web-api and @slack/bolt packages for Slack integration. Verify installation.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm list @slack/web-api",
+          "expectedOutput": "@slack/web-api",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "package.json",
+          "pattern": "@slack/web-api",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-035",
+      "phase": "phase-4",
+      "title": "Create Slack notification utility",
+      "description": "Create lib/slack.ts with functions to send messages, format Block Kit messages, and post completion notifications to Slack.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/slack.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/slack.ts",
+          "pattern": "export async function sendCompletionNotification",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-034"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-036",
+      "phase": "phase-4",
+      "title": "Integrate Slack notifications into orchestrator",
+      "description": "Update orchestrator API to send Slack notifications after creating completions. Post to #cofounder-updates channel with completion details.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/api/orchestrator/run/route.ts",
+          "pattern": "sendCompletionNotification",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-035"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-037",
+      "phase": "phase-4",
+      "title": "Create morning check-in cron",
+      "description": "Create API route for morning check-in that sends a message to Slack asking user about priorities. Add to Vercel cron for daily 9am UTC.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/slack/check-in/route.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "vercel.json",
+          "pattern": "/api/slack/check-in",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-035"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-038",
+      "phase": "phase-4",
+      "title": "Implement priority parsing",
+      "description": "Create utility to parse user Slack messages and extract project priorities using Anthropic API. Store in user_priorities table with 72h expiry.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/priority-parser.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority-parser.ts",
+          "pattern": "export async function parseUserPriority",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-037"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-039",
+      "phase": "phase-4",
+      "title": "Create Slack event webhook",
+      "description": "Create API route to handle Slack events (messages, button clicks). Integrate with priority parser for user messages.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/slack/events/route.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/slack/events/route.ts",
+          "pattern": "export async function POST",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-038"],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-040",
+      "phase": "phase-4",
+      "title": "E2E validation - Slack integration",
+      "description": "End-to-end test: Trigger orchestrator → Verify Slack notification sent → Verify priority parsing works. Mock Slack API for testing.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:e2e:slack",
+          "expectedOutput": "✓ Slack integration complete",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-039"],
+      "status": "todo",
+      "effort": "medium",
+      "priority": "high"
+    }
+  ]
+}

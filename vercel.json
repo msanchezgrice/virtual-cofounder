@@ -1,5 +1,15 @@
 {
   "framework": "nextjs",
   "buildCommand": "next build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/slack/check-in",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/scans/trigger",
+      "schedule": "5 9 * * *"
+    }
+  ]
 }

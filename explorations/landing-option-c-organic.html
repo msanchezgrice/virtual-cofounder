@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Cofounder — Your AI Partner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fffbf5;
+      --bg-warm: #fff5eb;
+      --text: #2d2a26;
+      --text-secondary: #6b6560;
+      --accent-coral: #ff6b4a;
+      --accent-peach: #ffb088;
+      --accent-lavender: #b8a9ff;
+      --accent-mint: #7dd3c0;
+      --border: #e8e4de;
+      --display: 'Instrument Serif', Georgia, serif;
+      --body: 'Bricolage Grotesque', system-ui, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse 100% 80% at 0% 0%, rgba(255, 176, 136, 0.25), transparent 50%),
+        radial-gradient(ellipse 80% 60% at 100% 20%, rgba(184, 169, 255, 0.2), transparent 50%),
+        radial-gradient(ellipse 60% 50% at 50% 100%, rgba(125, 211, 192, 0.15), transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1.25rem 2rem;
+      backdrop-filter: blur(20px);
+      background: rgba(255, 251, 245, 0.8);
+    }
+
+    .nav-content {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--display);
+      font-size: 1.5rem;
+      font-style: italic;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover { color: var(--accent-coral); }
+
+    .btn {
+      font-family: var(--body);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.875rem 1.75rem;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: var(--accent-coral);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 20px rgba(255, 107, 74, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255, 107, 74, 0.4);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--text);
+      background: rgba(0,0,0,0.02);
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 8rem 2rem 4rem;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      padding: 0.5rem 1rem 0.5rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+    }
+
+    .badge-dot {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent-mint), var(--accent-lavender));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 400;
+      line-height: 1.1;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--accent-coral), var(--accent-lavender));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-description {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .hero-visual {
+      margin-top: 4rem;
+      width: 100%;
+      max-width: 1000px;
+      perspective: 1500px;
+    }
+
+    .floating-cards {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      transform: rotateX(10deg);
+    }
+
+    .float-card {
+      background: white;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+      animation: float 6s ease-in-out infinite;
+      min-width: 200px;
+    }
+
+    .float-card:nth-child(1) { animation-delay: 0s; }
+    .float-card:nth-child(2) { animation-delay: 1s; }
+    .float-card:nth-child(3) { animation-delay: 2s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .float-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .float-card p { font-size: 0.85rem; color: var(--text-secondary); }
+
+    /* Stats */
+    .stats {
+      position: relative;
+      z-index: 1;
+      padding: 4rem 2rem;
+      background: white;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stats-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .stat-item h3 {
+      font-family: var(--display);
+      font-size: 3.5rem;
+      font-weight: 400;
+      background: linear-gradient(135deg, var(--accent-coral), var(--accent-lavender));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-item p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+    }
+
+    /* Surfaces */
+    .surfaces {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 2rem;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 4rem;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent-coral);
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .section-header h2 {
+      font-family: var(--display);
+      font-size: 3rem;
+      font-weight: 400;
+    }
+
+    .section-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      margin-top: 1rem;
+    }
+
+    .surfaces-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .surface-card {
+      background: white;
+      border-radius: 24px;
+      padding: 2.5rem;
+      transition: all 0.4s;
+      border: 1px solid transparent;
+    }
+
+    .surface-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.08);
+      border-color: var(--border);
+    }
+
+    .surface-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .surface-card h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .surface-card > p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem; }
+
+    .surface-features {
+      list-style: none;
+      font-size: 0.85rem;
+    }
+
+    .surface-features li {
+      padding: 0.4rem 0;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .surface-features li::before {
+      content: '→';
+      color: var(--accent-coral);
+    }
+
+    /* Scanning */
+    .scanning {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 2rem;
+      background: var(--bg-warm);
+    }
+
+    .scanning-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .scan-card {
+      background: white;
+      border-radius: 20px;
+      padding: 2rem;
+      transition: all 0.3s;
+    }
+
+    .scan-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+    }
+
+    .scan-number {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-style: italic;
+      color: var(--accent-coral);
+      opacity: 0.6;
+      margin-bottom: 0.5rem;
+    }
+
+    .scan-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .scan-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+
+    /* Process */
+    .process {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 2rem;
+    }
+
+    .process-content {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .process h2 {
+      font-family: var(--display);
+      font-size: 3rem;
+      font-weight: 400;
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.5rem;
+      position: relative;
+    }
+
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 50px;
+      left: 10%;
+      right: 10%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-peach), var(--accent-lavender), var(--accent-mint));
+      border-radius: 2px;
+    }
+
+    .step {
+      text-align: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 100px;
+      height: 100px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-time {
+      font-size: 0.65rem;
+      color: var(--accent-coral);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .step-num {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-style: italic;
+      color: var(--accent-coral);
+    }
+
+    .step h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .step p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+    /* Agents */
+    .agents {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 2rem;
+      background: var(--bg-warm);
+    }
+
+    .agents-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .agents h2 {
+      font-family: var(--display);
+      font-size: 3rem;
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+    }
+
+    .agents-description {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .agent-highlight {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+    }
+
+    .agent-highlight span {
+      font-family: var(--display);
+      font-size: 6rem;
+      background: linear-gradient(135deg, var(--accent-coral), var(--accent-peach));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .agent-highlight p { font-size: 1rem; color: var(--text-secondary); }
+
+    .agents-visual {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .agent-bubble {
+      background: white;
+      border-radius: 20px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      transition: all 0.3s;
+    }
+
+    .agent-bubble:hover {
+      transform: scale(1.02);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    }
+
+    .agent-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .agent-bubble h4 { font-size: 0.95rem; font-weight: 600; }
+    .agent-bubble p { font-size: 0.75rem; color: var(--text-secondary); }
+
+    /* CTA */
+    .cta {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 2rem;
+      text-align: center;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg-warm) 100%);
+    }
+
+    .cta h2 {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 400;
+      max-width: 700px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .cta h2 em { font-style: italic; color: var(--accent-coral); }
+
+    .cta p {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+    }
+
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; }
+
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-logo {
+      font-family: var(--display);
+      font-size: 1.25rem;
+      font-style: italic;
+    }
+
+    .footer-links { display: flex; gap: 2rem; }
+
+    .footer-links a {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover { color: var(--accent-coral); }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .surfaces-grid, .scanning-grid { grid-template-columns: repeat(2, 1fr); }
+      .process-steps { grid-template-columns: repeat(3, 1fr); }
+      .process-steps::before { display: none; }
+      .agents-content { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .surfaces-grid, .scanning-grid { grid-template-columns: 1fr; }
+      .process-steps { grid-template-columns: 1fr; }
+      .stats-content { flex-direction: column; gap: 2rem; }
+      .floating-cards { flex-direction: column; align-items: center; }
+      .agents-visual { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <nav>
+    <div class="nav-content">
+      <div class="logo">Virtual Cofounder</div>
+      <ul class="nav-links">
+        <li><a href="#surfaces">Surfaces</a></li>
+        <li><a href="#scanning">Scanning</a></li>
+        <li><a href="#process">How it works</a></li>
+        <li><a href="#agents">Agents</a></li>
+      </ul>
+      <button class="btn btn-primary">Get Started</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="badge-dot">✨</span>
+      AI Head of Product
+    </div>
+    <h1>Your projects deserve a <em>partner</em></h1>
+    <p class="hero-description">
+      A cloud-based AI orchestration system that scans your portfolio daily, creates PRs, and coordinates via Slack. 17 specialist agents working 24/7 while your computer sleeps.
+    </p>
+    <div class="hero-buttons">
+      <button class="btn btn-primary">Start Free Trial</button>
+      <button class="btn btn-ghost">Watch Demo</button>
+    </div>
+    <div class="hero-visual">
+      <div class="floating-cards">
+        <div class="float-card">
+          <div class="card-icon" style="background: rgba(255,107,74,0.12);">🔍</div>
+          <h3>6 Scan Types</h3>
+          <p>Domain to Security</p>
+        </div>
+        <div class="float-card">
+          <div class="card-icon" style="background: rgba(184,169,255,0.15);">📝</div>
+          <h3>Auto PRs</h3>
+          <p>Created & notified</p>
+        </div>
+        <div class="float-card">
+          <div class="card-icon" style="background: rgba(125,211,192,0.15);">💬</div>
+          <h3>Slack Check-ins</h3>
+          <p>Morning & evening</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stats-content">
+      <div class="stat-item">
+        <h3>17</h3>
+        <p>Specialist AI agents</p>
+      </div>
+      <div class="stat-item">
+        <h3>6</h3>
+        <p>Comprehensive scan types</p>
+      </div>
+      <div class="stat-item">
+        <h3>3</h3>
+        <p>Integrated surfaces</p>
+      </div>
+      <div class="stat-item">
+        <h3>24/7</h3>
+        <p>Cloud operation</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="surfaces" id="surfaces">
+    <div class="section-header">
+      <span class="section-label">Three Surfaces</span>
+      <h2>Work where you work</h2>
+      <p>Dashboard for oversight, Slack for conversation, Linear for project management.</p>
+    </div>
+    <div class="surfaces-grid">
+      <div class="surface-card">
+        <div class="surface-icon" style="background: rgba(255,107,74,0.12);">📊</div>
+        <h3>Unified Dashboard</h3>
+        <p>Next.js 14 app with portfolio grid and aggregated stats. See everything at a glance.</p>
+        <ul class="surface-features">
+          <li>Portfolio view with health scores</li>
+          <li>Overview with high-priority issues</li>
+          <li>Real-time scan results</li>
+          <li>Agent activity feed</li>
+        </ul>
+      </div>
+      <div class="surface-card">
+        <div class="surface-icon" style="background: rgba(184,169,255,0.15);">💬</div>
+        <h3>Slack Integration</h3>
+        <p>Conversational AI with morning check-ins, agent updates, and approval buttons.</p>
+        <ul class="surface-features">
+          <li>9am: "What to focus on today?"</li>
+          <li>Agent thinking traces in threads</li>
+          <li>6pm: Daily summary & recap</li>
+          <li>[Approve] [Changes] [Snooze]</li>
+        </ul>
+      </div>
+      <div class="surface-card">
+        <div class="surface-icon" style="background: rgba(125,211,192,0.15);">📋</div>
+        <h3>Linear Sync</h3>
+        <p>Per-project Kanban boards. Agent dialogue as ticket comments. Bidirectional sync.</p>
+        <ul class="surface-features">
+          <li>One team per active project</li>
+          <li>Completions → Linear tasks</li>
+          <li>Agent dialogue in comments</li>
+          <li>Status changes sync back</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="scanning" id="scanning">
+    <div class="section-header">
+      <span class="section-label">Scanning System</span>
+      <h2>Six comprehensive scan types</h2>
+      <p>From SSL certificates to Core Web Vitals. Deep analysis daily at 9am.</p>
+    </div>
+    <div class="scanning-grid">
+      <div class="scan-card">
+        <div class="scan-number">01</div>
+        <h3>Domain Health</h3>
+        <p>HTTP/HTTPS, SSL validation, DNS, redirect chains, response time monitoring.</p>
+      </div>
+      <div class="scan-card">
+        <div class="scan-number">02</div>
+        <h3>SEO Analysis</h3>
+        <p>Meta tags, OG, canonical URLs, robots.txt, sitemap.xml, Schema.org markup.</p>
+      </div>
+      <div class="scan-card">
+        <div class="scan-number">03</div>
+        <h3>Analytics Detection</h3>
+        <p>PostHog, GA4, Plausible, Fathom snippets. Tag Manager verification.</p>
+      </div>
+      <div class="scan-card">
+        <div class="scan-number">04</div>
+        <h3>Vercel Deployment</h3>
+        <p>Status, build errors, missing env vars, preview URLs. Via Vercel API.</p>
+      </div>
+      <div class="scan-card">
+        <div class="scan-number">05</div>
+        <h3>Playwright Deep Scans</h3>
+        <p>Core Web Vitals, Lighthouse scores, screenshots, console errors.</p>
+      </div>
+      <div class="scan-card">
+        <div class="scan-number">06</div>
+        <h3>Security Scanning</h3>
+        <p>Exposed API keys, npm audit, outdated packages, security headers.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="process" id="process">
+    <div class="process-content">
+      <h2>A daily rhythm of improvement</h2>
+      <div class="process-steps">
+        <div class="step">
+          <div class="step-number">
+            <span class="step-time">9:00 AM</span>
+            <span class="step-num">1</span>
+          </div>
+          <h3>Check-in</h3>
+          <p>Slack asks what to focus on today</p>
+        </div>
+        <div class="step">
+          <div class="step-number">
+            <span class="step-time">9:15 AM</span>
+            <span class="step-num">2</span>
+          </div>
+          <h3>Scan</h3>
+          <p>6 scan types run across all projects</p>
+        </div>
+        <div class="step">
+          <div class="step-number">
+            <span class="step-time">10:00 AM</span>
+            <span class="step-num">3</span>
+          </div>
+          <h3>Analyze</h3>
+          <p>Orchestrator spawns relevant agents</p>
+        </div>
+        <div class="step">
+          <div class="step-number">
+            <span class="step-time">ONGOING</span>
+            <span class="step-num">4</span>
+          </div>
+          <h3>Create</h3>
+          <p>PRs created with Slack notifications</p>
+        </div>
+        <div class="step">
+          <div class="step-number">
+            <span class="step-time">6:00 PM</span>
+            <span class="step-num">5</span>
+          </div>
+          <h3>Recap</h3>
+          <p>Summary of shipped & pending work</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="agents" id="agents">
+    <div class="agents-content">
+      <div>
+        <span class="section-label">Agent Network</span>
+        <h2>Meet the team</h2>
+        <p class="agents-description">
+          Built on Claude Agent SDK. The Head of Product orchestrator spawns only agents with findings > 0. Each project gets custom config based on stage (launch, growth, mature).
+        </p>
+        <div class="agent-highlight">
+          <span>17</span>
+          <p>Specialist agents<br>organized in 4 categories</p>
+        </div>
+      </div>
+      <div class="agents-visual">
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(255,107,74,0.12);">🛡️</div>
+          <div><h4>Security Agent</h4><p>Keys, vulns, auth</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(184,169,255,0.15);">🔍</div>
+          <div><h4>SEO Agent</h4><p>Meta, schema, ranks</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(125,211,192,0.15);">⚡</div>
+          <div><h4>Performance</h4><p>Core Web Vitals</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(255,176,136,0.2);">♿</div>
+          <div><h4>Accessibility</h4><p>WCAG, ARIA</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(184,169,255,0.15);">📊</div>
+          <div><h4>Analytics</h4><p>PostHog, events</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(125,211,192,0.15);">📦</div>
+          <div><h4>Deployment</h4><p>Vercel, CI/CD</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(255,107,74,0.12);">📧</div>
+          <div><h4>Email Agent</h4><p>Resend, campaigns</p></div>
+        </div>
+        <div class="agent-bubble">
+          <div class="agent-avatar" style="background: rgba(255,176,136,0.2);">🎨</div>
+          <div><h4>Design Agent</h4><p>UI, brand, landing</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Ready for a <em>cofounder</em> that never sleeps?</h2>
+    <p>Cloud-native. Works while you sleep. Currently managing 73 projects in private beta.</p>
+    <div class="cta-buttons">
+      <button class="btn btn-primary">Get Early Access</button>
+      <button class="btn btn-ghost">Read Documentation</button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">Virtual Cofounder</div>
+      <div class="footer-links">
+        <a href="#">GitHub</a>
+        <a href="#">Docs</a>
+        <a href="#">Status</a>
+        <a href="#">Twitter</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

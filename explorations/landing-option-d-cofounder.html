@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Cofounder — The Team That Ships While You Sleep</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fefdfb;
+      --bg-soft: #f8f6f3;
+      --bg-slack: #4a154b;
+      --text: #1d1c1a;
+      --text-secondary: #5c5a56;
+      --text-muted: #8a8784;
+      --accent: #e85d04;
+      --accent-soft: #fff0e6;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --purple: #7c3aed;
+      --purple-soft: #ede9fe;
+      --border: #e8e6e1;
+      --display: 'Fraunces', Georgia, serif;
+      --body: 'Inter', system-ui, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      backdrop-filter: blur(20px);
+      background: rgba(254, 253, 251, 0.9);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: var(--display);
+      font-size: 1.25rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, #ff8a4c 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      font-family: var(--body);
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-secondary);
+      background: var(--bg-soft);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 10rem 2rem 6rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero-content {
+      max-width: 700px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      background: var(--bg-soft);
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+    }
+
+    .hero-eyebrow .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 500;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-description {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    /* Slack Preview */
+    .slack-preview {
+      background: var(--bg-slack);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+      margin-top: 4rem;
+    }
+
+    .slack-header {
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .slack-channel {
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .slack-body {
+      padding: 1.5rem;
+      background: white;
+      min-height: 340px;
+    }
+
+    .slack-message {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slack-message:nth-child(2) { animation-delay: 0.3s; }
+    .slack-message:nth-child(3) { animation-delay: 0.6s; }
+
+    .slack-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #ff8a4c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .slack-avatar.user {
+      background: #e0e0e0;
+      color: #666;
+    }
+
+    .slack-content { flex: 1; }
+
+    .slack-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .slack-name { font-weight: 600; font-size: 0.9rem; }
+    .slack-time { font-size: 0.75rem; color: var(--text-muted); }
+    .slack-app { font-size: 0.65rem; background: var(--bg-soft); padding: 0.15rem 0.4rem; border-radius: 4px; color: var(--text-muted); }
+
+    .slack-text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .slack-text strong { color: var(--text); }
+
+    .slack-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .slack-btn {
+      font-size: 0.8rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .slack-btn:hover { background: var(--bg-soft); }
+    .slack-btn.primary { background: var(--success); color: white; border-color: var(--success); }
+
+    .slack-options {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-soft);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .slack-options-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .slack-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      font-size: 0.85rem;
+    }
+
+    .slack-option-radio {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+    }
+
+    /* Tagline Section */
+    .tagline {
+      padding: 6rem 2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tagline-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .tagline h2 {
+      font-family: var(--display);
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--text-secondary);
+    }
+
+    .tagline h2 em {
+      font-style: italic;
+      color: var(--text);
+    }
+
+    /* Value Props */
+    .value-props {
+      padding: 8rem 2rem;
+      background: var(--bg-soft);
+    }
+
+    .value-props-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .value-header {
+      max-width: 600px;
+      margin-bottom: 4rem;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+    }
+
+    .value-header h2 {
+      font-family: var(--display);
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .value-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .value-card {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      transition: all 0.3s;
+    }
+
+    .value-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+    }
+
+    .value-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .value-card h3 {
+      font-family: var(--display);
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    .value-card p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Agent System */
+    .agent-system {
+      padding: 8rem 2rem;
+    }
+
+    .agent-system-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .agent-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 4rem;
+    }
+
+    .agent-header h2 {
+      font-family: var(--display);
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .agent-header h2 em { font-style: italic; color: var(--accent); }
+
+    .agent-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .agent-flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 4rem;
+    }
+
+    .agent-flow-arrow {
+      font-size: 1.5rem;
+      color: var(--text-muted);
+    }
+
+    .agent-flow-step {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .agent-flow-step.highlight {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .agent-flow-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .agent-flow-step h3 {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .agent-flow-step p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .agent-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .agent-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .agent-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .agent-card h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .agent-card p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .agent-category-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+
+    .category-tech { background: var(--blue-soft); color: var(--blue); }
+    .category-growth { background: var(--purple-soft); color: var(--purple); }
+
+    /* Scanning Section */
+    .scanning {
+      padding: 8rem 2rem;
+      background: var(--text);
+      color: white;
+    }
+
+    .scanning-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .scanning-text h2 {
+      font-family: var(--display);
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+
+    .scanning-text p {
+      color: rgba(255,255,255,0.7);
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .scanning-features {
+      list-style: none;
+    }
+
+    .scanning-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .scanning-features li::before {
+      content: '→';
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .project-ranking {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+    }
+
+    .ranking-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ranking-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .ranking-badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--accent);
+      border-radius: 100px;
+    }
+
+    .ranking-list {
+      padding: 0.5rem;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .ranking-item:hover { background: rgba(255,255,255,0.05); }
+
+    .ranking-position {
+      width: 28px;
+      height: 28px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .ranking-item:first-child .ranking-position {
+      background: var(--accent);
+    }
+
+    .ranking-info { flex: 1; }
+    .ranking-name { font-weight: 500; font-size: 0.9rem; }
+    .ranking-issues { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+    .ranking-score {
+      text-align: right;
+    }
+
+    .ranking-score-value {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+
+    .ranking-score-label {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* Kanban Section */
+    .kanban-section {
+      padding: 8rem 2rem;
+    }
+
+    .kanban-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .kanban-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 4rem;
+    }
+
+    .kanban-header h2 {
+      font-family: var(--display);
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .kanban-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .kanban-preview {
+      background: var(--bg-soft);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+
+    .kanban-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kanban-title {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .kanban-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .kanban-tab {
+      font-size: 0.8rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .kanban-tab.active {
+      background: var(--text);
+      color: white;
+      border-color: var(--text);
+    }
+
+    .kanban-columns {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .kanban-column h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .kanban-count {
+      background: var(--border);
+      padding: 0.1rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+    }
+
+    .kanban-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .kanban-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+
+    .kanban-card-title { font-weight: 500; font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .kanban-card-meta { font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 0.5rem; align-items: center; }
+
+    .kanban-card-agent {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    .kanban-card-agent-avatar {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: var(--accent-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+    }
+
+    .kanban-card.done { opacity: 0.6; }
+    .kanban-card.done .kanban-card-title { text-decoration: line-through; }
+
+    .kanban-card.in-review {
+      border-color: var(--purple);
+      background: var(--purple-soft);
+    }
+
+    .kanban-features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .kanban-feature {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .kanban-feature-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .kanban-feature h4 {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .kanban-feature p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Work Types */
+    .work-types {
+      padding: 8rem 2rem;
+      background: var(--bg-soft);
+    }
+
+    .work-types-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .work-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 4rem;
+    }
+
+    .work-header h2 {
+      font-family: var(--display);
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .work-header h2 em { font-style: italic; color: var(--accent); }
+
+    .work-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .work-categories {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    .work-category {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+    }
+
+    .work-category-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .work-category-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .work-category h3 {
+      font-family: var(--display);
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .work-category-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .work-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .work-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .work-item::before {
+      content: '✓';
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      padding: 8rem 2rem;
+    }
+
+    .how-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .how-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .how-header h2 {
+      font-family: var(--display);
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .how-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      position: relative;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 40px;
+      left: 12.5%;
+      right: 12.5%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--border));
+    }
+
+    .timeline-item {
+      text-align: center;
+      position: relative;
+    }
+
+    .timeline-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--bg-soft);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 1.5rem;
+      position: relative;
+      z-index: 1;
+      border: 2px solid var(--border);
+    }
+
+    .timeline-item:first-child .timeline-icon {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .timeline-time {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-item h3 {
+      font-family: var(--display);
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-item p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* CTA */
+    .cta {
+      padding: 8rem 2rem;
+      text-align: center;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--accent-soft) 100%);
+    }
+
+    .cta-content {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .cta h2 {
+      font-family: var(--display);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .cta h2 em { font-style: italic; color: var(--accent); }
+
+    .cta p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; }
+
+    /* Footer */
+    footer {
+      padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-logo {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .footer-links { display: flex; gap: 2rem; }
+
+    .footer-links a {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .value-grid { grid-template-columns: repeat(2, 1fr); }
+      .agent-flow { grid-template-columns: 1fr; }
+      .agent-flow-arrow { transform: rotate(90deg); justify-self: center; }
+      .agent-grid { grid-template-columns: repeat(2, 1fr); }
+      .scanning-content { grid-template-columns: 1fr; }
+      .timeline { grid-template-columns: repeat(2, 1fr); }
+      .timeline::before { display: none; }
+      .kanban-columns { grid-template-columns: repeat(2, 1fr); }
+      .kanban-features { grid-template-columns: 1fr; }
+      .work-categories { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .value-grid, .agent-grid { grid-template-columns: 1fr; }
+      .timeline { grid-template-columns: 1fr; }
+      .kanban-columns { grid-template-columns: 1fr; }
+      .hero-cta { flex-direction: column; }
+      .work-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-content">
+      <div class="logo">
+        <div class="logo-icon">🚀</div>
+        Virtual Cofounder
+      </div>
+      <ul class="nav-links">
+        <li><a href="#agents">Your team</a></li>
+        <li><a href="#scanning">How we help</a></li>
+        <li><a href="#kanban">Your board</a></li>
+        <li><a href="#how">Daily rhythm</a></li>
+      </ul>
+      <a href="#" class="btn btn-primary">Get Started</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        Working in the background right now
+      </div>
+      <h1>A team that <em>ships</em> while you sleep</h1>
+      <p class="hero-description">
+        The cofounder you always dreamed of. Whether it's technical debt, growth experiments, or launch prep—your virtual cofounder handles the work you've been putting off, overnight.
+      </p>
+      <div class="hero-cta">
+        <a href="#" class="btn btn-primary">Get your cofounder →</a>
+        <a href="#" class="btn btn-secondary">See how it works</a>
+      </div>
+    </div>
+
+    <div class="slack-preview">
+      <div class="slack-header">
+        <div class="slack-channel">
+          <span>#</span> cofounder-updates
+        </div>
+      </div>
+      <div class="slack-body">
+        <div class="slack-message">
+          <div class="slack-avatar">VC</div>
+          <div class="slack-content">
+            <div class="slack-meta">
+              <span class="slack-name">Virtual Cofounder</span>
+              <span class="slack-app">APP</span>
+              <span class="slack-time">7:32 AM</span>
+            </div>
+            <div class="slack-text">
+              ☀️ <strong>Good morning!</strong> I scanned all 12 of your projects overnight and ranked them by impact. Here's what I can help with most today:
+              <br><br>
+              🥇 <strong>startup-landing</strong> — Missing analytics + 3 SEO issues (high impact)<br>
+              🥈 <strong>saas-dashboard</strong> — 2 security vulnerabilities (urgent)<br>
+              🥉 <strong>portfolio-site</strong> — SSL expiring in 5 days
+            </div>
+            <div class="slack-options">
+              <div class="slack-options-label">I can approach the SEO fixes two ways:</div>
+              <div class="slack-option">
+                <div class="slack-option-radio"></div>
+                <strong>Option A:</strong> Quick fix — add meta descriptions to all 8 pages (30 min)
+              </div>
+              <div class="slack-option">
+                <div class="slack-option-radio"></div>
+                <strong>Option B:</strong> Full audit — rewrite titles, add schema markup, optimize images (2 hrs)
+              </div>
+            </div>
+            <div class="slack-buttons">
+              <button class="slack-btn primary">Go with Option B</button>
+              <button class="slack-btn">Option A is fine</button>
+              <button class="slack-btn">Different priority</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tagline">
+    <div class="tagline-content">
+      <h2>
+        Like having a team. <em>Without the meetings.</em><br>
+        The cofounder who handles everything you know you should do—but never get to.
+      </h2>
+    </div>
+  </section>
+
+  <section class="value-props">
+    <div class="value-props-content">
+      <div class="value-header">
+        <div class="section-label">Why it works</div>
+        <h2>Your dream cofounder, automated</h2>
+        <p>All the benefits of a technical partner, working in the background around your schedule.</p>
+      </div>
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-icon">🌙</div>
+          <h3>Ships while you sleep</h3>
+          <p>Scans run overnight. Fixes ship by morning. Wake up to progress, not a growing backlog of tedious tasks.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">💬</div>
+          <h3>Slack is your interface</h3>
+          <p>No new tools to learn. Morning check-ins, priority discussions, and approvals—all in the channel you already use.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">📋</div>
+          <h3>Your priorities, every day</h3>
+          <p>Tell your cofounder what matters. It factors your input into everything it works on. Change direction anytime.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🎯</div>
+          <h3>Does what you delay</h3>
+          <p>SEO tags? Security patches? Analytics setup? Important-but-not-urgent work that never quite makes the cut.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🔍</div>
+          <h3>Reviews before sharing</h3>
+          <p>Your cofounder spins up specialist agents, reviews their work, and only shows you polished, ready-to-approve PRs.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">🚢</div>
+          <h3>Gets you to launch</h3>
+          <p>Technical issues, growth tasks, polish work—everything you need to go live, handled by your always-on team.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="agent-system" id="agents">
+    <div class="agent-system-content">
+      <div class="agent-header">
+        <div class="section-label">How it works</div>
+        <h2>Your cofounder manages <em>the team</em></h2>
+        <p>Behind the scenes, specialized agents do the work. Your cofounder orchestrates, reviews, and only surfaces what's ready for you.</p>
+      </div>
+
+      <div class="agent-flow">
+        <div class="agent-flow-step">
+          <div class="agent-flow-icon">📊</div>
+          <h3>Scan & Rank</h3>
+          <p>All projects scanned. Issues ranked by impact.</p>
+        </div>
+        <div class="agent-flow-arrow">→</div>
+        <div class="agent-flow-step highlight">
+          <div class="agent-flow-icon">🧠</div>
+          <h3>Spawn Agents</h3>
+          <p>Specialists assigned to each task.</p>
+        </div>
+        <div class="agent-flow-arrow">→</div>
+        <div class="agent-flow-step">
+          <div class="agent-flow-icon">✅</div>
+          <h3>Review & Ship</h3>
+          <p>Work reviewed. PRs ready for you.</p>
+        </div>
+      </div>
+
+      <div class="agent-grid">
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--blue-soft);">🛡️</div>
+            <h4>Security Agent</h4>
+            <span class="agent-category-label category-tech">Tech</span>
+          </div>
+          <p>API key exposure, npm vulnerabilities, missing headers, dependency audits.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--purple-soft);">🔍</div>
+            <h4>SEO Agent</h4>
+            <span class="agent-category-label category-growth">Growth</span>
+          </div>
+          <p>Meta tags, schema markup, sitemaps, canonical URLs, content optimization.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--blue-soft);">⚡</div>
+            <h4>Performance Agent</h4>
+            <span class="agent-category-label category-tech">Tech</span>
+          </div>
+          <p>Core Web Vitals, Lighthouse scores, image optimization, bundle analysis.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--purple-soft);">📊</div>
+            <h4>Analytics Agent</h4>
+            <span class="agent-category-label category-growth">Growth</span>
+          </div>
+          <p>PostHog setup, event tracking, dashboards, funnel configuration.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--blue-soft);">🚀</div>
+            <h4>Deployment Agent</h4>
+            <span class="agent-category-label category-tech">Tech</span>
+          </div>
+          <p>Vercel issues, build errors, environment variables, domain configuration.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--purple-soft);">✉️</div>
+            <h4>Email Agent</h4>
+            <span class="agent-category-label category-growth">Growth</span>
+          </div>
+          <p>Resend integration, transactional emails, deliverability, templates.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--blue-soft);">♿</div>
+            <h4>Accessibility Agent</h4>
+            <span class="agent-category-label category-tech">Tech</span>
+          </div>
+          <p>WCAG compliance, screen reader support, keyboard navigation, ARIA labels.</p>
+        </div>
+        <div class="agent-card">
+          <div class="agent-card-header">
+            <div class="agent-card-icon" style="background: var(--purple-soft);">📈</div>
+            <h4>Growth Agent</h4>
+            <span class="agent-category-label category-growth">Growth</span>
+          </div>
+          <p>Conversion optimization, A/B test ideas, funnel analysis, retention.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scanning" id="scanning">
+    <div class="scanning-content">
+      <div class="scanning-text">
+        <div class="section-label" style="color: var(--accent);">Intelligent prioritization</div>
+        <h2>We scan everything. Then rank how to help most.</h2>
+        <p>
+          Your cofounder doesn't just find issues—it ranks them by impact. So you always know what will move the needle most, and can focus your limited time where it matters.
+        </p>
+        <ul class="scanning-features">
+          <li>All projects scanned daily—domain, SEO, security, performance, analytics</li>
+          <li>Issues ranked by severity, effort, and business impact</li>
+          <li>Your priorities factored in—tell us what matters and we'll weight it</li>
+          <li>Multiple options when there's more than one good approach</li>
+          <li>Auto-fix safe changes; PR for anything that needs your eyes</li>
+        </ul>
+      </div>
+      <div class="project-ranking">
+        <div class="ranking-header">
+          <div class="ranking-title">📊 Your Projects, Ranked</div>
+          <div class="ranking-badge">Updated 7:30 AM</div>
+        </div>
+        <div class="ranking-list">
+          <div class="ranking-item">
+            <div class="ranking-position">1</div>
+            <div class="ranking-info">
+              <div class="ranking-name">startup-landing</div>
+              <div class="ranking-issues">Missing analytics • 3 SEO issues • No schema</div>
+            </div>
+            <div class="ranking-score">
+              <div class="ranking-score-value">94</div>
+              <div class="ranking-score-label">impact score</div>
+            </div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position">2</div>
+            <div class="ranking-info">
+              <div class="ranking-name">saas-dashboard</div>
+              <div class="ranking-issues">2 npm vulnerabilities • Outdated deps</div>
+            </div>
+            <div class="ranking-score">
+              <div class="ranking-score-value">87</div>
+              <div class="ranking-score-label">impact score</div>
+            </div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position">3</div>
+            <div class="ranking-info">
+              <div class="ranking-name">portfolio-site</div>
+              <div class="ranking-issues">SSL expiring • Lighthouse 72</div>
+            </div>
+            <div class="ranking-score">
+              <div class="ranking-score-value">76</div>
+              <div class="ranking-score-label">impact score</div>
+            </div>
+          </div>
+          <div class="ranking-item">
+            <div class="ranking-position">4</div>
+            <div class="ranking-info">
+              <div class="ranking-name">docs-portal</div>
+              <div class="ranking-issues">Missing meta descriptions</div>
+            </div>
+            <div class="ranking-score">
+              <div class="ranking-score-value">45</div>
+              <div class="ranking-score-label">impact score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="kanban-section" id="kanban">
+    <div class="kanban-content">
+      <div class="kanban-header">
+        <div class="section-label">Full visibility</div>
+        <h2>See all work in progress. Anytime.</h2>
+        <p>Your cofounder isn't a black box. Every task, every PR, every piece of agent thinking—visible in your Linear workspace or our dashboard.</p>
+      </div>
+
+      <div class="kanban-preview">
+        <div class="kanban-toolbar">
+          <div class="kanban-title">📋 startup-landing</div>
+          <div class="kanban-tabs">
+            <button class="kanban-tab active">Board</button>
+            <button class="kanban-tab">Timeline</button>
+            <button class="kanban-tab">Activity</button>
+          </div>
+        </div>
+        <div class="kanban-columns">
+          <div class="kanban-column">
+            <h4>Queued <span class="kanban-count">3</span></h4>
+            <div class="kanban-card">
+              <div class="kanban-card-title">Add schema markup</div>
+              <div class="kanban-card-meta">
+                <span>SEO</span> • <span>Low effort</span>
+              </div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">Fix mobile nav overflow</div>
+              <div class="kanban-card-meta">
+                <span>UX</span> • <span>Medium effort</span>
+              </div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">Optimize hero image</div>
+              <div class="kanban-card-meta">
+                <span>Performance</span> • <span>Low effort</span>
+              </div>
+            </div>
+          </div>
+          <div class="kanban-column">
+            <h4>In Progress <span class="kanban-count">2</span></h4>
+            <div class="kanban-card">
+              <div class="kanban-card-title">Add PostHog analytics</div>
+              <div class="kanban-card-meta">
+                <span>Analytics</span> • <span>High impact</span>
+              </div>
+              <div class="kanban-card-agent">
+                <div class="kanban-card-agent-avatar">📊</div>
+                Analytics Agent working...
+              </div>
+            </div>
+            <div class="kanban-card">
+              <div class="kanban-card-title">Rewrite meta descriptions</div>
+              <div class="kanban-card-meta">
+                <span>SEO</span> • <span>8 pages</span>
+              </div>
+              <div class="kanban-card-agent">
+                <div class="kanban-card-agent-avatar">🔍</div>
+                SEO Agent working...
+              </div>
+            </div>
+          </div>
+          <div class="kanban-column">
+            <h4>In Review <span class="kanban-count">1</span></h4>
+            <div class="kanban-card in-review">
+              <div class="kanban-card-title">Fix npm vulnerabilities</div>
+              <div class="kanban-card-meta">
+                <span>Security</span> • <span>PR #142</span>
+              </div>
+              <div class="kanban-card-agent">
+                <div class="kanban-card-agent-avatar">🧠</div>
+                Cofounder reviewing...
+              </div>
+            </div>
+          </div>
+          <div class="kanban-column">
+            <h4>Done <span class="kanban-count">4</span></h4>
+            <div class="kanban-card done">
+              <div class="kanban-card-title">SSL certificate renewal</div>
+              <div class="kanban-card-meta">Shipped 2h ago</div>
+            </div>
+            <div class="kanban-card done">
+              <div class="kanban-card-title">Add OG images</div>
+              <div class="kanban-card-meta">Shipped yesterday</div>
+            </div>
+            <div class="kanban-card done">
+              <div class="kanban-card-title">Fix broken links</div>
+              <div class="kanban-card-meta">Shipped yesterday</div>
+            </div>
+            <div class="kanban-card done">
+              <div class="kanban-card-title">Update dependencies</div>
+              <div class="kanban-card-meta">Shipped 2 days ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kanban-features">
+        <div class="kanban-feature">
+          <div class="kanban-feature-icon">🔗</div>
+          <h4>Synced with Linear</h4>
+          <p>Every task appears in your existing Linear workspace. Bidirectional—changes flow both ways.</p>
+        </div>
+        <div class="kanban-feature">
+          <div class="kanban-feature-icon">💭</div>
+          <h4>Agent thinking visible</h4>
+          <p>See exactly how each agent approached the problem. Full reasoning in ticket comments.</p>
+        </div>
+        <div class="kanban-feature">
+          <div class="kanban-feature-icon">📎</div>
+          <h4>PRs linked to tasks</h4>
+          <p>Every pull request connected to its task. One-click review from Slack or Linear.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="work-types" id="work">
+    <div class="work-types-content">
+      <div class="work-header">
+        <div class="section-label">What we handle</div>
+        <h2>Technical <em>and</em> growth. All of it.</h2>
+        <p>Your cofounder helps with any part of getting live—from security patches to conversion optimization.</p>
+      </div>
+      <div class="work-categories">
+        <div class="work-category">
+          <div class="work-category-header">
+            <div class="work-category-icon" style="background: var(--blue-soft);">🔧</div>
+            <div>
+              <h3>Technical</h3>
+              <div class="work-category-desc">The infrastructure that keeps you running</div>
+            </div>
+          </div>
+          <div class="work-list">
+            <div class="work-item">Security vulnerabilities</div>
+            <div class="work-item">SSL & domain health</div>
+            <div class="work-item">Deployment issues</div>
+            <div class="work-item">Performance optimization</div>
+            <div class="work-item">Dependency updates</div>
+            <div class="work-item">Accessibility fixes</div>
+            <div class="work-item">Build errors</div>
+            <div class="work-item">Environment config</div>
+          </div>
+        </div>
+        <div class="work-category">
+          <div class="work-category-header">
+            <div class="work-category-icon" style="background: var(--purple-soft);">📈</div>
+            <div>
+              <h3>Growth</h3>
+              <div class="work-category-desc">The work that gets you discovered and converts</div>
+            </div>
+          </div>
+          <div class="work-list">
+            <div class="work-item">SEO optimization</div>
+            <div class="work-item">Analytics setup</div>
+            <div class="work-item">Meta tags & OG images</div>
+            <div class="work-item">Schema markup</div>
+            <div class="work-item">Email integration</div>
+            <div class="work-item">Conversion tracking</div>
+            <div class="work-item">Landing page polish</div>
+            <div class="work-item">Content optimization</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how">
+    <div class="how-content">
+      <div class="how-header">
+        <div class="section-label">Your daily rhythm</div>
+        <h2>A cofounder that works around you</h2>
+        <p>Check in when you want. Set priorities in plain English. Watch progress happen.</p>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-icon">☀️</div>
+          <div class="timeline-time">Morning</div>
+          <h3>Check-in</h3>
+          <p>Your cofounder shares overnight progress, ranked opportunities, and asks what to prioritize.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-icon">💬</div>
+          <div class="timeline-time">You reply</div>
+          <h3>Set focus</h3>
+          <p>"Focus on the launch" or "Security first"—plain English. Your cofounder adapts.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-icon">⚡</div>
+          <div class="timeline-time">All day</div>
+          <h3>Work ships</h3>
+          <p>Agents work. PRs appear. Check your board anytime. Approve with one click.</p>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-icon">🌙</div>
+          <div class="timeline-time">Evening</div>
+          <h3>Recap & plan</h3>
+          <p>Summary of the day. What's shipping overnight. Repeat tomorrow.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="cta-content">
+      <h2>The cofounder you've <em>always</em> wanted</h2>
+      <p>Stop putting off the work that matters. Get a partner who handles it—technical and growth, overnight and in the background.</p>
+      <div class="cta-buttons">
+        <a href="#" class="btn btn-primary">Get your cofounder →</a>
+        <a href="#" class="btn btn-secondary">See the demo</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-logo">
+        <div class="logo-icon" style="width:24px;height:24px;font-size:0.75rem;">🚀</div>
+        Virtual Cofounder
+      </div>
+      <div class="footer-links">
+        <a href="#">GitHub</a>
+        <a href="#">Documentation</a>
+        <a href="#">Status</a>
+        <a href="#">Twitter</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
