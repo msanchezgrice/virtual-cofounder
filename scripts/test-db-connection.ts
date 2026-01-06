@@ -1,4 +1,15 @@
-import { db } from '../lib/db';
+import { PrismaClient } from '@prisma/client';
+
+// Use direct connection for test scripts (not pooler) to avoid prepared statement issues
+const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543/', ':5432/').replace('?pgbouncer=true&connection_limit=1', '');
+
+const db = new PrismaClient({
+  datasources: {
+    db: {
+      url: directDatabaseUrl
+    }
+  }
+});
 
 async function testConnection() {
   try {
