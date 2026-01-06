@@ -62,9 +62,16 @@ async function testTables() {
       // Test row counts
       const projectCount = await db.project.count();
       const workspaceCount = await db.workspace.count();
+      const scanCount = await db.scan.count();
 
       console.log(`✓ Workspaces: ${workspaceCount}`);
       console.log(`✓ Projects: ${projectCount}`);
+
+      if (scanCount > 0) {
+        console.log(`✓ Scans table has data (${scanCount} scans)`);
+      } else {
+        console.log(`✓ Scans table exists (0 scans)`);
+      }
     } else {
       console.error('✗ Some tables are missing. Run migration first.');
       process.exit(1);
