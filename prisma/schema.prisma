@@ -1,0 +1,287 @@
+// Virtual Cofounder Database Schema
+// Multi-user ready from day 1 (workspace_id on all tables)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MULTI-USER TABLES (Infrastructure)
+// ============================================================================
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  ownerUserId String @map("owner_user_id")
+
+  // Limits per workspace
+  plan           String   @default("free") // 'free', 'pro', 'enterprise'
+  maxProjects    Int      @default(10) @map("max_projects")
+  maxScansPerDay Int      @default(50) @map("max_scans_per_day")
+
+  // Integrations (per workspace)
+  githubInstallationId String? @map("github_installation_id")
+  slackTeamId          String? @map("slack_team_id")
+  linearOrgId          String? @map("linear_org_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  owner    User               @relation("WorkspaceOwner", fields: [ownerUserId], references: [id])
+  members  WorkspaceMember[]
+  projects Project[]
+  scans    Scan[]
+  completions Completion[]
+  userPriorities UserPriority[]
+  agentFindings AgentFinding[]
+  linearTasks LinearTask[]
+  projectAgentConfigs ProjectAgentConfig[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?   @map("avatar_url")
+  emailVerified DateTime? @map("email_verified")
+
+  defaultWorkspaceId String? @map("default_workspace_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ownedWorkspaces  Workspace[]         @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+
+  @@map("users")
+}
+
+model WorkspaceMember {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        String   @default("member") // 'owner', 'admin', 'member', 'viewer'
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+// ============================================================================
+// CORE TABLES (Portfolio Management)
+// ============================================================================
+
+model Project {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+
+  name   String
+  domain String?
+  repo   String?
+  status String // 'ACTIVE - Live Product', 'ACTIVE - Pre-Launch', 'Maintenance Mode', 'Inactive'
+
+  // Integrations
+  hasPosthog      Boolean @default(false) @map("has_posthog")
+  hasResend       Boolean @default(false) @map("has_resend")
+  vercelProjectId String? @map("vercel_project_id")
+  linearTeamId    String? @map("linear_team_id")
+
+  // Metadata
+  lastScannedAt DateTime? @map("last_scanned_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  workspace         Workspace            @relation(fields: [workspaceId], references: [id])
+  scans             Scan[]
+  completions       Completion[]
+  agentFindings     AgentFinding[]
+  linearTasks       LinearTask[]
+  agentConfig       ProjectAgentConfig?
+
+  @@unique([workspaceId, name])
+  @@map("projects")
+}
+
+model Scan {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  projectId   String   @map("project_id")
+  scanType    String   @map("scan_type") // 'domain'|'seo'|'vercel'|'playwright'|'security'|'analytics'
+
+  // Results (JSONB for flexibility)
+  status            String  // 'ok'|'error'|'timeout'
+  seoDetail         Json?   @map("seo_detail") // { title, metaDesc, ogTags, h1 }
+  vercelData        Json?   @map("vercel_data") // { deploymentId, status, buildTime }
+  playwrightMetrics Json?   @map("playwright_metrics") // { fcp, lcp, cls, screenshots }
+  securityIssues    Json?   @map("security_issues") // [{ type, severity, file, line }]
+  domainData        Json?   @map("domain_data") // { ssl, dns, redirects }
+  analyticsData     Json?   @map("analytics_data") // { posthog, ga, etc. }
+
+  scannedAt  DateTime @map("scanned_at")
+  durationMs Int?     @map("duration_ms")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([projectId, scanType, scannedAt])
+  @@map("scans")
+}
+
+model Completion {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  runId       String   @map("run_id")
+  projectId   String   @map("project_id")
+
+  title     String
+  rationale String   @db.Text
+  priority  String   // 'high'|'medium'|'low'
+  policy    String   // 'approval_required'|'auto_safe'|'suggest_only'
+
+  // Execution tracking
+  status     String    @default("pending") // 'pending'|'in_progress'|'completed'|'failed'|'rejected'
+  prUrl      String?   @map("pr_url")
+  commitSha  String?   @map("commit_sha")
+  executedAt DateTime? @map("executed_at")
+
+  // User input
+  userApproved Boolean? @map("user_approved")
+  userNotes    String?  @map("user_notes") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id])
+  project     Project      @relation(fields: [projectId], references: [id])
+  linearTasks LinearTask[]
+
+  @@index([workspaceId, status, priority])
+  @@map("completions")
+}
+
+model UserPriority {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+
+  userInput    String   @map("user_input") @db.Text // Raw Slack message
+  parsedIntent Json     @map("parsed_intent") // { projects: [{ name, tasks, weight }] }
+
+  weight    Float    @default(2.0)
+  expiresAt DateTime @map("expires_at") // created_at + 72h
+
+  slackMessageTs String?  @map("slack_message_ts")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, expiresAt])
+  @@map("user_priorities")
+}
+
+model AgentFinding {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  runId       String   @map("run_id")
+  projectId   String   @map("project_id")
+  agent       String   // 'security'|'domain'|'seo'|'analytics'|'deployment'|etc.
+
+  issue  String @db.Text
+  action String @db.Text
+
+  severity   String  // 'high'|'medium'|'low'
+  effort     String  // 'low'|'medium'|'high'
+  impact     String  // 'high'|'medium'|'low'
+  confidence Float   // 0.0-1.0
+
+  rank Int?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([workspaceId, runId, severity])
+  @@map("agent_findings")
+}
+
+model LinearTask {
+  id            String   @id @default(uuid())
+  workspaceId   String   @map("workspace_id")
+  projectId     String   @map("project_id")
+  completionId  String?  @map("completion_id")
+
+  linearIssueId String @unique @map("linear_issue_id")
+  linearTeamId  String @map("linear_team_id")
+
+  title  String
+  status String // 'todo'|'in_progress'|'done'|'cancelled'
+
+  syncedAt DateTime @default(now()) @map("synced_at")
+
+  // Relations
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
+  project    Project     @relation(fields: [projectId], references: [id])
+  completion Completion? @relation(fields: [completionId], references: [id])
+
+  @@index([workspaceId, projectId])
+  @@map("linear_tasks")
+}
+
+model ProjectAgentConfig {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+  projectId   String   @unique @map("project_id")
+
+  stage String // 'ideation'|'mvp'|'launch'|'growth'|'mature'
+
+  enabledAgents    Json @default("[]") @map("enabled_agents") // ['security', 'seo', 'analytics', ...]
+  agentSettings    Json @default("{}") @map("agent_settings") // { "seo": { "target_keywords": [...] } }
+  agentPriorities  Json @default("{}") @map("agent_priorities") // { "security": 2.0, "seo": 1.5 }
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@map("project_agent_config")
+}
+
+// ============================================================================
+// ORCHESTRATOR RUNS (Audit Trail)
+// ============================================================================
+
+model OrchestratorRun {
+  id          String   @id @default(uuid())
+  runId       String   @unique @map("run_id")
+
+  status String @default("running") // 'running'|'completed'|'failed'
+
+  findingsCount    Int @default(0) @map("findings_count")
+  completionsCount Int @default(0) @map("completions_count")
+
+  conversation Json? // Agent dialogue from SDK
+
+  startedAt   DateTime  @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@map("orchestrator_runs")
+}
