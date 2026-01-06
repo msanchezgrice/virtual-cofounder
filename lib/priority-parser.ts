@@ -117,7 +117,7 @@ export async function storeUserPriority(
     data: {
       workspaceId,
       userInput: userMessage,
-      parsedIntent: parsed,
+      parsedIntent: parsed as any, // Prisma Json type
       expiresAt,
       slackMessageTs,
     },
@@ -144,7 +144,7 @@ export async function getActivePriorities(
     },
   });
 
-  return priorities.map(p => p.parsedIntent as ParsedPriority);
+  return priorities.map(p => p.parsedIntent as unknown as ParsedPriority);
 }
 
 /**

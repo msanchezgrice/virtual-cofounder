@@ -84,7 +84,7 @@ async function validateCriterion(criterion: AcceptanceCriterion): Promise<boolea
         return validateFileContains(criterion);
 
       case 'command':
-        return validateCommand(criterion);
+        return await validateCommand(criterion);
 
       default:
         console.warn(`⚠️  Unknown criterion type: ${criterion.type}`);
@@ -156,7 +156,7 @@ function validateFileContains(criterion: AcceptanceCriterion): boolean {
   }
 }
 
-function validateCommand(criterion: AcceptanceCriterion): boolean {
+async function validateCommand(criterion: AcceptanceCriterion): Promise<boolean> {
   const { command, expectedOutput, mustPass } = criterion;
 
   if (!command) {
@@ -168,7 +168,7 @@ function validateCommand(criterion: AcceptanceCriterion): boolean {
   const isLongRunning = command.includes('worker:') || command.includes('worker-');
 
   if (isLongRunning && expectedOutput) {
-    return validateLongRunningCommand(command, expectedOutput);
+    return await validateLongRunningCommand(command, expectedOutput);
   }
 
   try {
@@ -212,7 +212,7 @@ function validateCommand(criterion: AcceptanceCriterion): boolean {
   }
 }
 
-function validateLongRunningCommand(command: string, expectedOutput: string): boolean {
+function validateLongRunningCommand(command: string, expectedOutput: string): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     let output = '';
     let foundExpected = false;
