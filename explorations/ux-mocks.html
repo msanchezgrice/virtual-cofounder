@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Virtual Cofounder - UX Mocks</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f6f2ea;
+        --bg-2: #fdfaf6;
+        --ink: #0f172a;
+        --muted: #475569;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --accent: #f97316;
+        --accent-2: #0f766e;
+        --accent-3: #fbbf24;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+        background: radial-gradient(circle at 20% 20%, #fff7ed 0, #f6f2ea 55%, #f3f4f6 100%);
+        color: var(--ink);
+      }
+
+      header {
+        padding: 56px 24px 20px;
+        background:
+          linear-gradient(135deg, rgba(249, 115, 22, 0.08), transparent 40%),
+          linear-gradient(320deg, rgba(15, 118, 110, 0.08), transparent 50%);
+      }
+
+      .wrap {
+        max-width: 1220px;
+        margin: 0 auto;
+      }
+
+      .title {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: clamp(28px, 5vw, 44px);
+        letter-spacing: -0.02em;
+        margin: 0 0 10px;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 16px;
+        margin: 0 0 24px;
+        max-width: 760px;
+      }
+
+      .top-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .pill {
+        background: rgba(15, 23, 42, 0.06);
+        color: var(--ink);
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        text-decoration: none;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+      }
+
+      main {
+        padding: 32px 24px 72px;
+      }
+
+      section {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 26px;
+        box-shadow: var(--shadow);
+        animation: fadeUp 0.65s ease both;
+      }
+
+      section:nth-of-type(2) {
+        animation-delay: 0.12s;
+      }
+
+      section:nth-of-type(3) {
+        animation-delay: 0.24s;
+      }
+
+      h2 {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: 20px;
+        margin: 0 0 16px;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .meta-card {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px 16px;
+        min-width: 150px;
+      }
+
+      .meta-card strong {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 18px;
+        background: #ffffff;
+      }
+
+      .queue-row {
+        display: grid;
+        grid-template-columns: 44px 1.2fr 1fr 110px 110px 110px;
+        gap: 12px;
+        padding: 14px 12px;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+      }
+
+      .queue-row:last-child {
+        border-bottom: 0;
+      }
+
+      .rank {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-size: 18px;
+        text-align: center;
+        color: var(--accent-2);
+      }
+
+      .priority {
+        font-weight: 600;
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        text-align: center;
+      }
+
+      .p0 { background: rgba(220, 38, 38, 0.12); color: var(--danger); }
+      .p1 { background: rgba(249, 115, 22, 0.14); color: var(--accent); }
+      .p2 { background: rgba(15, 118, 110, 0.12); color: var(--accent-2); }
+      .p3 { background: rgba(15, 23, 42, 0.08); color: var(--ink); }
+
+      .status {
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        text-align: center;
+        border: 1px solid var(--border);
+      }
+
+      .running { color: var(--success); border-color: rgba(22, 163, 74, 0.4); }
+      .queued { color: var(--muted); }
+      .blocked { color: var(--danger); border-color: rgba(220, 38, 38, 0.4); }
+
+      .side-title {
+        font-weight: 600;
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--bg-2);
+        margin-bottom: 10px;
+      }
+
+      .toggle span {
+        font-size: 13px;
+      }
+
+      .switch {
+        width: 40px;
+        height: 22px;
+        background: var(--accent-2);
+        border-radius: 999px;
+        position: relative;
+      }
+
+      .switch::after {
+        content: "";
+        width: 16px;
+        height: 16px;
+        background: white;
+        border-radius: 50%;
+        position: absolute;
+        top: 3px;
+        right: 3px;
+      }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 18px;
+      }
+
+      .run-card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        background: var(--bg-2);
+        margin-bottom: 10px;
+      }
+
+      .run-card strong {
+        font-size: 13px;
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .chat {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .bubble {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px 14px;
+        max-width: 80%;
+      }
+
+      .bubble.agent {
+        background: rgba(15, 118, 110, 0.08);
+        align-self: flex-start;
+      }
+
+      .bubble.user {
+        background: rgba(249, 115, 22, 0.12);
+        align-self: flex-end;
+      }
+
+      .bubble .tag {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .decision {
+        border-left: 3px solid var(--accent);
+        background: #fff7ed;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-size: 13px;
+        color: var(--ink);
+      }
+
+      .rank-grid {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr) 280px;
+        gap: 16px;
+      }
+
+      .project-list button {
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .project-list .active {
+        border-color: var(--accent-2);
+        background: rgba(15, 118, 110, 0.08);
+        font-weight: 600;
+      }
+
+      .story-row {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+
+      .story-row header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0;
+        background: none;
+      }
+
+      .factors {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .factor {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px;
+        font-size: 12px;
+      }
+
+      .score-card {
+        background: #0f172a;
+        color: #f8fafc;
+        border-radius: 16px;
+        padding: 16px;
+      }
+
+      .score-card h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+
+      .score-card .bar {
+        height: 8px;
+        background: rgba(248, 250, 252, 0.2);
+        border-radius: 999px;
+        margin-bottom: 10px;
+        overflow: hidden;
+      }
+
+      .score-card .bar span {
+        display: block;
+        height: 100%;
+        background: var(--accent-3);
+        width: 72%;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+      }
+
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @media (max-width: 980px) {
+        .grid, .timeline, .rank-grid {
+          grid-template-columns: 1fr;
+        }
+        .queue-row {
+          grid-template-columns: 34px 1fr;
+          grid-auto-rows: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <h1 class="title">UX Mocks - Execution, Orchestrator, Stack Rank</h1>
+        <p class="subtitle">
+          High fidelity concept views for how the user experiences execution flow,
+          orchestration chat history, and ranked worklists by project and overall.
+        </p>
+        <div class="top-links">
+          <a class="pill" href="#execution">Execution Queue</a>
+          <a class="pill" href="#orchestrator">Orchestrator Chat History</a>
+          <a class="pill" href="#stackrank">Stack Ranked Lists</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section id="execution">
+        <h2>Execution Queue</h2>
+        <div class="meta">
+          <div class="meta-card">
+            <strong>14</strong>
+            Active items
+          </div>
+          <div class="meta-card">
+            <strong>7m</strong>
+            Avg wait
+          </div>
+          <div class="meta-card">
+            <strong>3.2/hr</strong>
+            Throughput
+          </div>
+          <div class="meta-card">
+            <strong>Always on</strong>
+            Worker status
+          </div>
+        </div>
+        <div class="grid">
+          <div class="panel">
+            <div class="queue-row">
+              <div class="rank">1</div>
+              <div>
+                <strong>Warmstart</strong>
+                <div class="muted">Fix domain redirect loop on pricing</div>
+              </div>
+              <div>
+                Autonomy: auto_safe
+                <div class="muted">ETA 12m</div>
+              </div>
+              <div class="priority p0">P0</div>
+              <div class="status running">Running</div>
+              <div class="status">Worker A</div>
+            </div>
+            <div class="queue-row">
+              <div class="rank">2</div>
+              <div>
+                <strong>TalkingObject</strong>
+                <div class="muted">Rotate leaked API key</div>
+              </div>
+              <div>
+                Autonomy: approval_required
+                <div class="muted">ETA 25m</div>
+              </div>
+              <div class="priority p1">P1</div>
+              <div class="status queued">Queued</div>
+              <div class="status">Worker B</div>
+            </div>
+            <div class="queue-row">
+              <div class="rank">3</div>
+              <div>
+                <strong>ShipShow</strong>
+                <div class="muted">Add sitemap and robots</div>
+              </div>
+              <div>
+                Autonomy: auto_safe
+                <div class="muted">ETA 8m</div>
+              </div>
+              <div class="priority p2">P2</div>
+              <div class="status queued">Queued</div>
+              <div class="status">Worker A</div>
+            </div>
+            <div class="queue-row">
+              <div class="rank">4</div>
+              <div>
+                <strong>LaunchReady</strong>
+                <div class="muted">Perf regression review</div>
+              </div>
+              <div>
+                Autonomy: suggest_only
+                <div class="muted">ETA 40m</div>
+              </div>
+              <div class="priority p3">P3</div>
+              <div class="status blocked">Blocked</div>
+              <div class="status">Needs approval</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="side-title">Queue Controls</div>
+            <div class="toggle">
+              <span>Execution worker</span>
+              <div class="switch"></div>
+            </div>
+            <div class="toggle">
+              <span>Priority re-rank</span>
+              <div class="switch"></div>
+            </div>
+            <div class="side-title">SLA Guardrails</div>
+            <div class="toggle">
+              <span>P0 must start in 5m</span>
+              <div class="switch"></div>
+            </div>
+            <div class="toggle">
+              <span>Auto-cancel after 3 fails</span>
+              <div class="switch"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="orchestrator">
+        <h2>Orchestrator Chat History</h2>
+        <div class="timeline">
+          <div>
+            <div class="run-card">
+              <strong>Run 12:15 PM</strong>
+              Findings: 21 | Completions: 8
+              <div class="muted">Priority signals: 4</div>
+            </div>
+            <div class="run-card">
+              <strong>Run 9:05 AM</strong>
+              Findings: 17 | Completions: 5
+              <div class="muted">Priority signals: 2</div>
+            </div>
+            <div class="run-card">
+              <strong>Run 6:00 AM</strong>
+              Findings: 9 | Completions: 3
+              <div class="muted">Priority signals: 1</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="chat">
+              <div class="bubble agent">
+                <div class="tag">Orchestrator</div>
+                User said "ship analytics today" in DM. Elevating analytics fixes to P0.
+              </div>
+              <div class="bubble agent">
+                <div class="tag">Agent: Analytics</div>
+                Found missing PostHog snippet on Warmstart. Cost low, confidence high.
+              </div>
+              <div class="bubble agent">
+                <div class="tag">Agent: Domain</div>
+                Redirect loop detected on pricing. Impact high, cost medium.
+              </div>
+              <div class="decision">
+                Decision: Rank "Fix redirect loop" above "Add PostHog" due to P0 urgency.
+              </div>
+              <div class="bubble user">
+                <div class="tag">You</div>
+                Hey do this today. P0 for Warmstart launch.
+              </div>
+              <div class="bubble agent">
+                <div class="tag">Orchestrator</div>
+                Logged priority signal. Reranked project list and queued execution.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="stackrank">
+        <h2>Stack Ranked Lists (Per Project + Overall)</h2>
+        <div class="two-col">
+          <div class="panel">
+            <div class="rank-grid">
+              <div class="project-list">
+                <button class="active">Warmstart (P0)</button>
+                <button>TalkingObject (P1)</button>
+                <button>ShipShow (P2)</button>
+                <button>LaunchReady (P3)</button>
+              </div>
+              <div>
+                <div class="story-row">
+                  <header>
+                    <strong>#1 Fix pricing redirect loop</strong>
+                    <span class="priority p0">P0</span>
+                  </header>
+                  <div class="factors">
+                    <div class="factor">Impact: 5</div>
+                    <div class="factor">Cost: 3</div>
+                    <div class="factor">Confidence: 4</div>
+                    <div class="factor">Autonomy: auto_safe</div>
+                    <div class="factor">Urgency: today</div>
+                  </div>
+                </div>
+                <div class="story-row">
+                  <header>
+                    <strong>#2 Add PostHog snippet</strong>
+                    <span class="priority p1">P1</span>
+                  </header>
+                  <div class="factors">
+                    <div class="factor">Impact: 4</div>
+                    <div class="factor">Cost: 1</div>
+                    <div class="factor">Confidence: 5</div>
+                    <div class="factor">Autonomy: auto_safe</div>
+                    <div class="factor">Urgency: week</div>
+                  </div>
+                </div>
+              </div>
+              <div class="score-card">
+                <h3>Why #1</h3>
+                <div class="bar"><span></span></div>
+                P0 signal + high impact. Cost acceptable. Confidence 0.86.
+                <div class="muted">Updated 3 min ago</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <h3 style="margin-top:0">Overall Stack Rank</h3>
+            <div class="story-row">
+              <header>
+                <strong>#1 Warmstart: Fix redirect loop</strong>
+                <span class="priority p0">P0</span>
+              </header>
+              <div class="factors">
+                <div class="factor">Impact: 5</div>
+                <div class="factor">Cost: 3</div>
+                <div class="factor">Confidence: 4</div>
+                <div class="factor">Autonomy: auto_safe</div>
+              </div>
+            </div>
+            <div class="story-row">
+              <header>
+                <strong>#2 TalkingObject: Rotate API key</strong>
+                <span class="priority p1">P1</span>
+              </header>
+              <div class="factors">
+                <div class="factor">Impact: 5</div>
+                <div class="factor">Cost: 2</div>
+                <div class="factor">Confidence: 3</div>
+                <div class="factor">Autonomy: approval_required</div>
+              </div>
+            </div>
+            <div class="story-row">
+              <header>
+                <strong>#3 ShipShow: Add sitemap</strong>
+                <span class="priority p2">P2</span>
+              </header>
+              <div class="factors">
+                <div class="factor">Impact: 3</div>
+                <div class="factor">Cost: 1</div>
+                <div class="factor">Confidence: 5</div>
+                <div class="factor">Autonomy: auto_safe</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

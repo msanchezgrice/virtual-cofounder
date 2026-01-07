@@ -1175,10 +1175,22 @@ function ProjectRow({ project }: { project: ProjectWithScans }) {
   );
 }
 
+interface SlackMessage {
+  id: string;
+  text: string;
+  userId: string;
+  channelId: string;
+  isCommand: boolean;
+  commandType: string | null;
+  createdAt: string;
+}
+
 function HistoryView() {
   const [runs, setRuns] = useState<OrchestratorRun[]>([]);
+  const [messages, setMessages] = useState<SlackMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRun, setSelectedRun] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'runs' | 'messages' | 'all'>('all');
 
   useEffect(() => {
     fetchHistory();
@@ -1186,12 +1198,19 @@ function HistoryView() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch('/api/orchestrator/history');
-      const data = await res.json();
-      setRuns(data.runs || []);
+      // Fetch orchestrator runs
+      const runsRes = await fetch('/api/orchestrator/history');
+      const runsData = await runsRes.json();
+      setRuns(runsData.runs || []);
+
+      // Fetch Slack messages
+      const messagesRes = await fetch('/api/slack/messages');
+      const messagesData = await messagesRes.json();
+      setMessages(messagesData.messages || []);
     } catch (error) {
-      console.error('Failed to fetch orchestrator history:', error);
+      console.error('Failed to fetch history:', error);
       setRuns([]);
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -1224,25 +1243,76 @@ function HistoryView() {
     );
   }
 
-  if (runs.length === 0) {
-    return (
-      <div className="bg-white rounded-lg p-8 shadow text-center">
-        <div className="text-gray-600">No orchestrator runs yet</div>
-      </div>
-    );
-  }
-
-  const selectedRunData = selectedRun ? runs.find(r => r.id === selectedRun) : null;
+  // Filter what to show based on view mode
+  const displayRuns = viewMode === 'messages' ? [] : runs;
+  const displayMessages = viewMode === 'runs' ? [] : messages;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Orchestrator History</h2>
-        <div className="text-sm text-gray-600">{runs.length} total runs</div>
+        <h2 className="text-2xl font-bold">Activity History</h2>
+        <div className="flex items-center gap-4">
+          {/* View mode toggles */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('all')}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                viewMode === 'all' ? 'bg-white text-brand-blue shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setViewMode('messages')}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                viewMode === 'messages' ? 'bg-white text-brand-blue shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              Messages
+            </button>
+            <button
+              onClick={() => setViewMode('runs')}
+              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                viewMode === 'runs' ? 'bg-white text-brand-blue shadow-sm' : 'text-gray-600'
+              }`}
+            >
+              Runs
+            </button>
+          </div>
+          <div className="text-sm text-gray-600">
+            {messages.length} messages • {runs.length} runs
+          </div>
+        </div>
       </div>
 
       <div className="space-y-4">
-        {runs.map((run) => (
+        {/* Slack Messages */}
+        {displayMessages.map((message) => (
+          <div key={message.id} className="bg-white rounded-lg p-4 shadow hover:shadow-md transition-shadow border-l-4 border-purple-500">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-lg">💬</span>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Slack Message
+                  </h3>
+                  {message.isCommand && message.commandType && (
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                      {message.commandType.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-700 text-sm mb-2">{message.text}</p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>🕐 {formatDate(message.createdAt)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Orchestrator Runs */}
+        {displayRuns.map((run) => (
           <div key={run.id} className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-start justify-between mb-3">

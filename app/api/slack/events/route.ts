@@ -90,6 +90,7 @@ async function handleUserMessage(event: any): Promise<void> {
   const messageTs = event.ts;
   const channelId = event.channel;
   const userId = event.user;
+  const threadTs = event.thread_ts;
   const lowerMessage = message.toLowerCase();
 
   console.log(`[Slack Events] User message: "${message}"`);
@@ -101,6 +102,35 @@ async function handleUserMessage(event: any): Promise<void> {
     lowerMessage.includes('orchestrator') ||
     lowerMessage.includes('execution') ||
     lowerMessage.includes('status');
+
+  // Determine command type if it's a command
+  let commandType: string | undefined;
+  if (isCommand) {
+    if (lowerMessage.includes('help')) commandType = 'help';
+    else if (lowerMessage.includes('run scan') || lowerMessage.includes('scan')) commandType = 'run_scans';
+    else if (lowerMessage.includes('run orchestrator') || lowerMessage.includes('orchestrator')) commandType = 'run_orchestrator';
+    else if (lowerMessage.includes('run execution') || lowerMessage.includes('execution')) commandType = 'run_execution';
+    else if (lowerMessage.includes('status')) commandType = 'status';
+  }
+
+  // Store ALL messages in database
+  try {
+    await db.slackMessage.create({
+      data: {
+        workspaceId,
+        userId,
+        channelId,
+        text: message,
+        messageTs,
+        threadTs,
+        isCommand,
+        commandType,
+      },
+    });
+    console.log('[Slack Events] Message logged to database');
+  } catch (error) {
+    console.error('[Slack Events] Error logging message:', error);
+  }
 
   if (isCommand) {
     // Handle commands just like app mentions
@@ -134,14 +164,42 @@ async function handleAppMention(event: any): Promise<void> {
   const channelId = event.channel;
   const userId = event.user;
   const threadTs = event.thread_ts || event.ts;
+  const messageTs = event.ts;
 
   console.log(`[Slack Events] App mention from ${userId}: "${message}"`);
 
+  // Parse the message to understand intent
+  const lowerMessage = message.toLowerCase();
+
+  // Determine command type
+  let commandType: string | undefined;
+  if (lowerMessage.includes('help')) commandType = 'help';
+  else if (lowerMessage.includes('run scan') || lowerMessage.includes('scan')) commandType = 'run_scans';
+  else if (lowerMessage.includes('run orchestrator') || lowerMessage.includes('analyze')) commandType = 'run_orchestrator';
+  else if (lowerMessage.includes('run execution') || lowerMessage.includes('execute')) commandType = 'run_execution';
+  else if (lowerMessage.includes('status') || lowerMessage.includes('health')) commandType = 'status';
+
+  // Store app mention message in database
+  try {
+    await db.slackMessage.create({
+      data: {
+        workspaceId,
+        userId,
+        channelId,
+        text: message,
+        messageTs,
+        threadTs,
+        isCommand: true, // App mentions are always commands
+        commandType,
+      },
+    });
+    console.log('[Slack Events] App mention logged to database');
+  } catch (error) {
+    console.error('[Slack Events] Error logging app mention:', error);
+  }
+
   try {
     const client = getSlackClient();
-
-    // Parse the message to understand intent
-    const lowerMessage = message.toLowerCase();
 
     // Help command
     if (lowerMessage.includes('help')) {

@@ -44,6 +44,7 @@ model Workspace {
   agentFindings AgentFinding[]
   linearTasks LinearTask[]
   projectAgentConfigs ProjectAgentConfig[]
+  slackMessages SlackMessage[]
 
   @@map("workspaces")
 }
@@ -286,4 +287,26 @@ model OrchestratorRun {
   completedAt DateTime? @map("completed_at")
 
   @@map("orchestrator_runs")
+}
+
+model SlackMessage {
+  id          String   @id @default(uuid())
+  workspaceId String   @map("workspace_id")
+
+  userId      String   @map("user_id")
+  channelId   String   @map("channel_id")
+  text        String   @db.Text
+  messageTs   String   @map("message_ts") // Slack message timestamp
+  threadTs    String?  @map("thread_ts")  // Thread timestamp if in thread
+
+  isCommand   Boolean  @default(false) @map("is_command") // Was this processed as a command?
+  commandType String?  @map("command_type") // e.g., "run_orchestrator", "help", "status"
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@map("slack_messages")
 }
