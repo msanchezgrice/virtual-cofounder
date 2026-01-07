@@ -260,6 +260,78 @@ ${summary.topProjects.map(p => `• ${p}`).join('\n')}`,
 }
 
 /**
+ * Send PR creation notification to Slack
+ */
+export async function sendSlackNotification(data: {
+  completionId: string;
+  projectName: string;
+  title: string;
+  rationale: string;
+  prUrl: string;
+}): Promise<void> {
+  if (!slackToken) {
+    console.log('[Slack] Skipping PR notification - SLACK_BOT_TOKEN not configured');
+    return;
+  }
+
+  const client = getSlackClient();
+
+  try {
+    await client.chat.postMessage({
+      channel: slackChannel,
+      text: `✅ PR created: ${data.title}`,
+      blocks: [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: `✅ Pull Request Created`,
+            emoji: true,
+          },
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*${data.projectName}*\n\n*${data.title}*\n\n${data.rationale}`,
+          },
+        },
+        {
+          type: 'actions',
+          elements: [
+            {
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: 'View PR',
+                emoji: true,
+              },
+              style: 'primary',
+              url: data.prUrl,
+              action_id: 'view_pr',
+            },
+          ],
+        },
+        {
+          type: 'context',
+          elements: [
+            {
+              type: 'mrkdwn',
+              text: `Completion ID: ${data.completionId}`,
+            },
+          ],
+        },
+      ],
+    });
+
+    console.log(`[Slack] Sent PR notification: ${data.completionId}`);
+  } catch (error) {
+    console.error('[Slack] Error sending PR notification:', error);
+    throw error;
+  }
+}
+
+/**
  * Send a simple text message to Slack
  */
 export async function sendMessage(text: string, channel?: string): Promise<void> {

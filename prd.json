@@ -1,7 +1,7 @@
 {
   "projectName": "Virtual Cofounder",
   "version": "1.0.0",
-  "currentPhase": "phase-4",
+  "currentPhase": "phase-5",
   "phases": [
     {
       "id": "phase-1",
@@ -22,6 +22,11 @@
       "id": "phase-4",
       "name": "Slack Integration",
       "status": "complete"
+    },
+    {
+      "id": "phase-5",
+      "name": "PR Creation & Automated Execution",
+      "status": "in_progress"
     }
   ],
   "stories": [
@@ -529,6 +534,183 @@
         }
       ],
       "blockedBy": ["vc-039"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-041",
+      "phase": "phase-5",
+      "title": "Create execution worker infrastructure",
+      "description": "Create worker that polls for approved completions (userApproved=true, status='pending') and executes them. Use BullMQ queue pattern from Phase 2. Deploy to Railway.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "workers/execution-worker.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "async function executeCompletion",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run worker:execute",
+          "expectedOutput": "Worker started",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-042",
+      "phase": "phase-5",
+      "title": "Implement Git operations lib",
+      "description": "Create lib/git.ts with functions: cloneRepo(url), createBranch(name), commitChanges(message), pushBranch(). Use simple-git npm package.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/git.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/git.ts",
+          "pattern": "export async function cloneRepo",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:git-ops",
+          "expectedOutput": "✓ Git operations test passed",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-043",
+      "phase": "phase-5",
+      "title": "Integrate GitHub Octokit for PR creation",
+      "description": "Add @octokit/rest package. Create lib/github.ts with createPullRequest(repo, branch, title, body). Use GITHUB_TOKEN from env.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/github.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/github.ts",
+          "pattern": "export async function createPullRequest",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm list @octokit/rest",
+          "expectedOutput": "@octokit/rest",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-044",
+      "phase": "phase-5",
+      "title": "Build completion executor with Git + GitHub",
+      "description": "In execution worker, implement executeCompletion(): clone repo → create branch → make changes (placeholder) → commit → push → create PR. Update completion with prUrl.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "const prUrl = await createPullRequest",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:executor",
+          "expectedOutput": "✓ PR created",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-041", "vc-042", "vc-043"],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-045",
+      "phase": "phase-5",
+      "title": "Add safety policy enforcement",
+      "description": "Check completion.policy before execution. auto_safe: execute immediately. approval_required: require userApproved=true. suggest_only: skip execution, just create PR link.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "if \\(completion\\.policy === 'suggest_only'\\)",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:policy-enforcement",
+          "expectedOutput": "✓ Policy enforcement works",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-044"],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-046",
+      "phase": "phase-5",
+      "title": "Send Slack notifications on PR creation",
+      "description": "After PR created, send Slack message with PR URL, completion title, and agent rationale. Include [View PR] button.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "await sendSlackNotification",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:e2e:pr-notification",
+          "expectedOutput": "✓ Slack PR notification sent",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-044"],
+      "status": "done",
+      "effort": "low",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-047",
+      "phase": "phase-5",
+      "title": "E2E validation - Full execution flow",
+      "description": "End-to-end test: Create approved completion → Worker picks it up → Clones repo → Creates PR → Updates completion.prUrl → Sends Slack notification.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:e2e:execution",
+          "expectedOutput": "✓ Full execution flow complete",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-044", "vc-045", "vc-046"],
       "status": "done",
       "effort": "medium",
       "priority": "high"
