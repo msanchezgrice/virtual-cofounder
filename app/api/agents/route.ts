@@ -4,8 +4,8 @@ import { agents } from '@/lib/agents';
 
 export async function GET() {
   try {
-    // Fetch all completions with their findings
-    const completions = await db.completion.findMany({
+    // Fetch all stories with their findings
+    const stories = await db.story.findMany({
       include: {
         project: {
           select: {
@@ -34,13 +34,13 @@ export async function GET() {
       };
     });
 
-    // Process completions to extract agent findings
-    completions.forEach((completion) => {
+    // Process stories to extract agent findings
+    stories.forEach((story) => {
       // Try to parse rationale to extract agent findings
       // The rationale might contain structured data about which agent found what
       try {
-        // For now, we'll estimate based on the completion title and rationale
-        const text = `${completion.title} ${completion.rationale}`.toLowerCase();
+        // For now, we'll estimate based on the story title and rationale
+        const text = `${story.title} ${story.rationale}`.toLowerCase();
 
         // Map keywords to agents
         const agentKeywords = {
@@ -51,7 +51,7 @@ export async function GET() {
           deployment: ['deployment', 'vercel', 'build', 'env var', 'failed deploy'],
         };
 
-        // Find which agent this completion is most related to
+        // Find which agent this story is most related to
         let matchedAgent: string | null = null;
         let maxMatches = 0;
 
@@ -68,12 +68,12 @@ export async function GET() {
           agent.findingsCount++;
 
           // Update last run time
-          if (!agent.lastRun || new Date(completion.createdAt) > new Date(agent.lastRun)) {
-            agent.lastRun = completion.createdAt;
+          if (!agent.lastRun || new Date(story.createdAt) > new Date(agent.lastRun)) {
+            agent.lastRun = story.createdAt;
           }
 
           // Update status
-          if (completion.status === 'in_progress' || completion.status === 'pending') {
+          if (story.status === 'in_progress' || story.status === 'pending') {
             agent.status = 'active';
           }
 
@@ -87,17 +87,17 @@ export async function GET() {
             };
 
             agent.recentFindings.push({
-              id: completion.id,
-              issue: completion.title,
-              action: completion.rationale.split('\n')[0].substring(0, 150),
-              severity: severityMap[completion.priority] || 'medium',
-              projectName: completion.project.name,
-              createdAt: completion.createdAt,
+              id: story.id,
+              issue: story.title,
+              action: story.rationale.split('\n')[0].substring(0, 150),
+              severity: severityMap[story.priority] || 'medium',
+              projectName: story.project.name,
+              createdAt: story.createdAt,
             });
           }
         }
       } catch (error) {
-        console.error('Error processing completion for agents:', error);
+        console.error('Error processing story for agents:', error);
       }
     });
 

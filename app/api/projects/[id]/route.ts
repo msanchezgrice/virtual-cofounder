@@ -20,7 +20,7 @@ export async function GET(
           orderBy: { scannedAt: 'desc' },
           take: 10,
         },
-        completions: {
+        stories: {
           orderBy: { createdAt: 'desc' },
           select: {
             id: true,
@@ -82,7 +82,7 @@ export async function GET(
         healthScore,
         lastScanTime,
         scans,
-        completions: project.completions,
+        stories: project.stories,
       },
     });
   } catch (error) {

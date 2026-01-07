@@ -4,7 +4,7 @@ import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
 
 import { PrismaClient } from '@prisma/client';
-import { executeCompletion } from '../workers/execution-worker';
+import { executeStory } from '../workers/execution-worker';
 
 // Use direct database connection (not pooler)
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');
@@ -44,7 +44,7 @@ async function testPolicyEnforcement() {
 
     // Test 1: suggest_only policy - should skip execution but mark as completed
     console.log('1️⃣ Testing suggest_only policy...');
-    const suggestOnlyCompletion = await prisma.completion.create({
+    const suggestOnlyStory = await prisma.story.create({
       data: {
         workspaceId,
         runId: `test-suggest-${Date.now()}`,
@@ -58,10 +58,10 @@ async function testPolicyEnforcement() {
       },
     });
 
-    await executeCompletion(suggestOnlyCompletion.id);
+    await executeStory(suggestOnlyStory.id);
 
-    const suggestResult = await prisma.completion.findUnique({
-      where: { id: suggestOnlyCompletion.id },
+    const suggestResult = await prisma.story.findUnique({
+      where: { id: suggestOnlyStory.id },
     });
 
     if (suggestResult?.status !== 'completed') {
@@ -74,7 +74,7 @@ async function testPolicyEnforcement() {
 
     // Test 2: approval_required without approval - should skip
     console.log('2️⃣ Testing approval_required without approval...');
-    const unapprovedCompletion = await prisma.completion.create({
+    const unapprovedStory = await prisma.story.create({
       data: {
         workspaceId,
         runId: `test-unapproved-${Date.now()}`,
@@ -88,10 +88,10 @@ async function testPolicyEnforcement() {
       },
     });
 
-    await executeCompletion(unapprovedCompletion.id);
+    await executeStory(unapprovedStory.id);
 
-    const unapprovedResult = await prisma.completion.findUnique({
-      where: { id: unapprovedCompletion.id },
+    const unapprovedResult = await prisma.story.findUnique({
+      where: { id: unapprovedStory.id },
     });
 
     if (unapprovedResult?.status !== 'pending') {
@@ -101,7 +101,7 @@ async function testPolicyEnforcement() {
 
     // Test 3: approval_required with approval - should execute
     console.log('3️⃣ Testing approval_required with approval...');
-    const approvedCompletion = await prisma.completion.create({
+    const approvedStory = await prisma.story.create({
       data: {
         workspaceId,
         runId: `test-approved-${Date.now()}`,
@@ -115,10 +115,10 @@ async function testPolicyEnforcement() {
       },
     });
 
-    await executeCompletion(approvedCompletion.id);
+    await executeStory(approvedStory.id);
 
-    const approvedResult = await prisma.completion.findUnique({
-      where: { id: approvedCompletion.id },
+    const approvedResult = await prisma.story.findUnique({
+      where: { id: approvedStory.id },
     });
 
     if (approvedResult?.status !== 'completed') {

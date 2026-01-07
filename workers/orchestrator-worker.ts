@@ -50,7 +50,7 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
     // Run orchestrator for this single project
     const result = await runOrchestrator([scanContext]);
 
-    console.log(`[Orchestrator Worker] Project ${projectId}: ${result.findings.length} findings, ${result.completions.length} completions`);
+    console.log(`[Orchestrator Worker] Project ${projectId}: ${result.findings.length} findings, ${result.stories.length} stories`);
 
     // Save agent findings to database
     for (const finding of result.findings) {
@@ -76,17 +76,17 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
       where: { id: projectId },
     });
 
-    // Save completions to database, create Linear tasks, and send Slack notifications
-    for (const completion of result.completions) {
-      const dbCompletion = await prisma.completion.create({
+    // Save stories to database, create Linear tasks, and send Slack notifications
+    for (const story of result.stories) {
+      const dbStory = await prisma.story.create({
         data: {
           workspaceId,
           runId,
-          projectId: completion.projectId,
-          title: completion.title,
-          rationale: completion.rationale,
-          priority: completion.priority,
-          policy: completion.policy,
+          projectId: story.projectId,
+          title: story.title,
+          rationale: story.rationale,
+          priority: story.priority,
+          policy: story.policy,
           status: 'pending',
         },
       });
@@ -94,22 +94,22 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
       // Create Linear task
       try {
         const teamId = await getDefaultTeamId();
-        const linearPriority = mapPriorityToLinear(completion.priority);
+        const linearPriority = mapPriorityToLinear(story.priority);
 
         const linearTask = await createLinearTask({
           teamId,
-          title: completion.title,
-          description: `**Project:** ${project?.name || 'Unknown'}\n\n**Rationale:**\n${completion.rationale}\n\n**Priority:** ${completion.priority}\n**Policy:** ${completion.policy}\n\n**Run ID:** ${runId}`,
+          title: story.title,
+          description: `**Project:** ${project?.name || 'Unknown'}\n\n**Rationale:**\n${story.rationale}\n\n**Priority:** ${story.priority}\n**Policy:** ${story.policy}\n\n**Run ID:** ${runId}`,
           priority: linearPriority,
         });
 
-        // Update completion with Linear task ID
-        await prisma.completion.update({
-          where: { id: dbCompletion.id },
+        // Update story with Linear task ID
+        await prisma.story.update({
+          where: { id: dbStory.id },
           data: { linearTaskId: linearTask.id },
         });
 
-        console.log(`[Orchestrator Worker] Created Linear task ${linearTask.identifier} for completion ${dbCompletion.id}`);
+        console.log(`[Orchestrator Worker] Created Linear task ${linearTask.identifier} for story ${dbStory.id}`);
 
         // Post agent dialogue as a comment
         if (result.conversation && result.conversation.length > 0) {
@@ -134,12 +134,12 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
       if (project) {
         try {
           await sendCompletionNotification({
-            completionId: dbCompletion.id,
+            completionId: dbStory.id,
             projectName: project.name,
-            title: completion.title,
-            rationale: completion.rationale,
-            priority: completion.priority,
-            policy: completion.policy,
+            title: story.title,
+            rationale: story.rationale,
+            priority: story.priority,
+            policy: story.policy,
           });
         } catch (slackError) {
           // Log but don't fail the job if Slack fails
@@ -148,7 +148,7 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
       }
     }
 
-    console.log(`[Orchestrator Worker] Project ${projectId} complete: ${result.findings.length} findings, ${result.completions.length} completions saved`);
+    console.log(`[Orchestrator Worker] Project ${projectId} complete: ${result.findings.length} findings, ${result.stories.length} stories saved`);
 
   } catch (error) {
     console.error(`[Orchestrator Worker] Error processing project ${projectId}:`, error);

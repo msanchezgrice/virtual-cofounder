@@ -1,52 +1,52 @@
-// Test script for vc-032: Verify orchestrator creates completions
+// Test script for vc-032: Verify orchestrator creates stories
 import { db } from '../lib/db';
 
-async function testOrchestratorCompletions() {
+async function testOrchestratorStories() {
   try {
-    console.log('🧪 Testing: Orchestrator creates completions\n');
+    console.log('🧪 Testing: Orchestrator creates stories\n');
 
-    // Check if any completions exist in the database
-    const completions = await db.completion.findMany({
+    // Check if any stories exist in the database
+    const stories = await db.story.findMany({
       take: 5,
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    if (completions.length === 0) {
-      console.log('❌ No completions found in database');
+    if (stories.length === 0) {
+      console.log('❌ No stories found in database');
       console.log('💡 Run orchestrator first: curl -X POST http://localhost:3000/api/orchestrator/run');
       process.exit(1);
     }
 
-    console.log(`✓ Found ${completions.length} completions in database`);
+    console.log(`✓ Found ${stories.length} stories in database`);
 
-    // Verify structure of completions
-    const firstCompletion = completions[0];
+    // Verify structure of stories
+    const firstStory = stories[0];
     const requiredFields = ['title', 'rationale', 'priority', 'policy', 'status'];
-    const missingFields = requiredFields.filter(field => !(field in firstCompletion));
+    const missingFields = requiredFields.filter(field => !(field in firstStory));
 
     if (missingFields.length > 0) {
       console.log(`❌ Missing required fields: ${missingFields.join(', ')}`);
       process.exit(1);
     }
 
-    console.log('✓ Completions have correct structure');
-    console.log(`  - Title: ${firstCompletion.title.substring(0, 60)}...`);
-    console.log(`  - Priority: ${firstCompletion.priority}`);
-    console.log(`  - Policy: ${firstCompletion.policy}`);
-    console.log(`  - Status: ${firstCompletion.status}`);
+    console.log('✓ Stories have correct structure');
+    console.log(`  - Title: ${firstStory.title.substring(0, 60)}...`);
+    console.log(`  - Priority: ${firstStory.priority}`);
+    console.log(`  - Policy: ${firstStory.policy}`);
+    console.log(`  - Status: ${firstStory.status}`);
 
     // Verify policy values are valid
     const validPolicies = ['auto_safe', 'approval_required', 'suggest_only'];
-    if (!validPolicies.includes(firstCompletion.policy)) {
-      console.log(`❌ Invalid policy: ${firstCompletion.policy}`);
+    if (!validPolicies.includes(firstStory.policy)) {
+      console.log(`❌ Invalid policy: ${firstStory.policy}`);
       process.exit(1);
     }
 
-    console.log('✓ Completion policies are valid');
+    console.log('✓ Story policies are valid');
 
-    console.log('\n✅ ✓ Completions created\n');
+    console.log('\n✅ ✓ Stories created\n');
     process.exit(0);
   } catch (error) {
     console.error('❌ Test failed:', error);
@@ -54,4 +54,4 @@ async function testOrchestratorCompletions() {
   }
 }
 
-testOrchestratorCompletions();
+testOrchestratorStories();

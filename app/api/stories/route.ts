@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    const completions = await db.completion.findMany({
+    const stories = await db.story.findMany({
       include: {
         project: {
           select: {
@@ -18,12 +18,12 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      completions,
+      stories,
     });
   } catch (error) {
-    console.error('Failed to fetch completions:', error);
+    console.error('Failed to fetch stories:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch completions' },
+      { error: 'Failed to fetch stories' },
       { status: 500 }
     );
   }

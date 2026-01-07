@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'WORKSPACE_ID not configured' }, { status: 500 });
     }
 
-    // Get all projects with their latest scans and recent completions
+    // Get all projects with their latest scans and recent stories
     const projects = await db.project.findMany({
       where: { workspaceId },
       include: {
@@ -20,9 +20,9 @@ export async function GET(request: Request) {
           orderBy: { scannedAt: 'desc' },
           take: 10, // Get recent scans per project
         },
-        completions: {
+        stories: {
           orderBy: { createdAt: 'desc' },
-          take: 3, // Get 3 most recent completions per project
+          take: 3, // Get 3 most recent stories per project
           select: {
             id: true,
             title: true,
@@ -121,7 +121,7 @@ export async function GET(request: Request) {
         severity,
         issues,
         lastScanTime: project.scans[0]?.scannedAt || null,
-        completions: project.completions || [],
+        stories: project.stories || [],
         scans: {
           domain: domainScan
             ? {

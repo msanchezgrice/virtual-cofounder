@@ -88,25 +88,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      // Find completion with this Linear task ID
-      const completion = await prisma.completion.findFirst({
+      // Find story with this Linear task ID
+      const story = await prisma.story.findFirst({
         where: {
           linearTaskId,
         },
       });
 
-      if (!completion) {
-        console.log(`No completion found for Linear task: ${linearTaskId}`);
+      if (!story) {
+        console.log(`No story found for Linear task: ${linearTaskId}`);
         return NextResponse.json({ received: true });
       }
 
-      // Map Linear state to completion status
+      // Map Linear state to story status
       const newStatus = mapLinearStateToStatus(newState.type);
 
-      // Update completion status
-      await prisma.completion.update({
+      // Update story status
+      await prisma.story.update({
         where: {
-          id: completion.id,
+          id: story.id,
         },
         data: {
           status: newStatus,
@@ -114,12 +114,12 @@ export async function POST(request: NextRequest) {
       });
 
       console.log(
-        `Updated completion ${completion.id} status to ${newStatus} (Linear: ${newState.name})`
+        `Updated story ${story.id} status to ${newStatus} (Linear: ${newState.name})`
       );
 
       return NextResponse.json({
         success: true,
-        completionId: completion.id,
+        storyId: story.id,
         status: newStatus,
       });
     }

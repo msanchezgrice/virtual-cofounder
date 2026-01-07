@@ -4,7 +4,7 @@ import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
 
 import { PrismaClient } from '@prisma/client';
-import { executeCompletion } from '../workers/execution-worker';
+import { executeStory } from '../workers/execution-worker';
 
 // Use direct database connection (not pooler)
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');
@@ -49,15 +49,15 @@ async function testPRNotification() {
 
     console.log(`✓ Found project: ${testProject.name}\n`);
 
-    // Create test completion
-    console.log('1️⃣ Creating test completion...');
-    const testCompletion = await prisma.completion.create({
+    // Create test story
+    console.log('1️⃣ Creating test story...');
+    const testStory = await prisma.story.create({
       data: {
         workspaceId,
         runId: `test-pr-notification-${Date.now()}`,
         projectId: testProject.id,
         title: 'Test PR notification to Slack',
-        rationale: 'This completion tests that Slack notifications are sent when PRs are created',
+        rationale: 'This story tests that Slack notifications are sent when PRs are created',
         priority: 'medium',
         policy: 'auto_safe',
         status: 'pending',
@@ -65,27 +65,27 @@ async function testPRNotification() {
       },
     });
 
-    console.log(`✓ Created completion: ${testCompletion.id}\n`);
+    console.log(`✓ Created story: ${testStory.id}\n`);
 
-    // Execute completion (this will create PR and send Slack notification)
-    console.log('2️⃣ Executing completion (creates PR and sends Slack notification)...');
-    await executeCompletion(testCompletion.id);
+    // Execute story (this will create PR and send Slack notification)
+    console.log('2️⃣ Executing story (creates PR and sends Slack notification)...');
+    await executeStory(testStory.id);
 
-    // Verify completion
-    const updatedCompletion = await prisma.completion.findUnique({
-      where: { id: testCompletion.id },
+    // Verify story
+    const updatedStory = await prisma.story.findUnique({
+      where: { id: testStory.id },
     });
 
-    if (!updatedCompletion?.prUrl) {
-      throw new Error('Completion executed but prUrl was not set');
+    if (!updatedStory?.prUrl) {
+      throw new Error('Story executed but prUrl was not set');
     }
 
-    console.log(`✓ PR created: ${updatedCompletion.prUrl}\n`);
+    console.log(`✓ PR created: ${updatedStory.prUrl}\n`);
 
     // Success
     console.log('✅ ✓ Slack PR notification sent');
-    console.log(`\nTest completion ID: ${testCompletion.id}`);
-    console.log(`PR URL: ${updatedCompletion.prUrl}`);
+    console.log(`\nTest story ID: ${testStory.id}`);
+    console.log(`PR URL: ${updatedStory.prUrl}`);
 
     if (process.env.SLACK_BOT_TOKEN) {
       console.log(`\n💬 Check ${process.env.SLACK_CHANNEL || '#cofounder-updates'} for the notification`);

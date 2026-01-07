@@ -39,7 +39,7 @@ model Workspace {
   members  WorkspaceMember[]
   projects Project[]
   scans    Scan[]
-  completions Completion[]
+  stories Story[]
   userPriorities UserPriority[]
   agentFindings AgentFinding[]
   linearTasks LinearTask[]
@@ -109,7 +109,7 @@ model Project {
   // Relations
   workspace         Workspace            @relation(fields: [workspaceId], references: [id])
   scans             Scan[]
-  completions       Completion[]
+  stories           Story[]
   agentFindings     AgentFinding[]
   linearTasks       LinearTask[]
   agentConfig       ProjectAgentConfig?
@@ -144,7 +144,7 @@ model Scan {
   @@map("scans")
 }
 
-model Completion {
+model Story {
   id          String   @id @default(uuid())
   workspaceId String   @map("workspace_id")
   runId       String   @map("run_id")
@@ -228,7 +228,7 @@ model LinearTask {
   id            String   @id @default(uuid())
   workspaceId   String   @map("workspace_id")
   projectId     String   @map("project_id")
-  completionId  String?  @map("completion_id")
+  storyId       String?  @map("completion_id")
 
   linearIssueId String @unique @map("linear_issue_id")
   linearTeamId  String @map("linear_team_id")
@@ -241,7 +241,7 @@ model LinearTask {
   // Relations
   workspace  Workspace   @relation(fields: [workspaceId], references: [id])
   project    Project     @relation(fields: [projectId], references: [id])
-  completion Completion? @relation(fields: [completionId], references: [id])
+  story      Story?      @relation(fields: [storyId], references: [id])
 
   @@index([workspaceId, projectId])
   @@map("linear_tasks")
@@ -277,8 +277,8 @@ model OrchestratorRun {
 
   status String @default("running") // 'running'|'completed'|'failed'
 
-  findingsCount    Int @default(0) @map("findings_count")
-  completionsCount Int @default(0) @map("completions_count")
+  findingsCount Int @default(0) @map("findings_count")
+  storiesCount  Int @default(0) @map("completions_count")
 
   conversation Json? // Agent dialogue from SDK
 

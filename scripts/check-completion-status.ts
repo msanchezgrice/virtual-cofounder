@@ -9,10 +9,10 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const completionId = process.argv[2] || '3d205127-3ace-4b03-8f22-7dd47a3c9c7e';
+  const storyId = process.argv[2] || '3d205127-3ace-4b03-8f22-7dd47a3c9c7e';
 
-  const completion = await prisma.completion.findUnique({
-    where: { id: completionId },
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
     select: {
       id: true,
       title: true,
@@ -23,14 +23,14 @@ async function main() {
     }
   });
 
-  if (!completion) {
-    console.log(`❌ Completion ${completionId} not found`);
+  if (!story) {
+    console.log(`❌ Story ${storyId} not found`);
   } else {
-    console.log('✅ Completion found:');
-    console.log(`   Status: ${completion.status}`);
-    console.log(`   PR URL: ${completion.prUrl || 'Not created yet'}`);
-    console.log(`   Executed: ${completion.executedAt || 'Not executed yet'}`);
-    console.log(`   Created: ${completion.createdAt}`);
+    console.log('✅ Story found:');
+    console.log(`   Status: ${story.status}`);
+    console.log(`   PR URL: ${story.prUrl || 'Not created yet'}`);
+    console.log(`   Executed: ${story.executedAt || 'Not executed yet'}`);
+    console.log(`   Created: ${story.createdAt}`);
   }
 
   await prisma.$disconnect();

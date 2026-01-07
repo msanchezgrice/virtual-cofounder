@@ -23,18 +23,18 @@ async function main() {
     console.log(`   Started: ${run.startedAt}`);
     console.log(`   Completed: ${run.completedAt || 'In progress'}`);
     console.log(`   Status: ${run.status}`);
-    console.log(`   Completions Count: ${run.completionsCount}`);
+    console.log(`   Stories Count: ${run.storiesCount}`);
     console.log(`   Findings Count: ${run.findingsCount}`);
   });
 
-  // Get total completion count
-  const totalCompletions = await prisma.completion.count();
-  console.log(`\n\nTotal Completions in Database: ${totalCompletions}`);
+  // Get total story count
+  const totalStories = await prisma.story.count();
+  console.log(`\n\nTotal Stories in Database: ${totalStories}`);
 
-  // Get completions from most recent run
+  // Get stories from most recent run
   if (runs.length > 0) {
     const latestRun = runs[0];
-    const completions = await prisma.completion.findMany({
+    const stories = await prisma.story.findMany({
       where: { runId: latestRun.runId },
       select: {
         id: true,
@@ -46,14 +46,14 @@ async function main() {
       orderBy: { createdAt: 'desc' }
     });
 
-    console.log(`\n\nCompletions from Most Recent Run (${latestRun.runId}):`);
+    console.log(`\n\nStories from Most Recent Run (${latestRun.runId}):`);
     console.log('='.repeat(80));
-    if (completions.length === 0) {
-      console.log('No completions found for this run.');
+    if (stories.length === 0) {
+      console.log('No stories found for this run.');
     } else {
-      completions.forEach((c, i) => {
-        console.log(`${i + 1}. [${c.priority}] ${c.project.name}: ${c.title}`);
-        console.log(`   Created: ${c.createdAt}`);
+      stories.forEach((s, i) => {
+        console.log(`${i + 1}. [${s.priority}] ${s.project.name}: ${s.title}`);
+        console.log(`   Created: ${s.createdAt}`);
       });
     }
   }

@@ -246,14 +246,14 @@ async function handleButtonClick(event: any): Promise<void> {
 
   for (const action of actions) {
     const actionId = action.action_id;
-    const value = action.value; // e.g., "approve_completion-id" or "view_completion-id"
+    const value = action.value; // e.g., "approve_story-id" or "view_story-id"
 
     console.log(`[Slack Events] Button clicked: ${actionId}, value: ${value}`);
 
     // Parse action value
-    const [actionType, completionId] = value.split('_');
+    const [actionType, storyId] = value.split('_');
 
-    if (!completionId) {
+    if (!storyId) {
       console.warn('[Slack Events] Invalid action value:', value);
       continue;
     }
@@ -261,15 +261,15 @@ async function handleButtonClick(event: any): Promise<void> {
     // Handle different button actions
     switch (actionId) {
       case 'approve_completion':
-        await approveCompletion(completionId, userId, channelId);
+        await approveStory(storyId, userId, channelId);
         break;
 
       case 'view_completion':
-        await viewCompletion(completionId, userId, channelId);
+        await viewStory(storyId, userId, channelId);
         break;
 
       case 'snooze_completion':
-        await snoozeCompletion(completionId, userId, channelId);
+        await snoozeStory(storyId, userId, channelId);
         break;
 
       default:
@@ -279,12 +279,12 @@ async function handleButtonClick(event: any): Promise<void> {
 }
 
 /**
- * Approve a completion (mark for execution)
+ * Approve a story (mark for execution)
  */
-async function approveCompletion(completionId: string, userId?: string, channelId?: string): Promise<void> {
+async function approveStory(storyId: string, userId?: string, channelId?: string): Promise<void> {
   try {
-    const completion = await db.completion.update({
-      where: { id: completionId },
+    const story = await db.story.update({
+      where: { id: storyId },
       data: {
         userApproved: true,
         status: 'in_progress',
@@ -292,7 +292,7 @@ async function approveCompletion(completionId: string, userId?: string, channelI
       include: { project: true },
     });
 
-    console.log(`[Slack Events] Completion ${completionId} approved`);
+    console.log(`[Slack Events] Story ${storyId} approved`);
 
     // Send confirmation to user
     if (userId && channelId) {
@@ -300,42 +300,42 @@ async function approveCompletion(completionId: string, userId?: string, channelI
       await client.chat.postEphemeral({
         channel: channelId,
         user: userId,
-        text: `✅ Approved: "${completion.title}" for ${completion.project.name}. This will be executed in the next run.`,
+        text: `✅ Approved: "${story.title}" for ${story.project.name}. This will be executed in the next run.`,
       });
     }
   } catch (error) {
-    console.error('[Slack Events] Error approving completion:', error);
+    console.error('[Slack Events] Error approving story:', error);
   }
 }
 
 /**
- * View completion details (no-op for now, could open modal)
+ * View story details (no-op for now, could open modal)
  */
-async function viewCompletion(completionId: string, userId?: string, channelId?: string): Promise<void> {
-  console.log(`[Slack Events] View completion: ${completionId}`);
+async function viewStory(storyId: string, userId?: string, channelId?: string): Promise<void> {
+  console.log(`[Slack Events] View story: ${storyId}`);
 
   if (userId && channelId) {
     const client = getSlackClient();
     await client.chat.postEphemeral({
       channel: channelId,
       user: userId,
-      text: `📋 View details for completion ID: ${completionId}\n(Full details view coming in Phase 5)`,
+      text: `📋 View details for story ID: ${storyId}\n(Full details view coming in Phase 5)`,
     });
   }
 }
 
 /**
- * Snooze a completion (no-op for now, could update status)
+ * Snooze a story (no-op for now, could update status)
  */
-async function snoozeCompletion(completionId: string, userId?: string, channelId?: string): Promise<void> {
-  console.log(`[Slack Events] Snooze completion: ${completionId}`);
+async function snoozeStory(storyId: string, userId?: string, channelId?: string): Promise<void> {
+  console.log(`[Slack Events] Snooze story: ${storyId}`);
 
   if (userId && channelId) {
     const client = getSlackClient();
     await client.chat.postEphemeral({
       channel: channelId,
       user: userId,
-      text: `⏰ Snoozed completion ID: ${completionId} for 24 hours.\n(Snooze functionality coming in Phase 5)`,
+      text: `⏰ Snoozed story ID: ${storyId} for 24 hours.\n(Snooze functionality coming in Phase 5)`,
     });
   }
 }

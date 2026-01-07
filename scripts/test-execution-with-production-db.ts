@@ -2,15 +2,15 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
 
-import { executeCompletion } from '../workers/execution-worker';
+import { executeStory } from '../workers/execution-worker';
 
-const completionId = process.argv[2] || '64ef190a-e6a4-414d-86f8-190a0dc411ec';
+const storyId = process.argv[2] || '64ef190a-e6a4-414d-86f8-190a0dc411ec';
 
 console.log('🧪 Testing execution locally with production DB...');
-console.log(`   Completion ID: ${completionId}`);
+console.log(`   Story ID: ${storyId}`);
 console.log('');
 
-executeCompletion(completionId)
+executeStory(storyId)
   .then(() => {
     console.log('\n✅ Execution completed successfully');
     process.exit(0);

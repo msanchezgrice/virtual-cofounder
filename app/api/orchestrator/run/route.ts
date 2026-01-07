@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         message: 'No projects with recent scans found',
         run_id: null,
         findings_count: 0,
-        completions_count: 0,
+        stories_count: 0,
       });
     }
 
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
         runId,
         status: 'in_progress',
         findingsCount: 0,
-        completionsCount: 0,
+        storiesCount: 0,
         conversation: [],
       },
     });

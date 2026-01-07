@@ -4,7 +4,7 @@ import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
 
 import { PrismaClient } from '@prisma/client';
-import { executeCompletion } from '../workers/execution-worker';
+import { executeStory } from '../workers/execution-worker';
 
 // Use direct database connection (not pooler)
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');
@@ -47,16 +47,16 @@ async function testExecutor() {
 
     console.log(`✓ Found project: ${testProject.name} (repo: ${testProject.repo})\n`);
 
-    // Step 2: Create test completion
-    console.log('2️⃣ Creating test completion...');
+    // Step 2: Create test story
+    console.log('2️⃣ Creating test story...');
     const testRunId = `test-run-${Date.now()}`;
-    const testCompletion = await prisma.completion.create({
+    const testStory = await prisma.story.create({
       data: {
         workspaceId,
         runId: testRunId,
         projectId: testProject.id,
-        title: 'Test completion for executor validation',
-        rationale: 'This is a test completion to verify PR creation works. It will create a real branch and PR.',
+        title: 'Test story for executor validation',
+        rationale: 'This is a test story to verify PR creation works. It will create a real branch and PR.',
         priority: 'medium',
         policy: 'auto_safe',
         status: 'pending',
@@ -64,30 +64,30 @@ async function testExecutor() {
       },
     });
 
-    console.log(`✓ Created completion: ${testCompletion.id}\n`);
+    console.log(`✓ Created story: ${testStory.id}\n`);
 
-    // Step 3: Execute completion
-    console.log('3️⃣ Executing completion (this will create a real PR)...');
+    // Step 3: Execute story
+    console.log('3️⃣ Executing story (this will create a real PR)...');
     console.log('   Note: This creates a real branch and PR in the repository\n');
 
-    await executeCompletion(testCompletion.id);
+    await executeStory(testStory.id);
 
     // Step 4: Verify PR was created
     console.log('4️⃣ Verifying PR creation...');
-    const updatedCompletion = await prisma.completion.findUnique({
-      where: { id: testCompletion.id },
+    const updatedStory = await prisma.story.findUnique({
+      where: { id: testStory.id },
     });
 
-    if (!updatedCompletion?.prUrl) {
-      throw new Error('Completion executed but prUrl was not set');
+    if (!updatedStory?.prUrl) {
+      throw new Error('Story executed but prUrl was not set');
     }
 
-    console.log(`✓ PR created: ${updatedCompletion.prUrl}\n`);
+    console.log(`✓ PR created: ${updatedStory.prUrl}\n`);
 
     // Success
     console.log('✅ ✓ PR created');
-    console.log(`\nTest completion ID: ${testCompletion.id}`);
-    console.log(`PR URL: ${updatedCompletion.prUrl}`);
+    console.log(`\nTest story ID: ${testStory.id}`);
+    console.log(`PR URL: ${updatedStory.prUrl}`);
     process.exit(0); // Exit cleanly after success
   } catch (error) {
     console.error('❌ Executor test failed:', error);

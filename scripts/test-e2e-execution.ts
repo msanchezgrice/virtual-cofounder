@@ -45,15 +45,15 @@ async function testE2EExecution() {
 
     console.log(`   ✓ Project ready: ${testProject.name}\n`);
 
-    // Step 2: Create test completion
-    console.log('2️⃣ Creating test completion...');
-    const testCompletion = await prisma.completion.create({
+    // Step 2: Create test story
+    console.log('2️⃣ Creating test story...');
+    const testStory = await prisma.story.create({
       data: {
         workspaceId,
         runId: `test-e2e-${Date.now()}`,
         projectId: testProject.id,
         title: 'E2E test - Full execution flow',
-        rationale: 'This completion tests the full execution pipeline from queue to PR to Slack',
+        rationale: 'This story tests the full execution pipeline from queue to PR to Slack',
         priority: 'high',
         policy: 'auto_safe',
         status: 'pending',
@@ -61,27 +61,27 @@ async function testE2EExecution() {
       },
     });
 
-    console.log(`   ✓ Completion created: ${testCompletion.id}\n`);
+    console.log(`   ✓ Story created: ${testStory.id}\n`);
 
-    // Step 3: Execute completion directly (simulates worker picking up job)
-    console.log('3️⃣ Executing completion...');
+    // Step 3: Execute story directly (simulates worker picking up job)
+    console.log('3️⃣ Executing story...');
 
-    // Import executeCompletion function
-    const { executeCompletion } = await import('../workers/execution-worker');
+    // Import executeStory function
+    const { executeStory } = await import('../workers/execution-worker');
 
-    // Execute the completion (this is what the worker would do)
-    await executeCompletion(testCompletion.id);
+    // Execute the story (this is what the worker would do)
+    await executeStory(testStory.id);
 
     console.log('   ✓ Execution complete\n');
 
     // Step 4: Verify results
     console.log('4️⃣ Verifying execution results...');
-    const updated = await prisma.completion.findUnique({
-      where: { id: testCompletion.id },
+    const updated = await prisma.story.findUnique({
+      where: { id: testStory.id },
     });
 
     if (!updated?.prUrl) {
-      throw new Error('Completion executed but prUrl was not set');
+      throw new Error('Story executed but prUrl was not set');
     }
 
     if (updated.status !== 'completed') {
@@ -97,7 +97,7 @@ async function testE2EExecution() {
     }
 
     console.log('✅ ✓ Full execution flow complete');
-    console.log(`\nTest completion ID: ${testCompletion.id}`);
+    console.log(`\nTest story ID: ${testStory.id}`);
     console.log(`PR URL: ${updated.prUrl}`);
 
     process.exit(0);

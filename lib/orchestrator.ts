@@ -34,7 +34,7 @@ export interface AgentFinding {
   rank?: number;
 }
 
-export interface Completion {
+export interface Story {
   projectId: string;
   title: string;
   rationale: string;
@@ -45,7 +45,7 @@ export interface Completion {
 export interface OrchestratorResult {
   runId: string;
   findings: AgentFinding[];
-  completions: Completion[];
+  stories: Story[];
   conversation: string[];
 }
 
@@ -180,11 +180,11 @@ function rankFindings(findings: AgentFinding[]): AgentFinding[] {
 }
 
 /**
- * Group findings into completions (actionable work items)
- * Each completion represents a PR or task that can be executed
+ * Group findings into stories (actionable work items)
+ * Each story represents a PR or task that can be executed
  */
-function createCompletions(findings: AgentFinding[]): Completion[] {
-  const completions: Completion[] = [];
+function createStories(findings: AgentFinding[]): Story[] {
+  const stories: Story[] = [];
 
   // Group findings by project
   const findingsByProject = findings.reduce((acc, finding) => {
@@ -195,7 +195,7 @@ function createCompletions(findings: AgentFinding[]): Completion[] {
     return acc;
   }, {} as Record<string, AgentFinding[]>);
 
-  // Create completions for each project's top findings
+  // Create stories for each project's top findings
   Object.entries(findingsByProject).forEach(([projectId, projectFindings]) => {
     // Sort by rank and take top 3 findings per project
     const topFindings = projectFindings
@@ -204,7 +204,7 @@ function createCompletions(findings: AgentFinding[]): Completion[] {
 
     topFindings.forEach(finding => {
       // Determine policy based on agent and severity
-      let policy: Completion['policy'] = 'approval_required';
+      let policy: Story['policy'] = 'approval_required';
 
       // Auto-safe policies for low-risk changes
       if (finding.agent === 'seo' && finding.severity === 'low') {
@@ -220,13 +220,13 @@ function createCompletions(findings: AgentFinding[]): Completion[] {
       }
 
       // Map severity to priority
-      const priorityMap: Record<string, Completion['priority']> = {
+      const priorityMap: Record<string, Story['priority']> = {
         high: 'high',
         medium: 'medium',
         low: 'low',
       };
 
-      completions.push({
+      stories.push({
         projectId,
         title: finding.issue,
         rationale: `${finding.agent.toUpperCase()} AGENT: ${finding.action}\n\nSeverity: ${finding.severity}\nEffort: ${finding.effort}\nImpact: ${finding.impact}\nConfidence: ${(finding.confidence * 100).toFixed(0)}%`,
@@ -236,7 +236,7 @@ function createCompletions(findings: AgentFinding[]): Completion[] {
     });
   });
 
-  return completions;
+  return stories;
 }
 
 /**
@@ -278,16 +278,16 @@ export async function runOrchestrator(
   const rankedFindings = rankFindings(allFindings);
   conversation.push(`Findings ranked by priority (top 5): ${rankedFindings.slice(0, 5).map(f => `${f.issue} (rank: ${f.rank})`).join(', ')}`);
 
-  // Create completions from top findings
-  const completions = createCompletions(rankedFindings);
-  conversation.push(`Created ${completions.length} completions for user review`);
+  // Create stories from top findings
+  const stories = createStories(rankedFindings);
+  conversation.push(`Created ${stories.length} stories for user review`);
 
   conversation.push(`[${new Date().toISOString()}] Orchestrator completed`);
 
   return {
     runId,
     findings: rankedFindings,
-    completions,
+    stories,
     conversation,
   };
 }

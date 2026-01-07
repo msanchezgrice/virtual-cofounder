@@ -91,7 +91,7 @@ async function testE2EOrchestratorPipeline() {
     console.log(`✓ Orchestrator run recorded`);
     console.log(`  - Status: ${orchestratorRun.status}`);
     console.log(`  - Findings count: ${orchestratorRun.findingsCount}`);
-    console.log(`  - Completions count: ${orchestratorRun.completionsCount}`);
+    console.log(`  - Stories count: ${orchestratorRun.storiesCount}`);
 
     // Step 5: Verify agent findings were created
     console.log('\n[5/6] Verifying agent findings...');
@@ -110,18 +110,18 @@ async function testE2EOrchestratorPipeline() {
       console.log(`  - By agent: ${JSON.stringify(agentCounts)}`);
     }
 
-    // Step 6: Verify completions were created
-    console.log('\n[6/6] Verifying completions...');
-    const completions = await db.completion.findMany({
+    // Step 6: Verify stories were created
+    console.log('\n[6/6] Verifying stories...');
+    const stories = await db.story.findMany({
       where: { runId: result.run_id },
     });
 
-    if (completions.length === 0) {
-      console.log('⚠️  No completions created (this may be expected if no actionable items were found)');
+    if (stories.length === 0) {
+      console.log('⚠️  No stories created (this may be expected if no actionable items were found)');
     } else {
-      console.log(`✓ Found ${completions.length} completions`);
-      const priorityCounts = completions.reduce((acc, c) => {
-        acc[c.priority] = (acc[c.priority] || 0) + 1;
+      console.log(`✓ Found ${stories.length} stories`);
+      const priorityCounts = stories.reduce((acc, s) => {
+        acc[s.priority] = (acc[s.priority] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
       console.log(`  - By priority: ${JSON.stringify(priorityCounts)}`);

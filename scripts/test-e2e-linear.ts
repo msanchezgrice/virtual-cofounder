@@ -52,17 +52,17 @@ async function testE2ELinearIntegration() {
 
     // Step 5: Verify database schema supports Linear integration
     console.log('\n[5/6] Verifying database schema...');
-    const sampleCompletion = await db.completion.findFirst({
+    const sampleStory = await db.story.findFirst({
       orderBy: { createdAt: 'desc' },
     });
 
-    if (sampleCompletion && 'linearTaskId' in sampleCompletion) {
-      console.log('✓ Completions table has linearTaskId column');
-      if (sampleCompletion.linearTaskId) {
-        console.log(`  - Found completion with Linear task: ${sampleCompletion.linearTaskId}`);
+    if (sampleStory && 'linearTaskId' in sampleStory) {
+      console.log('✓ Stories table has linearTaskId column');
+      if (sampleStory.linearTaskId) {
+        console.log(`  - Found story with Linear task: ${sampleStory.linearTaskId}`);
       }
     } else {
-      console.log('⚠️  Could not verify linearTaskId column (no completions in database)');
+      console.log('⚠️  Could not verify linearTaskId column (no stories in database)');
     }
 
     // Step 6: Verify all integration points are configured

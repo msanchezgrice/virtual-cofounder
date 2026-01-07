@@ -10,30 +10,30 @@ const db = new PrismaClient({
 });
 
 async function test() {
-  const completion = await db.completion.findFirst({
+  const story = await db.story.findFirst({
     where: { status: 'pending' },
     include: { project: true },
   });
 
-  if (!completion) {
-    console.log('❌ No pending completions found');
+  if (!story) {
+    console.log('❌ No pending stories found');
     process.exit(1);
   }
 
-  console.log('🧪 Testing Slack notification for completion:', completion.id);
-  console.log('   Project:', completion.project.name);
-  console.log('   Title:', completion.title);
-  console.log('   Priority:', completion.priority);
-  console.log('   Policy:', completion.policy);
+  console.log('🧪 Testing Slack notification for story:', story.id);
+  console.log('   Project:', story.project.name);
+  console.log('   Title:', story.title);
+  console.log('   Priority:', story.priority);
+  console.log('   Policy:', story.policy);
   console.log();
 
   await sendCompletionNotification({
-    projectName: completion.project.name,
-    title: completion.title,
-    rationale: completion.rationale,
-    priority: completion.priority as 'low' | 'medium' | 'high',
-    policy: completion.policy as 'auto_safe' | 'approval_required' | 'suggest_only',
-    completionId: completion.id,
+    projectName: story.project.name,
+    title: story.title,
+    rationale: story.rationale,
+    priority: story.priority as 'low' | 'medium' | 'high',
+    policy: story.policy as 'auto_safe' | 'approval_required' | 'suggest_only',
+    completionId: story.id,
   });
 
   console.log('✅ Notification sent to Slack!');
