@@ -272,19 +272,25 @@ async function executeCompletion(completionId: string): Promise<void> {
       data: { status: 'failed' },
     });
 
-    // Sync failed status to Linear
-    await updateLinearTaskStatusForCompletion(completion.linearTaskId, 'failed');
+    // Fetch completion data for Linear updates
+    try {
+      const failedCompletion = await prisma.completion.findUnique({
+        where: { id: completionId },
+        include: { project: true },
+      });
 
-    // Post failure comment to Linear with error details
-    if (completion.linearTaskId) {
-      try {
+      if (failedCompletion?.linearTaskId) {
+        // Sync failed status to Linear
+        await updateLinearTaskStatusForCompletion(failedCompletion.linearTaskId, 'failed');
+
+        // Post failure comment to Linear with error details
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const failureComment = `**❌ Execution Failed**\n\nThe AI Co-Founder encountered an error while working on this task.\n\n**Error:**\n\`\`\`\n${errorMessage}\n\`\`\`\n\n**Project:** ${completion.project.name}\n\n_Failed at ${new Date().toLocaleString()}_`;
-        await addLinearComment(completion.linearTaskId, failureComment);
-        console.log(`[Execution Worker] Posted execution failure to Linear task ${completion.linearTaskId}`);
-      } catch (linearError) {
-        console.error(`[Execution Worker] Failed to post execution failure to Linear:`, linearError);
+        const failureComment = `**❌ Execution Failed**\n\nThe AI Co-Founder encountered an error while working on this task.\n\n**Error:**\n\`\`\`\n${errorMessage}\n\`\`\`\n\n**Project:** ${failedCompletion.project.name}\n\n_Failed at ${new Date().toLocaleString()}_`;
+        await addLinearComment(failedCompletion.linearTaskId, failureComment);
+        console.log(`[Execution Worker] Posted execution failure to Linear task ${failedCompletion.linearTaskId}`);
       }
+    } catch (linearError) {
+      console.error(`[Execution Worker] Failed to post execution failure to Linear:`, linearError);
     }
   }
 }

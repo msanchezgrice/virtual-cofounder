@@ -3,12 +3,13 @@ import { sendSlackNotification } from '@/lib/slack';
 
 export async function POST() {
   try {
-    // Send a test message to Slack
+    // Send a test PR notification to Slack
     await sendSlackNotification({
+      completionId: 'test-' + Date.now(),
+      projectName: 'Test Project',
       title: '🧪 Test Message from Dashboard',
-      message: 'This is a test message to verify Slack integration is working correctly.',
-      priority: 'medium',
-      timestamp: new Date().toISOString(),
+      rationale: 'This is a test message to verify Slack integration is working correctly.',
+      prUrl: 'https://github.com/test/test/pull/1',
     });
 
     return NextResponse.json({

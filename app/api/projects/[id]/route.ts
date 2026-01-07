@@ -10,7 +10,16 @@ export async function GET(
 
     const project = await db.project.findUnique({
       where: { id: projectId },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        repo: true,
+        lastScannedAt: true,
+        scans: {
+          orderBy: { scannedAt: 'desc' },
+          take: 10,
+        },
         completions: {
           orderBy: { createdAt: 'desc' },
           select: {
@@ -33,38 +42,36 @@ export async function GET(
       );
     }
 
-    // Parse scan data
+    // Parse scan data from scan records
+    const domainScan = project.scans.find(s => s.scanType === 'domain');
+    const seoScan = project.scans.find(s => s.scanType === 'seo');
+    const analyticsScan = project.scans.find(s => s.scanType === 'analytics');
+
     const scans = {
-      domain: project.domainScanData ? {
-        status: 'success',
-        data: project.domainScanData,
-        scannedAt: project.domainScannedAt?.toISOString() || new Date().toISOString(),
+      domain: domainScan ? {
+        status: domainScan.status,
+        data: domainScan.domainData,
+        scannedAt: domainScan.scannedAt.toISOString(),
       } : null,
-      seo: project.seoScanData ? {
-        status: 'success',
-        data: project.seoScanData,
-        scannedAt: project.seoScannedAt?.toISOString() || new Date().toISOString(),
+      seo: seoScan ? {
+        status: seoScan.status,
+        data: seoScan.seoDetail,
+        scannedAt: seoScan.scannedAt.toISOString(),
       } : null,
-      analytics: project.analyticsScanData ? {
-        status: 'success',
-        data: project.analyticsScanData,
-        scannedAt: project.analyticsScannedAt?.toISOString() || new Date().toISOString(),
+      analytics: analyticsScan ? {
+        status: analyticsScan.status,
+        data: analyticsScan.analyticsData,
+        scannedAt: analyticsScan.scannedAt.toISOString(),
       } : null,
     };
 
     // Calculate health score from scan data
     const healthScore = calculateHealthScore(scans);
 
-    // Get last scan time
-    const scanTimes = [
-      project.domainScannedAt,
-      project.seoScannedAt,
-      project.analyticsScannedAt,
-    ].filter(Boolean) as Date[];
-
-    const lastScanTime = scanTimes.length > 0
-      ? new Date(Math.max(...scanTimes.map(d => d.getTime()))).toISOString()
-      : null;
+    // Get last scan time from actual scans
+    const lastScanTime = project.scans.length > 0
+      ? project.scans[0].scannedAt.toISOString()
+      : project.lastScannedAt?.toISOString() || null;
 
     return NextResponse.json({
       project: {
