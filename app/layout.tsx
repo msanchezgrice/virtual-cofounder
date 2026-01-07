@@ -27,20 +27,11 @@ export const metadata: Metadata = {
     siteName: 'Virtual Cofounder',
     title: 'Virtual Cofounder — A Team That Ships While You Sleep',
     description: 'The cofounder you always dreamed of. Whether it\'s technical debt, growth experiments, or launch prep—your virtual cofounder handles the work you\'ve been putting off, overnight.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Virtual Cofounder - A team that ships while you sleep',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Virtual Cofounder — A Team That Ships While You Sleep',
     description: 'The cofounder you always dreamed of. Whether it\'s technical debt, growth experiments, or launch prep—your virtual cofounder handles the work you\'ve been putting off, overnight.',
-    images: ['/og-image.png'],
     creator: '@virtualcofounder',
   },
   robots: {
