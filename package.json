@@ -30,6 +30,7 @@
     "test:policy-enforcement": "tsx scripts/test-policy-enforcement.ts",
     "test:e2e:pr-notification": "tsx scripts/test-e2e-pr-notification.ts",
     "test:e2e:execution": "tsx scripts/test-e2e-execution.ts",
+    "test:e2e:linear": "tsx scripts/test-e2e-linear.ts",
     "validate:story": "tsx scripts/validate-story.ts"
   },
   "dependencies": {

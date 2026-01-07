@@ -1,7 +1,7 @@
 {
   "projectName": "Virtual Cofounder",
   "version": "1.0.0",
-  "currentPhase": "phase-5",
+  "currentPhase": "phase-6",
   "phases": [
     {
       "id": "phase-1",
@@ -26,7 +26,12 @@
     {
       "id": "phase-5",
       "name": "PR Creation & Automated Execution",
-      "status": "in_progress"
+      "status": "complete"
+    },
+    {
+      "id": "phase-6",
+      "name": "Linear Integration",
+      "status": "complete"
     }
   ],
   "stories": [
@@ -83,7 +88,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-020"],
+      "blockedBy": [
+        "vc-020"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -112,7 +119,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-021"],
+      "blockedBy": [
+        "vc-021"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -141,7 +150,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-022"],
+      "blockedBy": [
+        "vc-022"
+      ],
       "status": "done",
       "effort": "low",
       "priority": "medium"
@@ -169,7 +180,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-023"],
+      "blockedBy": [
+        "vc-023"
+      ],
       "status": "done",
       "effort": "high",
       "priority": "high"
@@ -198,7 +211,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-024"],
+      "blockedBy": [
+        "vc-024"
+      ],
       "status": "done",
       "effort": "low",
       "priority": "medium"
@@ -222,7 +237,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-025"],
+      "blockedBy": [
+        "vc-025"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -275,7 +292,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-027"],
+      "blockedBy": [
+        "vc-027"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -298,7 +317,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-028"],
+      "blockedBy": [
+        "vc-028"
+      ],
       "status": "done",
       "effort": "high",
       "priority": "high"
@@ -327,7 +348,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-029"],
+      "blockedBy": [
+        "vc-029"
+      ],
       "status": "done",
       "effort": "high",
       "priority": "high"
@@ -345,7 +368,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-030"],
+      "blockedBy": [
+        "vc-030"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -363,7 +388,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-031"],
+      "blockedBy": [
+        "vc-031"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -381,7 +408,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-032"],
+      "blockedBy": [
+        "vc-032"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -428,7 +457,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-034"],
+      "blockedBy": [
+        "vc-034"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -446,7 +477,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-035"],
+      "blockedBy": [
+        "vc-035"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -469,7 +502,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-035"],
+      "blockedBy": [
+        "vc-035"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "medium"
@@ -492,7 +527,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-037"],
+      "blockedBy": [
+        "vc-037"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "medium"
@@ -515,7 +552,9 @@
           "mustContain": true
         }
       ],
-      "blockedBy": ["vc-038"],
+      "blockedBy": [
+        "vc-038"
+      ],
       "status": "done",
       "effort": "high",
       "priority": "high"
@@ -533,7 +572,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-039"],
+      "blockedBy": [
+        "vc-039"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"
@@ -644,7 +685,11 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-041", "vc-042", "vc-043"],
+      "blockedBy": [
+        "vc-041",
+        "vc-042",
+        "vc-043"
+      ],
       "status": "done",
       "effort": "high",
       "priority": "high"
@@ -668,7 +713,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-044"],
+      "blockedBy": [
+        "vc-044"
+      ],
       "status": "done",
       "effort": "low",
       "priority": "high"
@@ -692,7 +739,9 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-044"],
+      "blockedBy": [
+        "vc-044"
+      ],
       "status": "done",
       "effort": "low",
       "priority": "medium"
@@ -710,7 +759,236 @@
           "mustPass": true
         }
       ],
-      "blockedBy": ["vc-044", "vc-045", "vc-046"],
+      "blockedBy": [
+        "vc-044",
+        "vc-045",
+        "vc-046"
+      ],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-048",
+      "phase": "phase-6",
+      "title": "Install Linear SDK",
+      "description": "Install @linear/sdk package for Linear integration. Verify installation.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm list @linear/sdk",
+          "expectedOutput": "@linear/sdk",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "package.json",
+          "pattern": "@linear/sdk",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-049",
+      "phase": "phase-6",
+      "title": "Create Linear client wrapper",
+      "description": "Create lib/linear.ts with Linear client initialization, team fetching, and task creation functions. Use LINEAR_API_KEY from env.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/linear.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/linear.ts",
+          "pattern": "export async function createLinearTask",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-048"
+      ],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-050",
+      "phase": "phase-6",
+      "title": "Create API route /api/linear/webhook",
+      "description": "Create POST endpoint to handle Linear webhook events (task status changes, comments). Verify webhook signature using LINEAR_WEBHOOK_SECRET.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/linear/webhook/route.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/linear/webhook/route.ts",
+          "pattern": "export async function POST",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-049"
+      ],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-051",
+      "phase": "phase-6",
+      "title": "Integrate Linear task creation into orchestrator",
+      "description": "Update orchestrator to create Linear tasks when completions are created. Map completion to appropriate Linear team based on project. Include agent rationale and priority in task description.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/api/orchestrator/run/route.ts",
+          "pattern": "createLinearTask",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-049"
+      ],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-052",
+      "phase": "phase-6",
+      "title": "Sync completion status to Linear",
+      "description": "When completion status changes (pending → in_progress → completed), update corresponding Linear task status. Map completion.status to Linear workflow states.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "updateLinearTaskStatus",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-051"
+      ],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-053",
+      "phase": "phase-6",
+      "title": "Handle Linear webhook for task updates",
+      "description": "When Linear task status changes (e.g., marked as Done), update corresponding completion in database. Implement bidirectional sync.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/api/linear/webhook/route.ts",
+          "pattern": "prisma.completion.update",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-050",
+        "vc-051"
+      ],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-054",
+      "phase": "phase-6",
+      "title": "Post agent dialogue as Linear comments",
+      "description": "When agents discuss findings in orchestrator, post their dialogue as comments on the Linear task. Include agent name, reasoning, and recommendations.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "addLinearComment",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-051"
+      ],
+      "status": "done",
+      "effort": "medium",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-055",
+      "phase": "phase-6",
+      "title": "Store Linear task ID in completions table",
+      "description": "Add linearTaskId field to completions table to link completions with Linear tasks. Update Prisma schema and run migration.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "prisma/schema.prisma",
+          "pattern": "linearTaskId",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npx prisma generate",
+          "expectedOutput": "Generated Prisma Client",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-056",
+      "phase": "phase-6",
+      "title": "Add PR URL to Linear task on completion",
+      "description": "When PR is created, add PR URL to Linear task as a comment and update task status. Include PR summary and test results.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "addLinearComment.*prUrl",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": [
+        "vc-052",
+        "vc-054"
+      ],
+      "status": "done",
+      "effort": "low",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-057",
+      "phase": "phase-6",
+      "title": "E2E validation - Linear integration",
+      "description": "End-to-end test: Trigger orchestrator → Completion created → Linear task created → Task status synced → Agent comments posted → PR URL added to task.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run test:e2e:linear",
+          "expectedOutput": "✓ Linear integration complete",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [
+        "vc-051",
+        "vc-052",
+        "vc-053",
+        "vc-054",
+        "vc-055",
+        "vc-056"
+      ],
       "status": "done",
       "effort": "medium",
       "priority": "high"

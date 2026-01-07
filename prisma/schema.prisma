@@ -156,10 +156,11 @@ model Completion {
   policy    String   // 'approval_required'|'auto_safe'|'suggest_only'
 
   // Execution tracking
-  status     String    @default("pending") // 'pending'|'in_progress'|'completed'|'failed'|'rejected'
-  prUrl      String?   @map("pr_url")
-  commitSha  String?   @map("commit_sha")
-  executedAt DateTime? @map("executed_at")
+  status        String    @default("pending") // 'pending'|'in_progress'|'completed'|'failed'|'rejected'
+  prUrl         String?   @map("pr_url")
+  linearTaskId  String?   @map("linear_task_id") // Linear issue ID
+  commitSha     String?   @map("commit_sha")
+  executedAt    DateTime? @map("executed_at")
 
   // User input
   userApproved Boolean? @map("user_approved")
