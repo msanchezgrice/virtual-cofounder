@@ -387,18 +387,61 @@ async function approveStory(storyId: string, userId?: string, channelId?: string
 }
 
 /**
- * View story details (no-op for now, could open modal)
+ * View story details with Linear link
  */
 async function viewStory(storyId: string, userId?: string, channelId?: string): Promise<void> {
   console.log(`[Slack Events] View story: ${storyId}`);
 
   if (userId && channelId) {
-    const client = getSlackClient();
-    await client.chat.postEphemeral({
-      channel: channelId,
-      user: userId,
-      text: `📋 View details for story ID: ${storyId}\n(Full details view coming in Phase 5)`,
-    });
+    try {
+      // Fetch story with Linear task ID
+      const story = await db.story.findUnique({
+        where: { id: storyId },
+        include: { project: true },
+      });
+
+      if (!story) {
+        const client = getSlackClient();
+        await client.chat.postEphemeral({
+          channel: channelId,
+          user: userId,
+          text: `❌ Story not found`,
+        });
+        return;
+      }
+
+      const client = getSlackClient();
+
+      // Build message with Linear link if available
+      let message = `📋 **${story.title}**\n\n`;
+      message += `**Project:** ${story.project.name}\n`;
+      message += `**Priority:** ${story.priority}\n`;
+      message += `**Status:** ${story.status}\n\n`;
+
+      if (story.linearTaskId) {
+        message += `🔗 View in Linear: https://linear.app/issue/${story.linearTaskId}\n\n`;
+      }
+
+      if (story.prUrl) {
+        message += `🔗 Pull Request: ${story.prUrl}\n\n`;
+      }
+
+      message += `_Story ID: ${storyId}_`;
+
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: message,
+      });
+    } catch (error) {
+      console.error('[Slack Events] Error viewing story:', error);
+      const client = getSlackClient();
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: `❌ Error loading story details`,
+      });
+    }
   }
 }
 
