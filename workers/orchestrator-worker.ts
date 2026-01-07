@@ -101,7 +101,7 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
           title: story.title,
           description: `## Project: ${project?.name || 'Unknown'}
 **Domain:** ${project?.domain || 'N/A'}
-**Status:** ${story.status}
+**Status:** pending
 **Priority:** ${story.priority}
 **Policy:** ${story.policy}
 
@@ -115,7 +115,7 @@ ${story.rationale}
 ## Tags
 ${project?.name ? `project:${project.name.toLowerCase().replace(/\s+/g, '-')}` : ''}
 priority:${story.priority.toLowerCase()}
-status:${story.status}
+status:pending
 
 ---
 

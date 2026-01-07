@@ -184,7 +184,6 @@ async function fetchConversationContext(workspaceId: string) {
 
   // Fetch recent orchestrator runs
   const recentRuns = await db.orchestratorRun.findMany({
-    where: { workspaceId },
     orderBy: { startedAt: 'desc' },
     take: 3,
   });
@@ -203,7 +202,6 @@ async function fetchConversationContext(workspaceId: string) {
       id: true,
       name: true,
       domain: true,
-      healthScore: true,
       status: true,
     },
   });
@@ -255,7 +253,7 @@ Current portfolio status:
 - **Pending Stories**: ${context.pendingStories.length} stories in queue
 
 Available projects:
-${context.projects.map((p: any) => `- ${p.name} (${p.domain}): Health ${p.healthScore}/100`).join('\n')}
+${context.projects.map((p: any) => `- ${p.name} (${p.domain || 'No domain'}): ${p.status}`).join('\n')}
 
 Recent orchestrator activity:
 ${context.recentRuns.map((r: any) => `- Run ${r.runId.substring(0, 8)}: ${r.findingsCount} findings, ${r.storiesCount} stories (${r.status})`).join('\n')}
