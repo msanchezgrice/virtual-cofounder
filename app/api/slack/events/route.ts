@@ -101,6 +101,7 @@ async function handleUserMessage(event: any): Promise<void> {
   const messageTs = event.ts;
   const channelId = event.channel;
   const userId = event.user;
+  // Always reply in thread: use existing thread or start new one with this message
   const threadTs = event.thread_ts || event.ts;
 
   // Ignore if no userId (shouldn't happen but safety check)
