@@ -23,6 +23,14 @@
     {
       "path": "/api/slack/check-in",
       "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/scans/trigger",
+      "schedule": "5 18 * * *"
+    },
+    {
+      "path": "/api/orchestrator/run",
+      "schedule": "30 18 * * *"
     }
   ]
 }
