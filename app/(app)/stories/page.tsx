@@ -31,11 +31,11 @@ export default function CompletionsPage() {
 
   const fetchCompletions = async () => {
     try {
-      const res = await fetch('/api/completions');
+      const res = await fetch('/api/stories');
       const data = await res.json();
-      setCompletions(data.completions || []);
+      setCompletions(data.stories || []);
     } catch (error) {
-      console.error('Failed to fetch completions:', error);
+      console.error('Failed to fetch stories:', error);
       setCompletions([]);
     } finally {
       setLoading(false);

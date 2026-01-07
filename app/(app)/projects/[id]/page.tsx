@@ -16,7 +16,7 @@ interface ProjectDetail {
     seo: ScanResult | null;
     analytics: ScanResult | null;
   };
-  completions: Completion[];
+  stories: Completion[];
 }
 
 interface ScanResult {
@@ -35,7 +35,7 @@ interface Completion {
   linearTaskId: string | null;
 }
 
-type TabType = 'overview' | 'domain' | 'seo' | 'analytics' | 'completions';
+type TabType = 'overview' | 'domain' | 'seo' | 'analytics' | 'stories';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -146,7 +146,7 @@ export default function ProjectDetailPage() {
           { id: 'domain', label: '🌐 Domain' },
           { id: 'seo', label: '🔍 SEO' },
           { id: 'analytics', label: '📊 Analytics' },
-          { id: 'completions', label: '✅ Completions' },
+          { id: 'stories', label: '✅ Stories' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -176,8 +176,8 @@ export default function ProjectDetailPage() {
         {activeTab === 'analytics' && (
           <ScanTab title="Analytics Scan" scan={project.scans.analytics} />
         )}
-        {activeTab === 'completions' && (
-          <CompletionsTab completions={project.completions} />
+        {activeTab === 'stories' && (
+          <StoriesTab stories={project.stories} />
         )}
       </div>
     </div>
@@ -217,11 +217,11 @@ function OverviewTab({ project }: { project: ProjectDetail }) {
 
       <div className="mt-6">
         <h3 className="text-lg font-semibold mb-3">Recent Activity</h3>
-        {project.completions.length === 0 ? (
-          <div className="text-gray-500 text-sm">No completions yet</div>
+        {project.stories.length === 0 ? (
+          <div className="text-gray-500 text-sm">No stories yet</div>
         ) : (
           <div className="space-y-2">
-            {project.completions.slice(0, 5).map((completion) => (
+            {project.stories.slice(0, 5).map((completion) => (
               <div key={completion.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
                 <span className="text-sm">{completion.title}</span>
                 <span className={`text-xs px-2 py-1 rounded-full ${
@@ -274,20 +274,20 @@ function ScanTab({ title, scan }: { title: string; scan: ScanResult | null }) {
   );
 }
 
-function CompletionsTab({ completions }: { completions: Completion[] }) {
-  if (completions.length === 0) {
+function StoriesTab({ stories }: { stories: Completion[] }) {
+  if (stories.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-600">No completions for this project</div>
+        <div className="text-gray-600">No stories for this project</div>
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Completions ({completions.length})</h2>
+      <h2 className="text-xl font-semibold mb-4">Stories ({stories.length})</h2>
       <div className="space-y-4">
-        {completions.map((completion) => (
+        {stories.map((completion) => (
           <div key={completion.id} className="border rounded-lg p-4">
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-semibold">{completion.title}</h3>

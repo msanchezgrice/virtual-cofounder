@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+type TabMode = 'dashboard' | 'queue' | 'stories' | 'agents';
 type ViewMode = 'overview' | 'portfolio';
 
 interface ScanData {
@@ -26,7 +27,7 @@ interface ProjectWithScans {
   severity: 'critical' | 'high' | 'medium' | 'low';
   issues: string[];
   lastScanTime: string | null;
-  completions: {
+  stories: {
     id: string;
     title: string;
     status: string;
@@ -47,7 +48,77 @@ interface ScanResult {
   scannedAt: string;
 }
 
+interface Story {
+  id: string;
+  title: string;
+  rationale: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'rejected';
+  prUrl: string | null;
+  linearTaskId: string | null;
+  commitSha: string | null;
+  createdAt: string;
+  executedAt: string | null;
+  project: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Agent {
+  name: string;
+  role: string;
+  model: string;
+  status: 'active' | 'idle';
+  lastRun: string | null;
+  findingsCount: number;
+  recentFindings: Finding[];
+}
+
+interface Finding {
+  id: string;
+  issue: string;
+  action: string;
+  severity: 'high' | 'medium' | 'low';
+  projectName: string;
+  createdAt: string;
+}
+
+const AGENT_INFO = {
+  security: {
+    name: 'Security Agent',
+    icon: '🔒',
+    color: 'bg-red-100 text-red-800',
+    description: 'Finds exposed secrets, vulnerabilities, outdated dependencies',
+  },
+  analytics: {
+    name: 'Analytics Agent',
+    icon: '📊',
+    color: 'bg-blue-100 text-blue-800',
+    description: 'Ensures proper tracking and instrumentation',
+  },
+  domain: {
+    name: 'Domain Agent',
+    icon: '🌐',
+    color: 'bg-green-100 text-green-800',
+    description: 'Monitors domain health, SSL, and availability',
+  },
+  seo: {
+    name: 'SEO Agent',
+    icon: '🔍',
+    color: 'bg-purple-100 text-purple-800',
+    description: 'Optimizes search engine visibility',
+  },
+  deployment: {
+    name: 'Deployment Agent',
+    icon: '🚀',
+    color: 'bg-orange-100 text-orange-800',
+    description: 'Monitors deployment health and build status',
+  },
+};
+
 export default function DashboardPage() {
+  const [tab, setTab] = useState<TabMode>('dashboard');
   const [view, setView] = useState<ViewMode>('overview');
   const [scanData, setScanData] = useState<ScanData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +145,6 @@ export default function DashboardPage() {
       const res = await fetch(endpoint, { method: 'POST' });
       if (res.ok) {
         alert(`✅ ${name} triggered successfully!`);
-        // Refresh scan data after a short delay
         setTimeout(() => {
           fetchScans();
         }, 2000);
@@ -101,89 +171,633 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* View Toggle */}
+      {/* Tab Navigation */}
       <div className="flex gap-2 mb-6">
         <button
-          onClick={() => setView('overview')}
+          onClick={() => setTab('dashboard')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            view === 'overview'
+            tab === 'dashboard'
               ? 'bg-brand-blue text-white'
               : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
           }`}
         >
-          Overview
+          Dashboard
         </button>
         <button
-          onClick={() => setView('portfolio')}
+          onClick={() => setTab('queue')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            view === 'portfolio'
+            tab === 'queue'
               ? 'bg-brand-blue text-white'
               : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
           }`}
         >
-          Portfolio
+          Execution Queue
+        </button>
+        <button
+          onClick={() => setTab('stories')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            tab === 'stories'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          Stories
+        </button>
+        <button
+          onClick={() => setTab('agents')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            tab === 'agents'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          Agents
         </button>
 
-        {/* Manual Trigger Buttons */}
-        <div className="ml-auto flex gap-2">
-          <button
-            onClick={() => handleTrigger('/api/scans/trigger', 'Scans')}
-            disabled={triggering !== null}
-            className="px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {triggering === 'Scans' ? '⏳ Running...' : '🔄 Run Scans'}
-          </button>
-          <button
-            onClick={() => handleTrigger('/api/orchestrator/run', 'Orchestrator')}
-            disabled={triggering !== null}
-            className="px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
-          </button>
-          <button
-            onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
-            disabled={triggering !== null}
-            className="px-4 py-2 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
-          </button>
-          <button
-            onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
-            disabled={triggering !== null}
-            className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {triggering === 'Slack Test' ? '⏳ Sending...' : '💬 Test Slack'}
-          </button>
-        </div>
+        {/* Manual Trigger Buttons - only show on dashboard tab */}
+        {tab === 'dashboard' && (
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => handleTrigger('/api/scans/trigger', 'Scans')}
+              disabled={triggering !== null}
+              className="px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {triggering === 'Scans' ? '⏳ Running...' : '🔄 Run Scans'}
+            </button>
+            <button
+              onClick={() => handleTrigger('/api/orchestrator/run', 'Orchestrator')}
+              disabled={triggering !== null}
+              className="px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
+            </button>
+            <button
+              onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
+              disabled={triggering !== null}
+              className="px-4 py-2 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
+            </button>
+            <button
+              onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
+              disabled={triggering !== null}
+              className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {triggering === 'Slack Test' ? '⏳ Sending...' : '💬 Test Slack'}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Conditional Rendering */}
-      {loading ? (
-        <div className="text-center py-12">
-          <div className="text-gray-600">Loading scan data...</div>
-        </div>
-      ) : !scanData ? (
-        <div className="text-center py-12">
-          <div className="text-gray-600">No scan data available</div>
-        </div>
-      ) : view === 'overview' ? (
-        <OverviewView scanData={scanData} />
+      {/* Tab Content */}
+      {tab === 'dashboard' ? (
+        <>
+          {/* Dashboard View Toggle */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setView('overview')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                view === 'overview'
+                  ? 'bg-brand-blue text-white'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setView('portfolio')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                view === 'portfolio'
+                  ? 'bg-brand-blue text-white'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+              }`}
+            >
+              Portfolio
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="text-gray-600">Loading scan data...</div>
+            </div>
+          ) : !scanData ? (
+            <div className="text-center py-12">
+              <div className="text-gray-600">No scan data available</div>
+            </div>
+          ) : view === 'overview' ? (
+            <OverviewView scanData={scanData} />
+          ) : (
+            <PortfolioView scanData={scanData} />
+          )}
+        </>
+      ) : tab === 'queue' ? (
+        <ExecutionQueueView />
+      ) : tab === 'stories' ? (
+        <StoriesView />
       ) : (
-        <PortfolioView scanData={scanData} />
+        <AgentsView />
       )}
     </div>
   );
 }
 
+// Execution Queue View
+function ExecutionQueueView() {
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchQueue();
+  }, []);
+
+  const fetchQueue = async () => {
+    try {
+      const res = await fetch('/api/stories');
+      const data = await res.json();
+      // Filter for pending and in_progress stories, sorted by created date (FIFO)
+      const queueStories = (data.stories || [])
+        .filter((s: Story) => s.status === 'pending' || s.status === 'in_progress')
+        .sort((a: Story, b: Story) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      setStories(queueStories);
+    } catch (error) {
+      console.error('Failed to fetch execution queue:', error);
+      setStories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getQueuePosition = (index: number) => {
+    return index + 1;
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold">
+          Execution Queue ({stories.length} {stories.length === 1 ? 'story' : 'stories'})
+        </h2>
+        <div className="text-sm text-gray-600">
+          Showing pending and in-progress stories in FIFO order
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-gray-600">Loading execution queue...</div>
+        </div>
+      ) : stories.length === 0 ? (
+        <div className="bg-white rounded-lg p-8 shadow text-center">
+          <div className="text-gray-600">No stories in execution queue</div>
+          <p className="text-sm text-gray-500 mt-2">All stories have been processed! 🎉</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {stories.map((story, index) => (
+            <div key={story.id} className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start gap-4 flex-1">
+                  {/* Queue Position */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-blue text-white flex items-center justify-center font-bold">
+                    {getQueuePosition(index)}
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {story.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {story.project.name}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(story.priority)}`}>
+                    {story.priority}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(story.status)}`}>
+                    {story.status === 'in_progress' ? '⏳ executing' : '⏸️ pending'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rationale */}
+              <p className="text-sm text-gray-700 mb-4 pl-14 line-clamp-2">
+                {story.rationale}
+              </p>
+
+              {/* Metadata */}
+              <div className="flex items-center gap-4 text-sm pl-14">
+                <span className="text-gray-500">
+                  Queued {formatDate(story.createdAt)}
+                </span>
+
+                {story.linearTaskId && (
+                  <a
+                    href={`https://linear.app/issue/${story.linearTaskId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-brand-blue hover:text-blue-700 font-medium"
+                  >
+                    📋 View in Linear
+                  </a>
+                )}
+
+                {story.status === 'in_progress' && (
+                  <span className="text-blue-600 font-medium animate-pulse">
+                    🔄 Currently executing...
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Stories View (embedded from completions page)
+function StoriesView() {
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
+
+  useEffect(() => {
+    fetchStories();
+  }, []);
+
+  const fetchStories = async () => {
+    try {
+      const res = await fetch('/api/stories');
+      const data = await res.json();
+      setStories(data.stories || []);
+    } catch (error) {
+      console.error('Failed to fetch stories:', error);
+      setStories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredStories = (stories || []).filter(s => {
+    if (filter === 'all') return true;
+    return s.status === filter;
+  });
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-gray-100 text-gray-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'rejected': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-6">Stories</h2>
+
+      {/* Filter Buttons */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setFilter('all')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            filter === 'all'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          All ({(stories || []).length})
+        </button>
+        <button
+          onClick={() => setFilter('pending')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            filter === 'pending'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          Pending ({(stories || []).filter(s => s.status === 'pending').length})
+        </button>
+        <button
+          onClick={() => setFilter('in_progress')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            filter === 'in_progress'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          In Progress ({(stories || []).filter(s => s.status === 'in_progress').length})
+        </button>
+        <button
+          onClick={() => setFilter('completed')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            filter === 'completed'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          Completed ({(stories || []).filter(s => s.status === 'completed').length})
+        </button>
+      </div>
+
+      {/* Stories List */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-gray-600">Loading stories...</div>
+        </div>
+      ) : filteredStories.length === 0 ? (
+        <div className="bg-white rounded-lg p-8 shadow text-center">
+          <div className="text-gray-600">No stories found</div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredStories.map((story) => (
+            <div key={story.id} className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    {story.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {story.project.name}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(story.priority)}`}>
+                    {story.priority}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(story.status)}`}>
+                    {story.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rationale */}
+              <p className="text-sm text-gray-700 mb-4 line-clamp-2">
+                {story.rationale}
+              </p>
+
+              {/* Links and Actions */}
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-gray-500">
+                  {formatDate(story.createdAt)}
+                </span>
+
+                {story.linearTaskId && (
+                  <a
+                    href={`https://linear.app/issue/${story.linearTaskId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-brand-blue hover:text-blue-700 font-medium"
+                  >
+                    📋 View in Linear
+                  </a>
+                )}
+
+                {story.prUrl && (
+                  <a
+                    href={story.prUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-brand-blue hover:text-blue-700 font-medium"
+                  >
+                    🔀 View PR
+                  </a>
+                )}
+
+                {story.commitSha && (
+                  <span className="text-gray-500 font-mono text-xs">
+                    {story.commitSha.substring(0, 7)}
+                  </span>
+                )}
+
+                {story.executedAt && (
+                  <span className="text-gray-500">
+                    Executed {formatDate(story.executedAt)}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Agents View (embedded from agents page)
+function AgentsView() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  const fetchAgents = async () => {
+    try {
+      const res = await fetch('/api/agents');
+      const data = await res.json();
+      setAgents(data.agents);
+    } catch (error) {
+      console.error('Failed to fetch agents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    const diff = Date.now() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const filteredAgents = selectedAgent
+    ? agents.filter(a => a.role === selectedAgent)
+    : agents;
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-6">Agents</h2>
+
+      {/* Agent Filter */}
+      <div className="flex gap-2 mb-6 overflow-x-auto">
+        <button
+          onClick={() => setSelectedAgent(null)}
+          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+            selectedAgent === null
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          All Agents ({agents.length})
+        </button>
+        {Object.entries(AGENT_INFO).map(([role, info]) => (
+          <button
+            key={role}
+            onClick={() => setSelectedAgent(role)}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+              selectedAgent === role
+                ? 'bg-brand-blue text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+            }`}
+          >
+            {info.icon} {info.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Agents Grid */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-gray-600">Loading agents...</div>
+        </div>
+      ) : filteredAgents.length === 0 ? (
+        <div className="bg-white rounded-lg p-8 shadow text-center">
+          <div className="text-gray-600">No agent activity found</div>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredAgents.map((agent) => {
+            const info = AGENT_INFO[agent.role as keyof typeof AGENT_INFO];
+            return (
+              <div key={agent.role} className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow">
+                {/* Agent Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{info.icon}</span>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{info.name}</h3>
+                      <p className="text-xs text-gray-500">{agent.model}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                    agent.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {agent.status}
+                  </span>
+                </div>
+
+                {/* Agent Description */}
+                <p className="text-sm text-gray-600 mb-4">{info.description}</p>
+
+                {/* Agent Stats */}
+                <div className="flex items-center justify-between text-sm mb-4">
+                  <span className="text-gray-600">
+                    Last run: {formatDate(agent.lastRun)}
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {agent.findingsCount} findings
+                  </span>
+                </div>
+
+                {/* Recent Findings */}
+                {agent.recentFindings.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-xs font-semibold text-gray-700 mb-2">Recent Findings</h4>
+                    <div className="space-y-2">
+                      {agent.recentFindings.slice(0, 3).map((finding) => (
+                        <div key={finding.id} className="text-xs">
+                          <div className="flex items-start gap-2">
+                            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityColor(finding.severity)}`}>
+                              {finding.severity}
+                            </span>
+                            <span className="text-gray-600 flex-1 line-clamp-2">
+                              {finding.issue}
+                            </span>
+                          </div>
+                          <div className="text-gray-500 mt-1">
+                            {finding.projectName} • {formatDate(finding.createdAt)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Overview and Portfolio views remain the same
 function OverviewView({ scanData }: { scanData: ScanData }) {
   const { stats, highPriority } = scanData;
 
-  // Calculate portfolio health score (average of all projects)
   const avgHealth = Math.round(
     scanData.projects.reduce((sum, p) => sum + p.healthScore, 0) / scanData.projects.length
   );
 
-  // Format time ago
   const formatTimeAgo = (dateStr: string | null) => {
     if (!dateStr) return 'Never';
     const date = new Date(dateStr);
@@ -230,14 +844,14 @@ function OverviewView({ scanData }: { scanData: ScanData }) {
                 severity={project.severity}
                 lastScan={formatTimeAgo(project.lastScanTime)}
                 healthScore={project.healthScore}
-                completions={project.completions}
+                stories={project.stories}
               />
             ))
           )}
         </div>
       </div>
 
-      {/* Recent Activity - Show recently scanned projects */}
+      {/* Recent Activity */}
       <div>
         <h3 className="text-xl font-semibold mb-4">📋 Recent Scans (Last 24h)</h3>
         <div className="bg-white rounded-lg p-4 shadow">
@@ -266,7 +880,6 @@ function PortfolioView({ scanData }: { scanData: ScanData }) {
   const [filter, setFilter] = useState<string>('all');
   const [sort, setSort] = useState<string>('health');
 
-  // Filter projects
   let filteredProjects = scanData.projects;
   if (filter === 'critical') {
     filteredProjects = scanData.projects.filter((p) => p.severity === 'critical');
@@ -276,16 +889,15 @@ function PortfolioView({ scanData }: { scanData: ScanData }) {
     filteredProjects = scanData.projects.filter((p) => p.severity === 'low');
   }
 
-  // Sort projects
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     if (sort === 'health') {
-      return a.healthScore - b.healthScore; // Lowest health first
+      return a.healthScore - b.healthScore;
     } else if (sort === 'name') {
       return a.name.localeCompare(b.name);
     } else if (sort === 'lastScan') {
       const aTime = a.lastScanTime ? new Date(a.lastScanTime).getTime() : 0;
       const bTime = b.lastScanTime ? new Date(b.lastScanTime).getTime() : 0;
-      return bTime - aTime; // Most recent first
+      return bTime - aTime;
     }
     return 0;
   });
@@ -343,7 +955,7 @@ function StatCard({ title, value, subtitle, color }: any) {
   );
 }
 
-function IssueCard({ projectId, project, issue, severity, lastScan, healthScore, completions }: any) {
+function IssueCard({ projectId, project, issue, severity, lastScan, healthScore, stories }: any) {
   const severityColors: Record<string, string> = {
     critical: 'border-l-critical-red',
     high: 'border-l-high-yellow',
@@ -351,8 +963,7 @@ function IssueCard({ projectId, project, issue, severity, lastScan, healthScore,
     low: 'border-l-healthy-green',
   };
 
-  // Get most recent completion with Linear task or PR
-  const recentCompletion = completions?.find((c: any) => c.linearTaskId || c.prUrl);
+  const recentStory = stories?.find((s: any) => s.linearTaskId || s.prUrl);
 
   return (
     <div className={`bg-white rounded-lg p-4 shadow border-l-4 ${severityColors[severity] || 'border-l-gray-300'}`}>
@@ -369,9 +980,9 @@ function IssueCard({ projectId, project, issue, severity, lastScan, healthScore,
           <p className="text-gray-600 mt-1">{issue}</p>
           <div className="flex gap-4 mt-2 text-sm text-gray-500">
             <span>Last scan: {lastScan}</span>
-            {recentCompletion?.linearTaskId && (
+            {recentStory?.linearTaskId && (
               <a
-                href={`https://linear.app/issue/${recentCompletion.linearTaskId}`}
+                href={`https://linear.app/issue/${recentStory.linearTaskId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand-blue hover:text-blue-700 font-medium"
@@ -379,9 +990,9 @@ function IssueCard({ projectId, project, issue, severity, lastScan, healthScore,
                 📋 View in Linear
               </a>
             )}
-            {recentCompletion?.prUrl && (
+            {recentStory?.prUrl && (
               <a
-                href={recentCompletion.prUrl}
+                href={recentStory.prUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand-blue hover:text-blue-700 font-medium"
