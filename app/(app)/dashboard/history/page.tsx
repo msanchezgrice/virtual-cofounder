@@ -7,6 +7,7 @@ interface SlackMessage {
   text: string;
   userId: string;
   channelId: string;
+  messageTs: string;
   isCommand: boolean;
   commandType: string | null;
   createdAt: string;

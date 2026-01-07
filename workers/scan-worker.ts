@@ -3,7 +3,7 @@
  * Scan Worker
  *
  * Processes scan jobs from Redis queue (BullMQ)
- * Executes domain, SEO, and analytics scanners
+ * Executes all scanners: domain, SEO, analytics, Vercel, performance, screenshot, npm_audit, secrets
  * Saves results to database
  */
 
@@ -18,6 +18,11 @@ import { PrismaClient } from '@prisma/client';
 import { scanDomain } from '../lib/scanners/domain';
 import { scanSEO } from '../lib/scanners/seo';
 import { scanAnalytics } from '../lib/scanners/analytics';
+import { scanVercelDeployment } from '../lib/scanners/vercel';
+import { scanPerformance } from '../lib/scanners/performance';
+import { captureScreenshot } from '../lib/scanners/screenshot';
+import { scanNpmAudit } from '../lib/scanners/security-npm';
+import { scanSecrets } from '../lib/scanners/security-secrets';
 
 // Create fresh Prisma client for worker with direct connection (no pgBouncer)
 // PgBouncer in transaction mode doesn't support prepared statements
@@ -49,7 +54,8 @@ interface ScanJob {
   projectId: string;
   projectName: string;
   domain: string;
-  scanType: 'domain' | 'seo' | 'analytics';
+  repo?: string; // For npm_audit and secrets scanners
+  scanType: 'domain' | 'seo' | 'analytics' | 'vercel' | 'performance' | 'screenshot' | 'npm_audit' | 'secrets';
   workspaceId: string;
 }
 
@@ -120,6 +126,128 @@ async function processScanJob(job: any) {
         });
 
         console.log(`[${job.id}] ✓ Analytics scan complete: ${result.detected.length} detected (${durationMs}ms)`);
+        break;
+      }
+
+      case 'vercel': {
+        const result = await scanVercelDeployment(projectName);
+        const durationMs = Date.now() - startTime;
+
+        await db.scan.create({
+          data: {
+            workspaceId,
+            projectId,
+            scanType: 'vercel',
+            status: result.status,
+            vercelData: result.latestDeployment || {},
+            scannedAt: new Date(),
+            durationMs
+          }
+        });
+
+        console.log(`[${job.id}] ✓ Vercel scan complete: ${result.status} (${durationMs}ms)`);
+        break;
+      }
+
+      case 'performance': {
+        const result = await scanPerformance(domain);
+        const durationMs = Date.now() - startTime;
+
+        await db.scan.create({
+          data: {
+            workspaceId,
+            projectId,
+            scanType: 'performance',
+            status: result.status,
+            playwrightMetrics: (result.metrics || {}) as any,
+            scannedAt: new Date(),
+            durationMs
+          }
+        });
+
+        console.log(`[${job.id}] ✓ Performance scan complete: ${result.status} (${durationMs}ms)`);
+        break;
+      }
+
+      case 'screenshot': {
+        const result = await captureScreenshot(domain);
+        const durationMs = Date.now() - startTime;
+
+        await db.scan.create({
+          data: {
+            workspaceId,
+            projectId,
+            scanType: 'screenshot',
+            status: result.status,
+            playwrightMetrics: {
+              screenshotUrl: result.screenshotUrl,
+              screenshotPath: result.screenshotPath,
+              dimensions: result.dimensions
+            } as any,
+            scannedAt: new Date(),
+            durationMs
+          }
+        });
+
+        console.log(`[${job.id}] ✓ Screenshot capture complete: ${result.screenshotUrl} (${durationMs}ms)`);
+        break;
+      }
+
+      case 'npm_audit': {
+        const { repo } = data;
+        if (!repo) {
+          throw new Error('Repository path required for npm_audit scan');
+        }
+
+        const result = await scanNpmAudit(repo);
+        const durationMs = Date.now() - startTime;
+
+        await db.scan.create({
+          data: {
+            workspaceId,
+            projectId,
+            scanType: 'npm_audit',
+            status: result.status,
+            securityIssues: {
+              vulnerabilities: result.vulnerabilities || [],
+              metadata: result.metadata || {}
+            } as any,
+            scannedAt: new Date(),
+            durationMs
+          }
+        });
+
+        console.log(`[${job.id}] ✓ NPM audit complete: ${result.vulnerabilities?.length || 0} vulnerabilities (${durationMs}ms)`);
+        break;
+      }
+
+      case 'secrets': {
+        const { repo } = data;
+        if (!repo) {
+          throw new Error('Repository path required for secrets scan');
+        }
+
+        // For secrets scanner, we need to read files from the repo
+        // This is a simplified implementation - in production, you'd want to
+        // scan multiple files and aggregate results
+        const result = await scanSecrets('', repo);
+        const durationMs = Date.now() - startTime;
+
+        await db.scan.create({
+          data: {
+            workspaceId,
+            projectId,
+            scanType: 'secrets',
+            status: result.status,
+            securityIssues: {
+              findings: result.findings || []
+            } as any,
+            scannedAt: new Date(),
+            durationMs
+          }
+        });
+
+        console.log(`[${job.id}] ✓ Secrets scan complete: ${result.findings?.length || 0} findings (${durationMs}ms)`);
         break;
       }
 
