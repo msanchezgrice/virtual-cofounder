@@ -76,7 +76,8 @@ export async function POST(request: Request) {
 }
 
 /**
- * Handle user messages (priority replies)
+ * Handle user messages (direct messages or channel messages)
+ * Supports both priority parsing and command handling
  */
 async function handleUserMessage(event: any): Promise<void> {
   const workspaceId = process.env.WORKSPACE_ID;
@@ -87,15 +88,35 @@ async function handleUserMessage(event: any): Promise<void> {
 
   const message = event.text;
   const messageTs = event.ts;
+  const channelId = event.channel;
+  const userId = event.user;
+  const lowerMessage = message.toLowerCase();
 
   console.log(`[Slack Events] User message: "${message}"`);
 
-  // Parse and store priority
-  try {
-    await storeUserPriority(workspaceId, message, messageTs);
-    console.log('[Slack Events] User priority stored successfully');
-  } catch (error) {
-    console.error('[Slack Events] Error storing priority:', error);
+  // Check if this is a command (contains keywords)
+  const isCommand = lowerMessage.includes('help') ||
+    lowerMessage.includes('run') ||
+    lowerMessage.includes('scan') ||
+    lowerMessage.includes('orchestrator') ||
+    lowerMessage.includes('execution') ||
+    lowerMessage.includes('status');
+
+  if (isCommand) {
+    // Handle commands just like app mentions
+    // Reuse the app mention handler logic
+    await handleAppMention({
+      ...event,
+      thread_ts: event.ts, // Use message timestamp as thread
+    });
+  } else {
+    // Not a command - treat as priority input
+    try {
+      await storeUserPriority(workspaceId, message, messageTs);
+      console.log('[Slack Events] User priority stored successfully');
+    } catch (error) {
+      console.error('[Slack Events] Error storing priority:', error);
+    }
   }
 }
 
