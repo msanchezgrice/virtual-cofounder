@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-type TabMode = 'dashboard' | 'queue' | 'stories' | 'agents';
+type TabMode = 'dashboard' | 'queue' | 'stories' | 'agents' | 'history';
 type ViewMode = 'overview' | 'portfolio';
 
 interface ScanData {
@@ -82,6 +82,17 @@ interface Finding {
   severity: 'high' | 'medium' | 'low';
   projectName: string;
   createdAt: string;
+}
+
+interface OrchestratorRun {
+  id: string;
+  runId: string;
+  status: 'running' | 'completed' | 'failed';
+  findingsCount: number;
+  storiesCount: number;
+  conversation: any;
+  startedAt: string;
+  completedAt: string | null;
 }
 
 const AGENT_INFO = {
@@ -213,6 +224,16 @@ export default function DashboardPage() {
         >
           Agents
         </button>
+        <button
+          onClick={() => setTab('history')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            tab === 'history'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          History
+        </button>
 
         {/* Manual Trigger Buttons - only show on dashboard tab */}
         {tab === 'dashboard' && (
@@ -294,8 +315,10 @@ export default function DashboardPage() {
         <ExecutionQueueView />
       ) : tab === 'stories' ? (
         <StoriesView />
-      ) : (
+      ) : tab === 'agents' ? (
         <AgentsView />
+      ) : (
+        <HistoryView />
       )}
     </div>
   );
@@ -1055,6 +1078,125 @@ function ProjectCard({ project }: { project: ProjectWithScans }) {
             View Site
           </a>
         )}
+      </div>
+    </div>
+  );
+}
+
+function HistoryView() {
+  const [runs, setRuns] = useState<OrchestratorRun[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRun, setSelectedRun] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch('/api/orchestrator/history');
+      const data = await res.json();
+      setRuns(data.runs || []);
+    } catch (error) {
+      console.error('Failed to fetch orchestrator history:', error);
+      setRuns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'running': return 'bg-blue-100 text-blue-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-600">Loading history...</div>
+      </div>
+    );
+  }
+
+  if (runs.length === 0) {
+    return (
+      <div className="bg-white rounded-lg p-8 shadow text-center">
+        <div className="text-gray-600">No orchestrator runs yet</div>
+      </div>
+    );
+  }
+
+  const selectedRunData = selectedRun ? runs.find(r => r.id === selectedRun) : null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Orchestrator History</h2>
+        <div className="text-sm text-gray-600">{runs.length} total runs</div>
+      </div>
+
+      <div className="space-y-4">
+        {runs.map((run) => (
+          <div key={run.id} className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Run {run.runId.substring(0, 8)}
+                  </h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(run.status)}`}>
+                    {run.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span>📊 {run.findingsCount} findings</span>
+                  <span>✅ {run.storiesCount} stories</span>
+                  <span>🕐 {formatDate(run.startedAt)}</span>
+                  {run.completedAt && (
+                    <span className="text-green-600">
+                      Completed {formatDate(run.completedAt)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Conversation Details */}
+            {run.conversation && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setSelectedRun(selectedRun === run.id ? null : run.id)}
+                  className="text-sm text-brand-blue hover:underline font-medium"
+                >
+                  {selectedRun === run.id ? '▼ Hide conversation' : '▶ View conversation'}
+                </button>
+
+                {selectedRun === run.id && (
+                  <div className="mt-3 p-4 bg-gray-50 rounded-lg max-h-96 overflow-y-auto">
+                    <pre className="text-xs whitespace-pre-wrap font-mono">
+                      {JSON.stringify(run.conversation, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
