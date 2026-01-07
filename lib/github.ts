@@ -13,14 +13,34 @@ interface PullRequestParams {
 }
 
 /**
+ * Get GitHub App private key from environment
+ * Supports both direct key (GITHUB_APP_PRIVATE_KEY) and file path (GITHUB_APP_PRIVATE_KEY_PATH)
+ */
+function getPrivateKey(): string {
+  const privateKeyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
+  const privateKeyDirect = process.env.GITHUB_APP_PRIVATE_KEY;
+
+  if (privateKeyDirect) {
+    // Use key directly from environment (Railway, production)
+    return privateKeyDirect;
+  }
+
+  if (privateKeyPath) {
+    // Read key from file (local development)
+    return readFileSync(privateKeyPath, 'utf-8');
+  }
+
+  throw new Error('Missing GITHUB_APP_PRIVATE_KEY or GITHUB_APP_PRIVATE_KEY_PATH in environment');
+}
+
+/**
  * Get authenticated Octokit instance using GitHub App
  */
 async function getOctokit(): Promise<Octokit> {
   const appIdStr = process.env.GITHUB_APP_ID;
-  const privateKeyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
 
-  if (!appIdStr || !privateKeyPath) {
-    throw new Error('Missing GITHUB_APP_ID or GITHUB_APP_PRIVATE_KEY_PATH in environment');
+  if (!appIdStr) {
+    throw new Error('Missing GITHUB_APP_ID in environment');
   }
 
   const appId = parseInt(appIdStr, 10);
@@ -28,8 +48,8 @@ async function getOctokit(): Promise<Octokit> {
     throw new Error(`Invalid GITHUB_APP_ID: ${appIdStr} (must be a number)`);
   }
 
-  // Read private key from file
-  const privateKey = readFileSync(privateKeyPath, 'utf-8');
+  // Get private key from environment
+  const privateKey = getPrivateKey();
 
   // Create GitHub App auth
   const auth = createAppAuth({
@@ -57,10 +77,9 @@ async function getOctokit(): Promise<Octokit> {
  */
 async function getInstallationId(): Promise<number> {
   const appIdStr = process.env.GITHUB_APP_ID;
-  const privateKeyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
 
-  if (!appIdStr || !privateKeyPath) {
-    throw new Error('Missing GitHub App credentials');
+  if (!appIdStr) {
+    throw new Error('Missing GITHUB_APP_ID in environment');
   }
 
   const appId = parseInt(appIdStr, 10);
@@ -68,7 +87,7 @@ async function getInstallationId(): Promise<number> {
     throw new Error(`Invalid GITHUB_APP_ID: ${appIdStr} (must be a number)`);
   }
 
-  const privateKey = readFileSync(privateKeyPath, 'utf-8');
+  const privateKey = getPrivateKey();
 
   // Create app-level auth to list installations
   const appAuth = createAppAuth({
@@ -106,14 +125,13 @@ async function getInstallationId(): Promise<number> {
  */
 export async function getAuthenticatedCloneUrl(repoUrl: string): Promise<string> {
   const appIdStr = process.env.GITHUB_APP_ID;
-  const privateKeyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
 
-  if (!appIdStr || !privateKeyPath) {
-    throw new Error('Missing GITHUB_APP_ID or GITHUB_APP_PRIVATE_KEY_PATH in environment');
+  if (!appIdStr) {
+    throw new Error('Missing GITHUB_APP_ID in environment');
   }
 
   const appId = parseInt(appIdStr, 10);
-  const privateKey = readFileSync(privateKeyPath, 'utf-8');
+  const privateKey = getPrivateKey();
 
   // Create GitHub App auth
   const auth = createAppAuth({
