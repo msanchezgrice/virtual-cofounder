@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import { cloneRepo, createBranch, applyChanges, commitChanges, pushBranch, cleanup } from '../lib/git';
 import { createPullRequest, parseRepoUrl } from '../lib/github';
 import { sendSlackNotification } from '../lib/slack';
+import { updateLinearTaskStatus, getTeamWorkflowStates, addLinearComment } from '../lib/linear';
 
 // Create fresh Prisma client with direct connection (not pooler)
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');
@@ -36,6 +37,61 @@ interface ExecutionJob {
 }
 
 /**
+ * Update Linear task status based on completion status
+ */
+async function updateLinearTaskStatusForCompletion(
+  linearTaskId: string | null,
+  completionStatus: string,
+  teamId: string = 'd5cbb99d-df57-4b21-87c9-95fc5089a6a2' // Default: Virtual cofounder team
+): Promise<void> {
+  if (!linearTaskId) {
+    return; // No Linear task linked, skip
+  }
+
+  try {
+    // Get workflow states for the team
+    const states = await getTeamWorkflowStates(teamId);
+
+    // Map completion status to Linear state
+    let targetState = states.find((s) => {
+      const stateName = s.name.toLowerCase();
+      const stateType = s.type.toLowerCase();
+
+      switch (completionStatus) {
+        case 'in_progress':
+          return stateType === 'started' || stateName.includes('progress');
+        case 'completed':
+          return stateType === 'completed' || stateName.includes('done');
+        case 'failed':
+          return stateType === 'canceled' || stateName.includes('failed');
+        default:
+          return stateType === 'unstarted' || stateName.includes('todo');
+      }
+    });
+
+    // Fallback: find any state matching the type
+    if (!targetState) {
+      targetState = states.find((s) => {
+        if (completionStatus === 'in_progress') return s.type === 'started';
+        if (completionStatus === 'completed') return s.type === 'completed';
+        if (completionStatus === 'failed') return s.type === 'canceled';
+        return s.type === 'unstarted';
+      });
+    }
+
+    if (targetState) {
+      await updateLinearTaskStatus(linearTaskId, targetState.id);
+      console.log(`[Linear Sync] Updated task ${linearTaskId} to state: ${targetState.name}`);
+    } else {
+      console.warn(`[Linear Sync] No matching state found for status: ${completionStatus}`);
+    }
+  } catch (error) {
+    console.error('[Linear Sync] Failed to update Linear task:', error);
+    // Don't throw - Linear sync failures shouldn't break execution
+  }
+}
+
+/**
  * Execute a completion: clone repo → create branch → commit → push → create PR
  */
 async function executeCompletion(completionId: string): Promise<void> {
@@ -60,6 +116,10 @@ async function executeCompletion(completionId: string): Promise<void> {
         where: { id: completionId },
         data: { status: 'completed' },
       });
+
+      // Sync status to Linear
+      await updateLinearTaskStatusForCompletion(completion.linearTaskId, 'completed');
+
       return;
     }
 
@@ -76,6 +136,20 @@ async function executeCompletion(completionId: string): Promise<void> {
     });
 
     console.log(`[Execution Worker] Completion ${completionId} marked as in_progress`);
+
+    // Sync status to Linear
+    await updateLinearTaskStatusForCompletion(completion.linearTaskId, 'in_progress');
+
+    // Post execution start comment to Linear
+    if (completion.linearTaskId) {
+      try {
+        const startComment = `**🚀 Execution Started**\n\nThe AI Co-Founder is now working on this task.\n\n**Project:** ${completion.project.name}\n**Repository:** ${completion.project.repo}\n\n_Started at ${new Date().toLocaleString()}_`;
+        await addLinearComment(completion.linearTaskId, startComment);
+        console.log(`[Execution Worker] Posted execution start to Linear task ${completion.linearTaskId}`);
+      } catch (error) {
+        console.error(`[Execution Worker] Failed to post execution start to Linear:`, error);
+      }
+    }
 
     // Execute Git + GitHub workflow
     let repoPath: string | null = null;
@@ -121,6 +195,16 @@ async function executeCompletion(completionId: string): Promise<void> {
       // Step 5: Push branch
       await pushBranch(repoPath, branchName);
 
+      // Post progress update to Linear before creating PR
+      if (completion.linearTaskId) {
+        try {
+          const progressComment = `**⚙️ Creating Pull Request**\n\nChanges have been committed and pushed to branch \`${branchName}\`.\n\nNow creating pull request...\n\n_Updated at ${new Date().toLocaleString()}_`;
+          await addLinearComment(completion.linearTaskId, progressComment);
+        } catch (error) {
+          console.error(`[Execution Worker] Failed to post progress to Linear:`, error);
+        }
+      }
+
       // Step 6: Create pull request
       const { owner, repo: repoName } = parseRepoUrl(repoUrl);
       const prUrl = await createPullRequest({
@@ -143,6 +227,20 @@ async function executeCompletion(completionId: string): Promise<void> {
           prUrl: prUrl.url,
         },
       });
+
+      // Sync status to Linear
+      await updateLinearTaskStatusForCompletion(completion.linearTaskId, 'completed');
+
+      // Add PR URL as a comment to Linear task
+      if (completion.linearTaskId) {
+        try {
+          const prComment = `**Pull Request Created**\n\n${prUrl.url}\n\n**Project:** ${completion.project.name}\n**Title:** ${completion.title}\n\n_Automatically created by AI Co-Founder execution worker_`;
+          await addLinearComment(completion.linearTaskId, prComment); // addLinearComment with prUrl
+          console.log(`[Execution Worker] Posted PR URL to Linear task ${completion.linearTaskId}`);
+        } catch (error) {
+          console.error(`[Execution Worker] Failed to post PR URL to Linear:`, error);
+        }
+      }
 
       console.log(`[Execution Worker] Completion ${completionId} executed successfully`);
 
@@ -173,6 +271,21 @@ async function executeCompletion(completionId: string): Promise<void> {
       where: { id: completionId },
       data: { status: 'failed' },
     });
+
+    // Sync failed status to Linear
+    await updateLinearTaskStatusForCompletion(completion.linearTaskId, 'failed');
+
+    // Post failure comment to Linear with error details
+    if (completion.linearTaskId) {
+      try {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const failureComment = `**❌ Execution Failed**\n\nThe AI Co-Founder encountered an error while working on this task.\n\n**Error:**\n\`\`\`\n${errorMessage}\n\`\`\`\n\n**Project:** ${completion.project.name}\n\n_Failed at ${new Date().toLocaleString()}_`;
+        await addLinearComment(completion.linearTaskId, failureComment);
+        console.log(`[Execution Worker] Posted execution failure to Linear task ${completion.linearTaskId}`);
+      } catch (linearError) {
+        console.error(`[Execution Worker] Failed to post execution failure to Linear:`, linearError);
+      }
+    }
   }
 }
 

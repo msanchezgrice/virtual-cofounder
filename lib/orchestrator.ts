@@ -1,6 +1,7 @@
 // Head of Product Orchestrator - Coordinates specialist agents
 import Anthropic from '@anthropic-ai/sdk';
 import { agents, type AgentConfig } from './agents';
+import { addLinearComment } from './linear';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -85,8 +86,19 @@ If no issues found, return: {"findings": []}`;
       return [];
     }
 
-    // Parse JSON from response
-    const result = JSON.parse(textContent.text);
+    // Parse JSON from response (strip markdown code blocks if present)
+    let jsonText = textContent.text.trim();
+
+    // Remove markdown code block wrappers if present
+    if (jsonText.startsWith('```')) {
+      // Extract content between ``` markers
+      const match = jsonText.match(/```(?:json)?\n?([\s\S]*?)\n?```/);
+      if (match) {
+        jsonText = match[1].trim();
+      }
+    }
+
+    const result = JSON.parse(jsonText);
 
     if (!result.findings || !Array.isArray(result.findings)) {
       console.warn(`Invalid response format from ${agent.name}`);

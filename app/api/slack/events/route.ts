@@ -45,6 +45,11 @@ export async function POST(request: Request) {
         await handleUserMessage(event);
       }
 
+      // Handle app mentions (when someone @mentions the bot)
+      if (event.type === 'app_mention') {
+        await handleAppMention(event);
+      }
+
       // Handle button interactions
       if (event.type === 'block_actions') {
         await handleButtonClick(event);
@@ -91,6 +96,137 @@ async function handleUserMessage(event: any): Promise<void> {
     console.log('[Slack Events] User priority stored successfully');
   } catch (error) {
     console.error('[Slack Events] Error storing priority:', error);
+  }
+}
+
+/**
+ * Handle app mentions (when someone @mentions the bot)
+ */
+async function handleAppMention(event: any): Promise<void> {
+  const workspaceId = process.env.WORKSPACE_ID;
+  if (!workspaceId) {
+    console.error('[Slack Events] WORKSPACE_ID not configured');
+    return;
+  }
+
+  const message = event.text;
+  const channelId = event.channel;
+  const userId = event.user;
+  const threadTs = event.thread_ts || event.ts;
+
+  console.log(`[Slack Events] App mention from ${userId}: "${message}"`);
+
+  try {
+    const client = getSlackClient();
+
+    // Parse the message to understand intent
+    const lowerMessage = message.toLowerCase();
+
+    // Help command
+    if (lowerMessage.includes('help')) {
+      await client.chat.postMessage({
+        channel: channelId,
+        thread_ts: threadTs,
+        text: `👋 Hi! I'm your AI Co-Founder. Here's what I can do:\n\n` +
+          `• **Run scans**: Mention "run scans" to scan all projects\n` +
+          `• **Check status**: Mention "status" to see project health\n` +
+          `• **Show priorities**: Mention "priorities" to see high-priority issues\n` +
+          `• **View completions**: Mention "completions" to see recent work\n\n` +
+          `You can also click the manual trigger buttons in the dashboard!`,
+      });
+      return;
+    }
+
+    // Run scans command
+    if (lowerMessage.includes('run scan') || lowerMessage.includes('scan project')) {
+      await client.chat.postMessage({
+        channel: channelId,
+        thread_ts: threadTs,
+        text: `🔄 Triggering scans for all active projects...\n\n_This will take a few minutes. I'll update you when it's done!_`,
+      });
+
+      // Trigger scans via API
+      try {
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000';
+
+        const response = await fetch(`${baseUrl}/api/scans/trigger`, {
+          method: 'POST',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          await client.chat.postMessage({
+            channel: channelId,
+            thread_ts: threadTs,
+            text: `✅ Scans triggered successfully!\n\n` +
+              `**Projects:** ${data.projects}\n` +
+              `**Jobs:** ${data.jobs}\n\n` +
+              `Results will be available in the dashboard shortly.`,
+          });
+        } else {
+          await client.chat.postMessage({
+            channel: channelId,
+            thread_ts: threadTs,
+            text: `❌ Failed to trigger scans. Please try again or check the dashboard.`,
+          });
+        }
+      } catch (error) {
+        console.error('[Slack Events] Error triggering scans:', error);
+        await client.chat.postMessage({
+          channel: channelId,
+          thread_ts: threadTs,
+          text: `❌ Error triggering scans: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
+      return;
+    }
+
+    // Status command
+    if (lowerMessage.includes('status') || lowerMessage.includes('health')) {
+      const projects = await db.project.findMany({
+        where: { workspaceId },
+        include: {
+          scans: {
+            orderBy: { scannedAt: 'desc' },
+            take: 1,
+          },
+        },
+      });
+
+      const activeProjects = projects.filter(p => p.status.includes('ACTIVE'));
+      const scannedToday = projects.filter(p => {
+        const lastScan = p.scans[0]?.scannedAt;
+        if (!lastScan) return false;
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        return new Date(lastScan) > dayAgo;
+      });
+
+      await client.chat.postMessage({
+        channel: channelId,
+        thread_ts: threadTs,
+        text: `📊 **Portfolio Status**\n\n` +
+          `**Active Projects:** ${activeProjects.length}\n` +
+          `**Scanned Today:** ${scannedToday.length}\n\n` +
+          `View full details in the dashboard: ${process.env.VERCEL_URL || 'localhost:3000'}`,
+      });
+      return;
+    }
+
+    // Default response for unrecognized commands
+    await client.chat.postMessage({
+      channel: channelId,
+      thread_ts: threadTs,
+      text: `👋 Hi! I heard you, but I'm not sure what you want me to do.\n\n` +
+        `Try mentioning:\n` +
+        `• "help" - See what I can do\n` +
+        `• "run scans" - Scan all projects\n` +
+        `• "status" - Check project health\n` +
+        `• "priorities" - View high-priority issues`,
+    });
+  } catch (error) {
+    console.error('[Slack Events] Error handling app mention:', error);
   }
 }
 

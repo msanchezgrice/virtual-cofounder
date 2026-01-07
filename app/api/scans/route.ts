@@ -12,13 +12,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'WORKSPACE_ID not configured' }, { status: 500 });
     }
 
-    // Get all projects with their latest scans
+    // Get all projects with their latest scans and recent completions
     const projects = await db.project.findMany({
       where: { workspaceId },
       include: {
         scans: {
           orderBy: { scannedAt: 'desc' },
           take: 10, // Get recent scans per project
+        },
+        completions: {
+          orderBy: { createdAt: 'desc' },
+          take: 3, // Get 3 most recent completions per project
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            linearTaskId: true,
+            prUrl: true,
+            priority: true,
+          },
         },
       },
     });
@@ -109,6 +121,7 @@ export async function GET(request: Request) {
         severity,
         issues,
         lastScanTime: project.scans[0]?.scannedAt || null,
+        completions: project.completions || [],
         scans: {
           domain: domainScan
             ? {

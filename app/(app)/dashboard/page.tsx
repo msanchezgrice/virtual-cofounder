@@ -26,6 +26,14 @@ interface ProjectWithScans {
   severity: 'critical' | 'high' | 'medium' | 'low';
   issues: string[];
   lastScanTime: string | null;
+  completions: {
+    id: string;
+    title: string;
+    status: string;
+    linearTaskId: string | null;
+    prUrl: string | null;
+    priority: string;
+  }[];
   scans: {
     domain: ScanResult | null;
     seo: ScanResult | null;
@@ -133,6 +141,13 @@ export default function DashboardPage() {
             {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
           </button>
           <button
+            onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
+            disabled={triggering !== null}
+            className="px-4 py-2 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
+          </button>
+          <button
             onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
             disabled={triggering !== null}
             className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -215,6 +230,7 @@ function OverviewView({ scanData }: { scanData: ScanData }) {
                 severity={project.severity}
                 lastScan={formatTimeAgo(project.lastScanTime)}
                 healthScore={project.healthScore}
+                completions={project.completions}
               />
             ))
           )}
@@ -327,13 +343,16 @@ function StatCard({ title, value, subtitle, color }: any) {
   );
 }
 
-function IssueCard({ projectId, project, issue, severity, lastScan, healthScore }: any) {
+function IssueCard({ projectId, project, issue, severity, lastScan, healthScore, completions }: any) {
   const severityColors: Record<string, string> = {
     critical: 'border-l-critical-red',
     high: 'border-l-high-yellow',
     medium: 'border-l-brand-blue',
     low: 'border-l-healthy-green',
   };
+
+  // Get most recent completion with Linear task or PR
+  const recentCompletion = completions?.find((c: any) => c.linearTaskId || c.prUrl);
 
   return (
     <div className={`bg-white rounded-lg p-4 shadow border-l-4 ${severityColors[severity] || 'border-l-gray-300'}`}>
@@ -350,6 +369,26 @@ function IssueCard({ projectId, project, issue, severity, lastScan, healthScore 
           <p className="text-gray-600 mt-1">{issue}</p>
           <div className="flex gap-4 mt-2 text-sm text-gray-500">
             <span>Last scan: {lastScan}</span>
+            {recentCompletion?.linearTaskId && (
+              <a
+                href={`https://linear.app/issue/${recentCompletion.linearTaskId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-blue hover:text-blue-700 font-medium"
+              >
+                📋 View in Linear
+              </a>
+            )}
+            {recentCompletion?.prUrl && (
+              <a
+                href={recentCompletion.prUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-blue hover:text-blue-700 font-medium"
+              >
+                🔀 View PR
+              </a>
+            )}
           </div>
         </div>
       </div>
