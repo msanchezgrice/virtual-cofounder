@@ -81,19 +81,23 @@ async function executeCompletion(completionId: string): Promise<void> {
     let repoPath: string | null = null;
 
     try {
-      // Step 1: Clone repository
+      // Step 1: Clone repository with authentication
       const repo = completion.project.repo;
       if (!repo) {
         throw new Error('Project has no repository configured');
       }
 
-      // Construct full GitHub URL
+      // Get authenticated clone URL using GitHub App token
+      const { getAuthenticatedCloneUrl } = await import('../lib/github');
+      const authenticatedUrl = await getAuthenticatedCloneUrl(repo);
+
+      // Preserve original repo URL for PR creation
       const repoUrl = repo.startsWith('http')
         ? repo
         : `https://github.com/${repo}.git`;
 
       console.log(`[Execution Worker] Cloning repository: ${repoUrl}`);
-      repoPath = await cloneRepo(repoUrl);
+      repoPath = await cloneRepo(authenticatedUrl);
 
       // Step 2: Create branch
       const branchName = `ai-improvement-${completionId.slice(0, 8)}`;

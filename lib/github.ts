@@ -99,6 +99,43 @@ async function getInstallationId(): Promise<number> {
 }
 
 /**
+ * Get authenticated clone URL for GitHub repository
+ * Uses GitHub App installation token for authentication
+ * @param repoUrl Repository URL (e.g., 'user/repo' or 'https://github.com/user/repo')
+ * @returns Authenticated HTTPS URL for git operations
+ */
+export async function getAuthenticatedCloneUrl(repoUrl: string): Promise<string> {
+  const appIdStr = process.env.GITHUB_APP_ID;
+  const privateKeyPath = process.env.GITHUB_APP_PRIVATE_KEY_PATH;
+
+  if (!appIdStr || !privateKeyPath) {
+    throw new Error('Missing GITHUB_APP_ID or GITHUB_APP_PRIVATE_KEY_PATH in environment');
+  }
+
+  const appId = parseInt(appIdStr, 10);
+  const privateKey = readFileSync(privateKeyPath, 'utf-8');
+
+  // Create GitHub App auth
+  const auth = createAppAuth({
+    appId,
+    privateKey,
+  });
+
+  // Get installation access token
+  const { token } = await auth({
+    type: 'installation',
+    installationId: await getInstallationId(),
+  });
+
+  // Parse repo to get owner/repo
+  const parsed = parseRepoUrl(repoUrl);
+  const { owner, repo } = parsed;
+
+  // Return authenticated URL: https://x-access-token:<token>@github.com/owner/repo.git
+  return `https://x-access-token:${token}@github.com/${owner}/${repo}.git`;
+}
+
+/**
  * Create a pull request
  * @param params Pull request parameters (owner, repo, head, base, title, body)
  * @returns PR number and URL
