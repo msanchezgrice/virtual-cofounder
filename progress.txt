@@ -481,3 +481,89 @@ Starting Phase 4 on 2026-01-06...
 **Files created:**
 - `app/api/slack/events/route.ts` - Slack event webhook
 
+
+### Story vc-040: E2E validation - Slack integration - ✅ COMPLETE
+
+**What worked:**
+- Morning check-in tested successfully on production
+- Priority parsing extracts structured data from natural language messages
+- Data stored correctly in Supabase with 72h expiry
+- Webhook URL verification passed in Slack App settings
+- End-to-end flow validated: Slack message → webhook → parser → database
+
+**Production validation:**
+- User sent test message: "Focus on Warmstart launch and fix TalkingObject bugs"
+- Priority successfully parsed and stored in user_priorities table
+- Verified in Supabase UI - data visible and correctly structured
+- Webhook endpoint: https://virtual-cofounder-f71ct812v-miguel-sanchezgrices-projects.vercel.app/api/slack/events
+
+**Learnings:**
+- `scripts/test-e2e-slack.ts:1-80` - E2E validation script for Slack integration
+- `lib/priority-parser.ts:120` - Fixed Prisma Json type with `as any` cast
+- `scripts/validate-story.ts:216` - Fixed async function return type to Promise<boolean>
+- Production requires WORKSPACE_ID environment variable set on Vercel
+- Each Vercel deployment creates new URL - must update Slack Event Subscriptions URL
+- Vercel deployment protection must be disabled for webhook access
+- PgBouncer prepared statement issues affect local testing, but production works fine
+
+**Type fixes applied:**
+- `lib/priority-parser.ts:120` - Cast ParsedPriority to `as any` for Prisma Json compatibility
+- `scripts/validate-story.ts:216` - Added async keyword and Promise<boolean> return type
+
+**Production environment setup:**
+- SLACK_BOT_TOKEN configured on Vercel
+- SLACK_SIGNING_SECRET configured on Vercel
+- WORKSPACE_ID=00000000-0000-0000-0000-000000000002 configured on Vercel
+- SLACK_CHANNEL_ID configured on Vercel
+- Slack App Event Subscriptions URL updated to production deployment
+
+**Files created:**
+- `scripts/test-e2e-slack.ts` - End-to-end Slack integration test
+- `scripts/verify-phase4.ts` - Phase 4 verification script
+
+**Files modified:**
+- `package.json` - Added test:e2e:slack script
+- `.env.local` - Added Slack credentials and WORKSPACE_ID
+- `prisma/schema.prisma` - Added directUrl for migrations
+
+
+---
+
+## Phase 4: Slack Integration - COMPLETE ✅
+
+**Summary:**
+Phase 4 successfully implemented complete Slack integration with priority parsing and production validation:
+- Morning check-in notifications at 9:00am UTC daily
+- Priority parsing from natural language user messages
+- Event webhook handling Slack callbacks
+- Completion notifications with interactive buttons
+- Database storage with 72h expiry for priorities
+- Full production deployment and testing on Vercel
+
+**Key Achievements:**
+- 7 stories (vc-034 through vc-040) completed and validated in production
+- LLM-based priority parsing using Anthropic Opus
+- Rich Block Kit notifications with interactive buttons
+- Staggered cron jobs (9:00am check-in, 9:05am scans)
+- Weight system (1.0-3.0) for priority accumulation
+- Production-validated end-to-end flow from Slack to database
+- Type safety fixes for Prisma Json and async functions
+
+**Production Validation:**
+- ✅ Morning check-in sends to Slack channel
+- ✅ Event webhook receives and processes user messages
+- ✅ Priority parser extracts structured data from natural language
+- ✅ Data stored correctly in Supabase user_priorities table
+- ✅ 72h expiry configured for automatic cleanup
+- ✅ WORKSPACE_ID properly configured for multi-tenant support
+
+**Technical Highlights:**
+- Vercel Cron for scheduled tasks (check-in, scans)
+- Next.js 14 App Router for webhook endpoints
+- Prisma ORM with Supabase PostgreSQL
+- Anthropic Opus for high-accuracy parsing
+- Slack Block Kit for rich interactive messages
+- Graceful error handling (always return 200 to prevent retries)
+
+**Ready for Phase 5:** Automated Completion Execution
+

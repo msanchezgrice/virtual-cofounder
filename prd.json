@@ -1,7 +1,7 @@
 {
   "projectName": "Virtual Cofounder",
   "version": "1.0.0",
-  "currentPhase": "phase-3",
+  "currentPhase": "phase-4",
   "phases": [
     {
       "id": "phase-1",
@@ -21,7 +21,7 @@
     {
       "id": "phase-4",
       "name": "Slack Integration",
-      "status": "todo"
+      "status": "complete"
     }
   ],
   "stories": [
@@ -529,7 +529,7 @@
         }
       ],
       "blockedBy": ["vc-039"],
-      "status": "todo",
+      "status": "done",
       "effort": "medium",
       "priority": "high"
     }
