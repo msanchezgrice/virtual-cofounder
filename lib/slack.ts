@@ -7,7 +7,7 @@ const slackChannel = process.env.SLACK_CHANNEL || '#cofounder-updates';
 
 let slackClient: WebClient | null = null;
 
-function getSlackClient(): WebClient {
+export function getSlackClient(): WebClient {
   if (!slackClient) {
     if (!slackToken) {
       throw new Error('SLACK_BOT_TOKEN not configured');

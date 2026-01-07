@@ -2,13 +2,31 @@
 import { NextResponse } from 'next/server';
 import { storeUserPriority } from '@/lib/priority-parser';
 import { db } from '@/lib/db';
+import { getSlackClient } from '@/lib/slack';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const contentType = request.headers.get('content-type') || '';
+    let body: any;
+
+    // Slack sends button clicks as form-urlencoded with a 'payload' field
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.text();
+      const params = new URLSearchParams(formData);
+      const payloadStr = params.get('payload');
+      if (payloadStr) {
+        body = JSON.parse(payloadStr);
+      } else {
+        console.error('[Slack Events] No payload in form data');
+        return NextResponse.json({ ok: true });
+      }
+    } else {
+      // Regular JSON payload (events)
+      body = await request.json();
+    }
 
     // Handle Slack URL verification challenge
     if (body.type === 'url_verification') {
@@ -87,6 +105,8 @@ async function handleButtonClick(event: any): Promise<void> {
   }
 
   const actions = event.actions || [];
+  const userId = event.user?.id;
+  const channelId = event.channel?.id;
 
   for (const action of actions) {
     const actionId = action.action_id;
@@ -105,15 +125,15 @@ async function handleButtonClick(event: any): Promise<void> {
     // Handle different button actions
     switch (actionId) {
       case 'approve_completion':
-        await approveCompletion(completionId);
+        await approveCompletion(completionId, userId, channelId);
         break;
 
       case 'view_completion':
-        await viewCompletion(completionId);
+        await viewCompletion(completionId, userId, channelId);
         break;
 
       case 'snooze_completion':
-        await snoozeCompletion(completionId);
+        await snoozeCompletion(completionId, userId, channelId);
         break;
 
       default:
@@ -125,17 +145,28 @@ async function handleButtonClick(event: any): Promise<void> {
 /**
  * Approve a completion (mark for execution)
  */
-async function approveCompletion(completionId: string): Promise<void> {
+async function approveCompletion(completionId: string, userId?: string, channelId?: string): Promise<void> {
   try {
-    await db.completion.update({
+    const completion = await db.completion.update({
       where: { id: completionId },
       data: {
         userApproved: true,
         status: 'in_progress',
       },
+      include: { project: true },
     });
 
     console.log(`[Slack Events] Completion ${completionId} approved`);
+
+    // Send confirmation to user
+    if (userId && channelId) {
+      const client = getSlackClient();
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: `✅ Approved: "${completion.title}" for ${completion.project.name}. This will be executed in the next run.`,
+      });
+    }
   } catch (error) {
     console.error('[Slack Events] Error approving completion:', error);
   }
@@ -144,15 +175,31 @@ async function approveCompletion(completionId: string): Promise<void> {
 /**
  * View completion details (no-op for now, could open modal)
  */
-async function viewCompletion(completionId: string): Promise<void> {
+async function viewCompletion(completionId: string, userId?: string, channelId?: string): Promise<void> {
   console.log(`[Slack Events] View completion: ${completionId}`);
-  // TODO: Could open a Slack modal with full details
+
+  if (userId && channelId) {
+    const client = getSlackClient();
+    await client.chat.postEphemeral({
+      channel: channelId,
+      user: userId,
+      text: `📋 View details for completion ID: ${completionId}\n(Full details view coming in Phase 5)`,
+    });
+  }
 }
 
 /**
  * Snooze a completion (no-op for now, could update status)
  */
-async function snoozeCompletion(completionId: string): Promise<void> {
+async function snoozeCompletion(completionId: string, userId?: string, channelId?: string): Promise<void> {
   console.log(`[Slack Events] Snooze completion: ${completionId}`);
-  // TODO: Could add a snooze timestamp or status
+
+  if (userId && channelId) {
+    const client = getSlackClient();
+    await client.chat.postEphemeral({
+      channel: channelId,
+      user: userId,
+      text: `⏰ Snoozed completion ID: ${completionId} for 24 hours.\n(Snooze functionality coming in Phase 5)`,
+    });
+  }
 }
