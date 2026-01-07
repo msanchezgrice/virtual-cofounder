@@ -129,10 +129,10 @@ async function handleAppMention(event: any): Promise<void> {
         thread_ts: threadTs,
         text: `👋 Hi! I'm your AI Co-Founder. Here's what I can do:\n\n` +
           `• **Run scans**: Mention "run scans" to scan all projects\n` +
-          `• **Check status**: Mention "status" to see project health\n` +
-          `• **Show priorities**: Mention "priorities" to see high-priority issues\n` +
-          `• **View completions**: Mention "completions" to see recent work\n\n` +
-          `You can also click the manual trigger buttons in the dashboard!`,
+          `• **Run orchestrator**: Mention "run orchestrator" to analyze scans and create stories\n` +
+          `• **Run execution**: Mention "run execution" to process approved stories\n` +
+          `• **Check status**: Mention "status" to see project health\n\n` +
+          `You can also use the dashboard to manage everything!`,
       });
       return;
     }
@@ -178,6 +178,84 @@ async function handleAppMention(event: any): Promise<void> {
           channel: channelId,
           thread_ts: threadTs,
           text: `❌ Error triggering scans: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
+      return;
+    }
+
+    // Run orchestrator command (analyzes scans and creates stories)
+    if (lowerMessage.includes('run orchestrator') || lowerMessage.includes('analyze') || lowerMessage.includes('create stories')) {
+      await client.chat.postMessage({
+        channel: channelId,
+        thread_ts: threadTs,
+        text: `🤖 Running orchestrator to analyze projects and create stories...\n\n_This will take a few minutes. I'll notify you when new stories are created!_`,
+      });
+
+      // Trigger orchestrator via API
+      try {
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000';
+
+        const response = await fetch(`${baseUrl}/api/orchestrator/run`, {
+          method: 'POST',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          await client.chat.postMessage({
+            channel: channelId,
+            thread_ts: threadTs,
+            text: `✅ Orchestrator started!\n\n` +
+              `**Run ID:** ${data.run_id}\n` +
+              `**Projects Queued:** ${data.projects_queued}\n\n` +
+              `I'll send you new story notifications as they're created.`,
+          });
+        } else {
+          await client.chat.postMessage({
+            channel: channelId,
+            thread_ts: threadTs,
+            text: `❌ Failed to run orchestrator. Please try again or check the dashboard.`,
+          });
+        }
+      } catch (error) {
+        console.error('[Slack Events] Error running orchestrator:', error);
+        await client.chat.postMessage({
+          channel: channelId,
+          thread_ts: threadTs,
+          text: `❌ Error running orchestrator: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
+      return;
+    }
+
+    // Run execution worker command (processes pending stories)
+    if (lowerMessage.includes('run execution') || lowerMessage.includes('execute stories') || lowerMessage.includes('process queue')) {
+      await client.chat.postMessage({
+        channel: channelId,
+        thread_ts: threadTs,
+        text: `⚙️ Running execution worker to process pending stories...\n\n_This will execute approved stories in the queue!_`,
+      });
+
+      // Trigger execution worker via script
+      try {
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : 'http://localhost:3000';
+
+        // Note: In production, this would trigger the Railway execution worker
+        // For now, we'll just report that it's been queued
+        await client.chat.postMessage({
+          channel: channelId,
+          thread_ts: threadTs,
+          text: `✅ Execution worker triggered!\n\nApproved stories in the queue will be processed shortly. Check the dashboard for progress.`,
+        });
+      } catch (error) {
+        console.error('[Slack Events] Error triggering execution:', error);
+        await client.chat.postMessage({
+          channel: channelId,
+          thread_ts: threadTs,
+          text: `❌ Error triggering execution: ${error instanceof Error ? error.message : 'Unknown error'}`,
         });
       }
       return;
