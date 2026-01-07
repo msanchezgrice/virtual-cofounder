@@ -26,6 +26,9 @@ interface CreateTaskOptions {
   title: string;
   description: string;
   priority?: number; // 0 (no priority), 1 (urgent), 2 (high), 3 (medium), 4 (low)
+  labelIds?: string[]; // Linear label IDs for filtering
+  projectId?: string; // Linear project ID
+  stateId?: string; // Linear workflow state ID for kanban status
 }
 
 /**
@@ -93,13 +96,16 @@ export async function getLinearTeams(): Promise<LinearTeam[]> {
  */
 export async function createLinearTask(options: CreateTaskOptions): Promise<LinearTask> {
   const query = `
-    mutation CreateIssue($teamId: String!, $title: String!, $description: String!, $priority: Int) {
+    mutation CreateIssue($teamId: String!, $title: String!, $description: String!, $priority: Int, $labelIds: [String!], $projectId: String, $stateId: String) {
       issueCreate(
         input: {
           teamId: $teamId
           title: $title
           description: $description
           priority: $priority
+          labelIds: $labelIds
+          projectId: $projectId
+          stateId: $stateId
         }
       ) {
         success
@@ -122,6 +128,9 @@ export async function createLinearTask(options: CreateTaskOptions): Promise<Line
     title: options.title,
     description: options.description,
     priority: options.priority || 0,
+    labelIds: options.labelIds || [],
+    projectId: options.projectId || null,
+    stateId: options.stateId || null,
   };
 
   const data = await executeQuery<{
@@ -230,6 +239,15 @@ export async function getTeamWorkflowStates(teamId: string) {
 }
 
 /**
+ * Get the Backlog state ID for a team (for new tasks)
+ */
+export async function getBacklogStateId(teamId: string): Promise<string | undefined> {
+  const states = await getTeamWorkflowStates(teamId);
+  const backlogState = states.find((s) => s.type === 'backlog' || s.name.toLowerCase() === 'backlog');
+  return backlogState?.id;
+}
+
+/**
  * Map completion priority to Linear priority
  */
 export function mapPriorityToLinear(priority: string): number {
@@ -259,4 +277,160 @@ export async function getDefaultTeamId(): Promise<string> {
   }
 
   return defaultTeam.id;
+}
+
+/**
+ * Get all labels for a team
+ */
+export async function getTeamLabels(teamId: string): Promise<Array<{ id: string; name: string }>> {
+  const query = `
+    query GetTeamLabels($teamId: String!) {
+      team(id: $teamId) {
+        labels {
+          nodes {
+            id
+            name
+          }
+        }
+      }
+    }
+  `;
+
+  const data = await executeQuery<{
+    team: {
+      labels: {
+        nodes: Array<{ id: string; name: string }>;
+      };
+    };
+  }>(query, { teamId });
+
+  return data.team.labels.nodes;
+}
+
+/**
+ * Create a label for a team
+ */
+export async function createLabel(teamId: string, name: string): Promise<{ id: string; name: string }> {
+  const query = `
+    mutation CreateLabel($teamId: String!, $name: String!) {
+      issueLabelCreate(
+        input: {
+          teamId: $teamId
+          name: $name
+        }
+      ) {
+        success
+        issueLabel {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  const data = await executeQuery<{
+    issueLabelCreate: {
+      success: boolean;
+      issueLabel: { id: string; name: string };
+    };
+  }>(query, { teamId, name });
+
+  if (!data.issueLabelCreate.success) {
+    throw new Error(`Failed to create label: ${name}`);
+  }
+
+  return data.issueLabelCreate.issueLabel;
+}
+
+/**
+ * Get or create a label by name
+ */
+export async function getOrCreateLabel(teamId: string, name: string): Promise<string> {
+  const existingLabels = await getTeamLabels(teamId);
+  const existing = existingLabels.find((l) => l.name.toLowerCase() === name.toLowerCase());
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const newLabel = await createLabel(teamId, name);
+  return newLabel.id;
+}
+
+/**
+ * Get all projects for a team
+ */
+export async function getTeamProjects(teamId: string): Promise<Array<{ id: string; name: string }>> {
+  const query = `
+    query GetTeamProjects($teamId: String!) {
+      team(id: $teamId) {
+        projects {
+          nodes {
+            id
+            name
+          }
+        }
+      }
+    }
+  `;
+
+  const data = await executeQuery<{
+    team: {
+      projects: {
+        nodes: Array<{ id: string; name: string }>;
+      };
+    };
+  }>(query, { teamId });
+
+  return data.team.projects.nodes;
+}
+
+/**
+ * Create a project for a team
+ */
+export async function createProject(teamId: string, name: string): Promise<{ id: string; name: string }> {
+  const query = `
+    mutation CreateProject($teamId: String!, $name: String!) {
+      projectCreate(
+        input: {
+          teamId: $teamId
+          name: $name
+        }
+      ) {
+        success
+        project {
+          id
+          name
+        }
+      }
+    }
+  `;
+
+  const data = await executeQuery<{
+    projectCreate: {
+      success: boolean;
+      project: { id: string; name: string };
+    };
+  }>(query, { teamId, name });
+
+  if (!data.projectCreate.success) {
+    throw new Error(`Failed to create project: ${name}`);
+  }
+
+  return data.projectCreate.project;
+}
+
+/**
+ * Get or create a Linear project by name
+ */
+export async function getOrCreateProject(teamId: string, name: string): Promise<string> {
+  const existingProjects = await getTeamProjects(teamId);
+  const existing = existingProjects.find((p) => p.name.toLowerCase() === name.toLowerCase());
+
+  if (existing) {
+    return existing.id;
+  }
+
+  const newProject = await createProject(teamId, name);
+  return newProject.id;
 }

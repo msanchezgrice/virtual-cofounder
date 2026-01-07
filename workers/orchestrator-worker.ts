@@ -8,7 +8,7 @@ import Redis from 'ioredis';
 import { PrismaClient } from '@prisma/client';
 import { runOrchestrator, type ScanContext } from '../lib/orchestrator';
 import { sendCompletionNotification } from '../lib/slack';
-import { createLinearTask, getDefaultTeamId, mapPriorityToLinear, addLinearComment } from '../lib/linear';
+import { createLinearTask, getDefaultTeamId, mapPriorityToLinear, addLinearComment, getOrCreateProject, getOrCreateLabel, getBacklogStateId } from '../lib/linear';
 
 // Create fresh Prisma client with direct connection (not pooler)
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');
@@ -91,37 +91,49 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
         },
       });
 
-      // Create Linear task
+      // Create Linear task with labels, project, and workflow state
       try {
         const teamId = await getDefaultTeamId();
         const linearPriority = mapPriorityToLinear(story.priority);
 
+        // Get or create Linear project for this dashboard project
+        const linearProjectId = project?.name
+          ? await getOrCreateProject(teamId, project.name)
+          : undefined;
+
+        // Get backlog state for new tasks
+        const backlogStateId = await getBacklogStateId(teamId);
+
+        // Create labels for filtering
+        const labelIds: string[] = [];
+
+        // Priority label
+        const priorityLabel = await getOrCreateLabel(teamId, `priority:${story.priority.toLowerCase()}`);
+        labelIds.push(priorityLabel);
+
+        // Policy label
+        if (story.policy) {
+          const policyLabel = await getOrCreateLabel(teamId, `policy:${story.policy.toLowerCase()}`);
+          labelIds.push(policyLabel);
+        }
+
         const linearTask = await createLinearTask({
           teamId,
           title: story.title,
-          description: `## Project: ${project?.name || 'Unknown'}
-**Domain:** ${project?.domain || 'N/A'}
-**Status:** pending
-**Priority:** ${story.priority}
-**Policy:** ${story.policy}
-
----
-
-## Rationale
+          description: `## Rationale
 ${story.rationale}
 
 ---
 
-## Tags
-${project?.name ? `project:${project.name.toLowerCase().replace(/\s+/g, '-')}` : ''}
-priority:${story.priority.toLowerCase()}
-status:pending
-
----
+**Domain:** ${project?.domain || 'N/A'}
+**Policy:** ${story.policy}
 
 _Run ID: ${runId}_
 _Story ID: ${dbStory.id}_`,
           priority: linearPriority,
+          labelIds,
+          projectId: linearProjectId,
+          stateId: backlogStateId,
         });
 
         // Update story with Linear task ID
