@@ -39,6 +39,18 @@ export async function createBranch(repoPath: string, branchName: string): Promis
 }
 
 /**
+ * Configure git user identity for commits
+ * @param repoPath Path to git repository
+ */
+async function configureGitIdentity(repoPath: string): Promise<void> {
+  const git: SimpleGit = simpleGit(repoPath);
+
+  // Set git user for commits (required for Railway container)
+  await git.addConfig('user.name', 'Virtual Cofounder', false, 'local');
+  await git.addConfig('user.email', 'noreply@virtualcofounder.app', false, 'local');
+}
+
+/**
  * Commit all changes in working directory
  * @param repoPath Path to git repository
  * @param message Commit message
@@ -52,6 +64,9 @@ export async function commitChanges(
   console.log(`[Git] Committing changes in ${repoPath}`);
 
   const git: SimpleGit = simpleGit(repoPath);
+
+  // Configure git identity (required for Railway container)
+  await configureGitIdentity(repoPath);
 
   // Add files (all if not specified)
   if (files && files.length > 0) {
