@@ -19,6 +19,7 @@
     "test:scanner:analytics": "tsx scripts/test-scanner-analytics.ts",
     "worker:scan": "tsx workers/scan-worker.ts",
     "worker:execute": "tsx workers/execution-worker.ts",
+    "worker:orchestrator": "tsx workers/orchestrator-worker.ts",
     "test:e2e": "playwright test",
     "test:e2e:scans": "tsx scripts/test-e2e-scans.ts",
     "test:e2e:orchestrator": "tsx scripts/test-e2e-orchestrator.ts",
