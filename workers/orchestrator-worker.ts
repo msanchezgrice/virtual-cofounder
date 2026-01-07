@@ -150,6 +150,23 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
 
     console.log(`[Orchestrator Worker] Project ${projectId} complete: ${result.findings.length} findings, ${result.stories.length} stories saved`);
 
+    // Update orchestrator run with aggregated counts
+    const findingsCount = await prisma.agentFinding.count({
+      where: { runId },
+    });
+    const storiesCount = await prisma.story.count({
+      where: { runId },
+    });
+
+    await prisma.orchestratorRun.update({
+      where: { runId },
+      data: {
+        findingsCount,
+        storiesCount,
+        conversation: result.conversation,
+      },
+    });
+
   } catch (error) {
     console.error(`[Orchestrator Worker] Error processing project ${projectId}:`, error);
     throw error; // Let BullMQ handle retries
@@ -167,8 +184,36 @@ const worker = new Worker('orchestrator', processProject, {
 });
 
 // Event handlers
-worker.on('completed', (job) => {
+worker.on('completed', async (job) => {
   console.log(`[Orchestrator Worker] Job ${job.id} completed successfully`);
+
+  if (job.data.runId) {
+    try {
+      // Check if there are any more jobs for this run
+      const queue = await import('bullmq').then(m => new m.Queue('orchestrator', { connection }));
+      const waitingJobs = await queue.getWaiting();
+      const activeJobs = await queue.getActive();
+
+      // Filter jobs for this specific runId
+      const remainingJobsForRun = [...waitingJobs, ...activeJobs].filter(
+        j => j.data.runId === job.data.runId
+      );
+
+      if (remainingJobsForRun.length === 0) {
+        // This was the last job for this run - mark it as completed
+        await prisma.orchestratorRun.update({
+          where: { runId: job.data.runId },
+          data: {
+            status: 'completed',
+            completedAt: new Date(),
+          },
+        });
+        console.log(`[Orchestrator Worker] Run ${job.data.runId} marked as completed`);
+      }
+    } catch (error) {
+      console.error('[Orchestrator Worker] Error updating run status:', error);
+    }
+  }
 });
 
 worker.on('failed', (job, err) => {

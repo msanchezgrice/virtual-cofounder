@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-type TabMode = 'dashboard' | 'queue' | 'stories' | 'agents' | 'history';
+type TabMode = 'dashboard' | 'queue' | 'history';
 type ViewMode = 'overview' | 'portfolio';
 
 interface ScanData {
@@ -205,26 +205,6 @@ export default function DashboardPage() {
           Execution Queue
         </button>
         <button
-          onClick={() => setTab('stories')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            tab === 'stories'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
-        >
-          Stories
-        </button>
-        <button
-          onClick={() => setTab('agents')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            tab === 'agents'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
-        >
-          Agents
-        </button>
-        <button
           onClick={() => setTab('history')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             tab === 'history'
@@ -313,10 +293,6 @@ export default function DashboardPage() {
         </>
       ) : tab === 'queue' ? (
         <ExecutionQueueView />
-      ) : tab === 'stories' ? (
-        <StoriesView />
-      ) : tab === 'agents' ? (
-        <AgentsView />
       ) : (
         <HistoryView />
       )}
@@ -952,16 +928,16 @@ function PortfolioView({ scanData }: { scanData: ScanData }) {
         </div>
       </div>
 
-      {/* Project Grid */}
-      <div className="grid grid-cols-4 gap-4">
-        {sortedProjects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
-
-      {sortedProjects.length === 0 && (
+      {/* Project Rows */}
+      {sortedProjects.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-600">No projects match the selected filter</div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sortedProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} />
+          ))}
         </div>
       )}
     </div>
@@ -1045,6 +1021,15 @@ function ProjectCard({ project }: { project: ProjectWithScans }) {
     return '✅';
   };
 
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg p-4 shadow hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between mb-2">
@@ -1058,8 +1043,11 @@ function ProjectCard({ project }: { project: ProjectWithScans }) {
       <div className={`text-2xl font-bold ${getHealthColor(project.healthScore)} mb-1`}>
         {project.healthScore}/100
       </div>
-      <div className="text-sm text-gray-600 mb-3">
+      <div className="text-sm text-gray-600 mb-2">
         {project.issues.length} issue{project.issues.length !== 1 ? 's' : ''}
+      </div>
+      <div className="text-xs text-gray-500 mb-3">
+        Scanned: {formatDate(project.lastScanTime)}
       </div>
       <div className="flex gap-2">
         <Link
@@ -1078,6 +1066,110 @@ function ProjectCard({ project }: { project: ProjectWithScans }) {
             View Site
           </a>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ProjectRow({ project }: { project: ProjectWithScans }) {
+  const getHealthColor = (health: number) => {
+    if (health < 50) return 'text-critical-red';
+    if (health < 70) return 'text-high-yellow';
+    if (health < 85) return 'text-brand-blue';
+    return 'text-healthy-green';
+  };
+
+  const getHealthBg = (health: number) => {
+    if (health < 50) return 'bg-red-50';
+    if (health < 70) return 'bg-yellow-50';
+    if (health < 85) return 'bg-blue-50';
+    return 'bg-green-50';
+  };
+
+  const getHealthEmoji = (health: number) => {
+    if (health < 50) return '🔴';
+    if (health < 70) return '🟡';
+    if (health < 85) return '🔵';
+    return '✅';
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className={`bg-white rounded-lg p-4 shadow hover:shadow-md transition-shadow border-l-4 ${
+      project.severity === 'critical' ? 'border-l-critical-red' :
+      project.severity === 'high' ? 'border-l-high-yellow' :
+      project.severity === 'medium' ? 'border-l-brand-blue' :
+      'border-l-healthy-green'
+    }`}>
+      <div className="flex items-center justify-between">
+        {/* Project Name & Health */}
+        <div className="flex items-center gap-4 flex-1">
+          <span className="text-2xl">{getHealthEmoji(project.healthScore)}</span>
+          <div>
+            <Link
+              href={`/projects/${project.id}`}
+              className="font-semibold text-lg hover:text-brand-blue transition-colors"
+            >
+              {project.name}
+            </Link>
+            <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+              <span className={`font-medium ${getHealthColor(project.healthScore)}`}>
+                Health: {project.healthScore}/100
+              </span>
+              <span>•</span>
+              <span>{project.issues.length} issue{project.issues.length !== 1 ? 's' : ''}</span>
+              {project.domain && (
+                <>
+                  <span>•</span>
+                  <a
+                    href={`https://${project.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-blue hover:underline"
+                  >
+                    {project.domain}
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Last Scanned & Stories */}
+        <div className="flex items-center gap-6">
+          <div className="text-right">
+            <div className="text-xs text-gray-500">Last Scanned</div>
+            <div className="text-sm font-medium text-gray-700">
+              {formatDate(project.lastScanTime)}
+            </div>
+          </div>
+
+          {project.stories && project.stories.length > 0 && (
+            <div className="text-right">
+              <div className="text-xs text-gray-500">Recent Stories</div>
+              <div className="text-sm font-medium text-gray-700">
+                {project.stories.length} active
+              </div>
+            </div>
+          )}
+
+          <Link
+            href={`/projects/${project.id}`}
+            className="px-4 py-2 text-sm bg-brand-blue text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            View Details
+          </Link>
+        </div>
       </div>
     </div>
   );
