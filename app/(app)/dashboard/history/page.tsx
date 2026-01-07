@@ -64,6 +64,12 @@ export default function HistoryPage() {
     });
   };
 
+  const getSlackPermalink = (channelId: string, messageTs: string) => {
+    // Convert timestamp to Slack permalink format (remove decimal point)
+    const ts = messageTs.replace('.', '');
+    return `https://clipcade.slack.com/archives/${channelId}/p${ts}`;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
@@ -145,6 +151,14 @@ export default function HistoryPage() {
                 <p className="text-gray-700 text-sm mb-2">{message.text}</p>
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                   <span>🕐 {formatDate(message.createdAt)}</span>
+                  <a
+                    href={getSlackPermalink(message.channelId, message.messageTs)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-blue hover:text-blue-700 font-medium"
+                  >
+                    💬 View in Slack
+                  </a>
                 </div>
               </div>
             </div>

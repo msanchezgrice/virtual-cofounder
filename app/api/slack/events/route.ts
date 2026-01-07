@@ -46,7 +46,13 @@ export async function POST(request: Request) {
       console.log(`[Slack Events] Received event: ${event.type}`);
 
       // Handle message events (user replies to check-in)
-      if (event.type === 'message' && !event.bot_id) {
+      // Filter out bot messages, message edits, and other subtypes
+      if (
+        event.type === 'message' &&
+        !event.bot_id &&
+        !event.subtype &&
+        event.text
+      ) {
         await handleUserMessage(event);
       }
 
@@ -97,7 +103,27 @@ async function handleUserMessage(event: any): Promise<void> {
   const userId = event.user;
   const threadTs = event.thread_ts || event.ts;
 
-  console.log(`[Slack Events] User message: "${message}"`);
+  // Ignore if no userId (shouldn't happen but safety check)
+  if (!userId) {
+    console.log('[Slack Events] Message has no userId, skipping');
+    return;
+  }
+
+  console.log(`[Slack Events] User message from ${userId}: "${message}"`);
+
+  // Check for duplicate - if this message already exists, skip processing
+  const existing = await db.slackMessage.findFirst({
+    where: {
+      messageTs,
+      channelId,
+      userId,
+    },
+  });
+
+  if (existing) {
+    console.log('[Slack Events] Duplicate message detected, skipping');
+    return;
+  }
 
   // 1. Store user message in database
   try {
@@ -116,6 +142,8 @@ async function handleUserMessage(event: any): Promise<void> {
     console.log('[Slack Events] User message saved to database');
   } catch (error) {
     console.error('[Slack Events] Error saving user message:', error);
+    // If save fails due to duplicate key, it's a retry - just return
+    return;
   }
 
   // 2. Fetch context for conversational AI
