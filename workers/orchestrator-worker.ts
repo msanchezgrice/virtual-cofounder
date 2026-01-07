@@ -99,7 +99,28 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
         const linearTask = await createLinearTask({
           teamId,
           title: story.title,
-          description: `**Project:** ${project?.name || 'Unknown'}\n\n**Rationale:**\n${story.rationale}\n\n**Priority:** ${story.priority}\n**Policy:** ${story.policy}\n\n**Run ID:** ${runId}`,
+          description: `## Project: ${project?.name || 'Unknown'}
+**Domain:** ${project?.domain || 'N/A'}
+**Status:** ${story.status}
+**Priority:** ${story.priority}
+**Policy:** ${story.policy}
+
+---
+
+## Rationale
+${story.rationale}
+
+---
+
+## Tags
+${project?.name ? `project:${project.name.toLowerCase().replace(/\s+/g, '-')}` : ''}
+priority:${story.priority.toLowerCase()}
+status:${story.status}
+
+---
+
+_Run ID: ${runId}_
+_Story ID: ${dbStory.id}_`,
           priority: linearPriority,
         });
 

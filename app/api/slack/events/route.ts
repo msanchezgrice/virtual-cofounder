@@ -3,9 +3,14 @@ import { NextResponse } from 'next/server';
 import { storeUserPriority } from '@/lib/priority-parser';
 import { db } from '@/lib/db';
 import { getSlackClient } from '@/lib/slack';
+import Anthropic from '@anthropic-ai/sdk';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 export async function POST(request: Request) {
   try {
@@ -76,8 +81,8 @@ export async function POST(request: Request) {
 }
 
 /**
- * Handle user messages (direct messages or channel messages)
- * Supports both priority parsing and command handling
+ * Handle user messages with conversational AI
+ * ALL messages get a conversational response powered by Claude
  */
 async function handleUserMessage(event: any): Promise<void> {
   const workspaceId = process.env.WORKSPACE_ID;
@@ -90,30 +95,11 @@ async function handleUserMessage(event: any): Promise<void> {
   const messageTs = event.ts;
   const channelId = event.channel;
   const userId = event.user;
-  const threadTs = event.thread_ts;
-  const lowerMessage = message.toLowerCase();
+  const threadTs = event.thread_ts || event.ts;
 
   console.log(`[Slack Events] User message: "${message}"`);
 
-  // Check if this is a command (contains keywords)
-  const isCommand = lowerMessage.includes('help') ||
-    lowerMessage.includes('run') ||
-    lowerMessage.includes('scan') ||
-    lowerMessage.includes('orchestrator') ||
-    lowerMessage.includes('execution') ||
-    lowerMessage.includes('status');
-
-  // Determine command type if it's a command
-  let commandType: string | undefined;
-  if (isCommand) {
-    if (lowerMessage.includes('help')) commandType = 'help';
-    else if (lowerMessage.includes('run scan') || lowerMessage.includes('scan')) commandType = 'run_scans';
-    else if (lowerMessage.includes('run orchestrator') || lowerMessage.includes('orchestrator')) commandType = 'run_orchestrator';
-    else if (lowerMessage.includes('run execution') || lowerMessage.includes('execution')) commandType = 'run_execution';
-    else if (lowerMessage.includes('status')) commandType = 'status';
-  }
-
-  // Store ALL messages in database
+  // 1. Store user message in database
   try {
     await db.slackMessage.create({
       data: {
@@ -123,31 +109,177 @@ async function handleUserMessage(event: any): Promise<void> {
         text: message,
         messageTs,
         threadTs,
-        isCommand,
-        commandType,
+        isCommand: false,
+        commandType: null,
       },
     });
-    console.log('[Slack Events] Message logged to database');
+    console.log('[Slack Events] User message saved to database');
   } catch (error) {
-    console.error('[Slack Events] Error logging message:', error);
+    console.error('[Slack Events] Error saving user message:', error);
   }
 
-  if (isCommand) {
-    // Handle commands just like app mentions
-    // Reuse the app mention handler logic
-    await handleAppMention({
-      ...event,
-      thread_ts: event.ts, // Use message timestamp as thread
+  // 2. Fetch context for conversational AI
+  try {
+    const context = await fetchConversationContext(workspaceId);
+
+    // 3. Generate AI response using Claude
+    const aiResponse = await generateConversationalResponse(message, context);
+
+    // 4. Send response to Slack
+    const client = getSlackClient();
+    const response = await client.chat.postMessage({
+      channel: channelId,
+      thread_ts: threadTs,
+      text: aiResponse,
     });
-  } else {
-    // Not a command - treat as priority input
+
+    // 5. Store bot reply in database
+    if (response.ok && response.ts) {
+      await db.slackMessage.create({
+        data: {
+          workspaceId,
+          userId: 'bot', // Mark as bot message
+          channelId,
+          text: aiResponse,
+          messageTs: response.ts,
+          threadTs,
+          isCommand: false,
+          commandType: null,
+        },
+      });
+      console.log('[Slack Events] Bot response saved to database');
+    }
+  } catch (error) {
+    console.error('[Slack Events] Error generating AI response:', error);
+
+    // Fallback error message
     try {
-      await storeUserPriority(workspaceId, message, messageTs);
-      console.log('[Slack Events] User priority stored successfully');
-    } catch (error) {
-      console.error('[Slack Events] Error storing priority:', error);
+      const client = getSlackClient();
+      await client.chat.postMessage({
+        channel: channelId,
+        thread_ts: threadTs,
+        text: `Sorry, I encountered an error processing your message. Please try again!`,
+      });
+    } catch (slackError) {
+      console.error('[Slack Events] Error sending error message:', slackError);
     }
   }
+}
+
+/**
+ * Fetch context for conversational AI responses
+ */
+async function fetchConversationContext(workspaceId: string) {
+  // Fetch recent scans
+  const recentScans = await db.scan.findMany({
+    where: {
+      project: { workspaceId },
+    },
+    include: {
+      project: true,
+    },
+    orderBy: { scannedAt: 'desc' },
+    take: 5,
+  });
+
+  // Fetch recent orchestrator runs
+  const recentRuns = await db.orchestratorRun.findMany({
+    where: { workspaceId },
+    orderBy: { startedAt: 'desc' },
+    take: 3,
+  });
+
+  // Fetch recent Slack messages (conversation history)
+  const recentMessages = await db.slackMessage.findMany({
+    where: { workspaceId },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  });
+
+  // Fetch active projects summary
+  const projects = await db.project.findMany({
+    where: { workspaceId },
+    select: {
+      id: true,
+      name: true,
+      domain: true,
+      healthScore: true,
+      status: true,
+    },
+  });
+
+  // Fetch pending stories
+  const pendingStories = await db.story.findMany({
+    where: {
+      project: { workspaceId },
+      status: { in: ['pending', 'in_progress'] },
+    },
+    include: {
+      project: {
+        select: { name: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+  });
+
+  return {
+    projects,
+    recentScans,
+    recentRuns,
+    recentMessages,
+    pendingStories,
+  };
+}
+
+/**
+ * Generate conversational AI response using Claude
+ */
+async function generateConversationalResponse(
+  userMessage: string,
+  context: any
+): Promise<string> {
+  const systemPrompt = `You are an AI Co-Founder assistant helping manage a portfolio of web projects. You have access to real-time data about projects, scans, orchestrator runs, and pending stories.
+
+Your role is to:
+- Answer questions about project health, scans, and stories
+- Help the user understand what's happening across their portfolio
+- Provide insights and recommendations
+- Be conversational, friendly, and helpful
+- Keep responses concise and actionable
+
+Current portfolio status:
+- **Active Projects**: ${context.projects.filter((p: any) => p.status.includes('ACTIVE')).length} projects
+- **Recent Scans**: ${context.recentScans.length} scans completed recently
+- **Recent Runs**: ${context.recentRuns.length} orchestrator runs
+- **Pending Stories**: ${context.pendingStories.length} stories in queue
+
+Available projects:
+${context.projects.map((p: any) => `- ${p.name} (${p.domain}): Health ${p.healthScore}/100`).join('\n')}
+
+Recent orchestrator activity:
+${context.recentRuns.map((r: any) => `- Run ${r.runId.substring(0, 8)}: ${r.findingsCount} findings, ${r.storiesCount} stories (${r.status})`).join('\n')}
+
+Pending stories:
+${context.pendingStories.map((s: any) => `- ${s.title} (${s.project.name}) - ${s.priority} priority`).join('\n')}
+
+Recent conversation:
+${context.recentMessages.slice(0, 5).reverse().map((m: any) => `${m.userId === 'bot' ? 'You' : 'User'}: ${m.text}`).join('\n')}`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1024,
+    system: systemPrompt,
+    messages: [
+      {
+        role: 'user',
+        content: userMessage,
+      },
+    ],
+  });
+
+  const textContent = response.content.find((block) => block.type === 'text');
+  return textContent && 'text' in textContent ? textContent.text : 'Sorry, I could not generate a response.';
 }
 
 /**

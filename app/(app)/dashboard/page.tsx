@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-type TabMode = 'dashboard' | 'queue' | 'history';
 type ViewMode = 'overview' | 'portfolio';
 
 interface ScanData {
@@ -129,7 +128,6 @@ const AGENT_INFO = {
 };
 
 export default function DashboardPage() {
-  const [tab, setTab] = useState<TabMode>('dashboard');
   const [view, setView] = useState<ViewMode>('overview');
   const [scanData, setScanData] = useState<ScanData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,119 +180,74 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6">
+      {/* Manual Trigger Buttons */}
+      <div className="flex gap-2 mb-6 justify-end">
         <button
-          onClick={() => setTab('dashboard')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            tab === 'dashboard'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
+          onClick={() => handleTrigger('/api/scans/trigger', 'Scans')}
+          disabled={triggering !== null}
+          className="px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Dashboard
+          {triggering === 'Scans' ? '⏳ Running...' : '🔄 Run Scans'}
         </button>
         <button
-          onClick={() => setTab('queue')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            tab === 'queue'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
+          onClick={() => handleTrigger('/api/orchestrator/run', 'Orchestrator')}
+          disabled={triggering !== null}
+          className="px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Execution Queue
+          {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
         </button>
         <button
-          onClick={() => setTab('history')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            tab === 'history'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
+          onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
+          disabled={triggering !== null}
+          className="px-4 py-2 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          History
+          {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
         </button>
-
-        {/* Manual Trigger Buttons - only show on dashboard tab */}
-        {tab === 'dashboard' && (
-          <div className="ml-auto flex gap-2">
-            <button
-              onClick={() => handleTrigger('/api/scans/trigger', 'Scans')}
-              disabled={triggering !== null}
-              className="px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {triggering === 'Scans' ? '⏳ Running...' : '🔄 Run Scans'}
-            </button>
-            <button
-              onClick={() => handleTrigger('/api/orchestrator/run', 'Orchestrator')}
-              disabled={triggering !== null}
-              className="px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
-            </button>
-            <button
-              onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
-              disabled={triggering !== null}
-              className="px-4 py-2 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
-            </button>
-            <button
-              onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
-              disabled={triggering !== null}
-              className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {triggering === 'Slack Test' ? '⏳ Sending...' : '💬 Test Slack'}
-            </button>
-          </div>
-        )}
+        <button
+          onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
+          disabled={triggering !== null}
+          className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {triggering === 'Slack Test' ? '⏳ Sending...' : '💬 Test Slack'}
+        </button>
       </div>
 
-      {/* Tab Content */}
-      {tab === 'dashboard' ? (
-        <>
-          {/* Dashboard View Toggle */}
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setView('overview')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                view === 'overview'
-                  ? 'bg-brand-blue text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setView('portfolio')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                view === 'portfolio'
-                  ? 'bg-brand-blue text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-              }`}
-            >
-              Portfolio
-            </button>
-          </div>
+      {/* Dashboard View Toggle */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setView('overview')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            view === 'overview'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setView('portfolio')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            view === 'portfolio'
+              ? 'bg-brand-blue text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
+          }`}
+        >
+          Portfolio
+        </button>
+      </div>
 
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="text-gray-600">Loading scan data...</div>
-            </div>
-          ) : !scanData ? (
-            <div className="text-center py-12">
-              <div className="text-gray-600">No scan data available</div>
-            </div>
-          ) : view === 'overview' ? (
-            <OverviewView scanData={scanData} />
-          ) : (
-            <PortfolioView scanData={scanData} />
-          )}
-        </>
-      ) : tab === 'queue' ? (
-        <ExecutionQueueView />
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-gray-600">Loading scan data...</div>
+        </div>
+      ) : !scanData ? (
+        <div className="text-center py-12">
+          <div className="text-gray-600">No scan data available</div>
+        </div>
+      ) : view === 'overview' ? (
+        <OverviewView scanData={scanData} />
       ) : (
-        <HistoryView />
+        <PortfolioView scanData={scanData} />
       )}
     </div>
   );

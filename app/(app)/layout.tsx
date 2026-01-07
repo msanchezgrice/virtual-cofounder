@@ -18,6 +18,12 @@ export default function AppLayout({
               <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
                 Dashboard
               </Link>
+              <Link href="/dashboard/queue" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+                Queue
+              </Link>
+              <Link href="/dashboard/history" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+                History
+              </Link>
               <Link href="/stories" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
                 Stories
               </Link>
