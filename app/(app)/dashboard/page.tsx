@@ -1025,6 +1025,28 @@ function ProjectCard({ project }: { project: ProjectWithScans }) {
 }
 
 function ProjectRow({ project }: { project: ProjectWithScans }) {
+  const [scanning, setScanning] = useState(false);
+
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/scan`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Queued ${data.scans.length} scans for ${project.name}`);
+      } else {
+        alert('❌ Failed to trigger scans');
+      }
+    } catch (error) {
+      console.error('Error triggering scan:', error);
+      alert('❌ Failed to trigger scans');
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const getHealthColor = (health: number) => {
     if (health < 50) return 'text-critical-red';
     if (health < 70) return 'text-high-yellow';
@@ -1115,6 +1137,14 @@ function ProjectRow({ project }: { project: ProjectWithScans }) {
               </div>
             </div>
           )}
+
+          <button
+            onClick={handleScan}
+            disabled={scanning}
+            className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {scanning ? '⏳ Scanning...' : '🔄 Run Scan'}
+          </button>
 
           <Link
             href={`/projects/${project.id}`}

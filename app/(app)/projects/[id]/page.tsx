@@ -15,6 +15,10 @@ interface ProjectDetail {
     domain: ScanResult | null;
     seo: ScanResult | null;
     analytics: ScanResult | null;
+    vercel: ScanResult | null;
+    performance: ScanResult | null;
+    screenshot: ScanResult | null;
+    security: ScanResult | null;
   };
   stories: Completion[];
 }
@@ -35,7 +39,7 @@ interface Completion {
   linearTaskId: string | null;
 }
 
-type TabType = 'overview' | 'domain' | 'seo' | 'analytics' | 'stories';
+type TabType = 'overview' | 'domain' | 'seo' | 'analytics' | 'vercel' | 'performance' | 'screenshot' | 'security' | 'stories';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -44,6 +48,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -73,6 +78,30 @@ export default function ProjectDetailPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleScan = async () => {
+    setScanning(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/scan`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✅ Queued ${data.scans.length} scans. Refresh the page in a few minutes to see updated results.`);
+        // Optionally refresh project data after a delay
+        setTimeout(() => {
+          fetchProject();
+        }, 3000);
+      } else {
+        alert('❌ Failed to trigger scans');
+      }
+    } catch (error) {
+      console.error('Error triggering scan:', error);
+      alert('❌ Failed to trigger scans');
+    } finally {
+      setScanning(false);
+    }
   };
 
   const getHealthColor = (score: number) => {
@@ -130,22 +159,35 @@ export default function ProjectDetailPage() {
               )}
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-600 mb-1">Health Score</div>
-            <div className={`text-4xl font-bold ${getHealthColor(project.healthScore)}`}>
-              {project.healthScore}/100
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleScan}
+              disabled={scanning}
+              className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {scanning ? '⏳ Scanning...' : '🔄 Run Scan'}
+            </button>
+            <div className="text-right">
+              <div className="text-sm text-gray-600 mb-1">Health Score</div>
+              <div className={`text-4xl font-bold ${getHealthColor(project.healthScore)}`}>
+                {project.healthScore}/100
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b">
+      <div className="flex gap-2 mb-6 border-b overflow-x-auto">
         {[
           { id: 'overview', label: 'Overview' },
           { id: 'domain', label: '🌐 Domain' },
           { id: 'seo', label: '🔍 SEO' },
           { id: 'analytics', label: '📊 Analytics' },
+          { id: 'vercel', label: '🚀 Vercel' },
+          { id: 'performance', label: '⚡ Performance' },
+          { id: 'screenshot', label: '📸 Screenshot' },
+          { id: 'security', label: '🔒 Security' },
           { id: 'stories', label: '✅ Stories' },
         ].map((tab) => (
           <button
@@ -175,6 +217,18 @@ export default function ProjectDetailPage() {
         )}
         {activeTab === 'analytics' && (
           <ScanTab title="Analytics Scan" scan={project.scans.analytics} />
+        )}
+        {activeTab === 'vercel' && (
+          <VercelTab scan={project.scans.vercel} />
+        )}
+        {activeTab === 'performance' && (
+          <PerformanceTab scan={project.scans.performance} />
+        )}
+        {activeTab === 'screenshot' && (
+          <ScreenshotTab scan={project.scans.screenshot} />
+        )}
+        {activeTab === 'security' && (
+          <SecurityTab scan={project.scans.security} />
         )}
         {activeTab === 'stories' && (
           <StoriesTab stories={project.stories} />
@@ -269,6 +323,260 @@ function ScanTab({ title, scan }: { title: string; scan: ScanResult | null }) {
         <pre className="text-sm">
           {JSON.stringify(scan.data, null, 2)}
         </pre>
+      </div>
+    </div>
+  );
+}
+
+function VercelTab({ scan }: { scan: ScanResult | null }) {
+  if (!scan || !scan.data) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-600">No Vercel deployment data available</div>
+        <div className="text-sm text-gray-500 mt-2">Run a Vercel scan to see deployment status</div>
+      </div>
+    );
+  }
+
+  const deployment = scan.data;
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">🚀 Vercel Deployment</h2>
+
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">Status</div>
+          <div className={`text-lg font-semibold ${
+            deployment.state === 'READY' ? 'text-green-600' :
+            deployment.state === 'BUILDING' ? 'text-blue-600' :
+            'text-red-600'
+          }`}>
+            {deployment.state || 'Unknown'}
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">Build Duration</div>
+          <div className="text-lg font-semibold">
+            {deployment.buildDurationMs ? `${(deployment.buildDurationMs / 1000).toFixed(1)}s` : 'N/A'}
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4 md:col-span-2">
+          <div className="text-sm text-gray-600 mb-1">Deployment URL</div>
+          <a
+            href={`https://${deployment.url}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-blue hover:underline"
+          >
+            {deployment.url}
+          </a>
+        </div>
+      </div>
+
+      <div className="text-sm text-gray-600 mb-2">
+        Scanned at: {new Date(scan.scannedAt).toLocaleString()}
+      </div>
+    </div>
+  );
+}
+
+function PerformanceTab({ scan }: { scan: ScanResult | null }) {
+  if (!scan || !scan.data) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-600">No performance data available</div>
+        <div className="text-sm text-gray-500 mt-2">Run a performance scan to see Core Web Vitals</div>
+      </div>
+    );
+  }
+
+  const metrics = scan.data;
+
+  const getMetricColor = (value: number, thresholds: { good: number; needs: number }) => {
+    if (value <= thresholds.good) return 'text-green-600';
+    if (value <= thresholds.needs) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">⚡ Core Web Vitals</h2>
+
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">LCP (Largest Contentful Paint)</div>
+          <div className={`text-2xl font-bold ${getMetricColor(metrics.lcp || 0, { good: 2500, needs: 4000 })}`}>
+            {metrics.lcp ? `${(metrics.lcp / 1000).toFixed(2)}s` : 'N/A'}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Good: &lt; 2.5s</div>
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">FCP (First Contentful Paint)</div>
+          <div className={`text-2xl font-bold ${getMetricColor(metrics.fcp || 0, { good: 1800, needs: 3000 })}`}>
+            {metrics.fcp ? `${(metrics.fcp / 1000).toFixed(2)}s` : 'N/A'}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Good: &lt; 1.8s</div>
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">CLS (Cumulative Layout Shift)</div>
+          <div className={`text-2xl font-bold ${
+            (metrics.cls || 0) <= 0.1 ? 'text-green-600' :
+            (metrics.cls || 0) <= 0.25 ? 'text-yellow-600' :
+            'text-red-600'
+          }`}>
+            {metrics.cls !== undefined ? metrics.cls.toFixed(3) : 'N/A'}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Good: &lt; 0.1</div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">TTFB (Time to First Byte)</div>
+          <div className="text-lg font-semibold">
+            {metrics.ttfb ? `${metrics.ttfb.toFixed(0)}ms` : 'N/A'}
+          </div>
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <div className="text-sm text-gray-600 mb-1">DCL (DOMContentLoaded)</div>
+          <div className="text-lg font-semibold">
+            {metrics.dcl ? `${(metrics.dcl / 1000).toFixed(2)}s` : 'N/A'}
+          </div>
+        </div>
+      </div>
+
+      <div className="text-sm text-gray-600">
+        Scanned at: {new Date(scan.scannedAt).toLocaleString()}
+      </div>
+    </div>
+  );
+}
+
+function ScreenshotTab({ scan }: { scan: ScanResult | null }) {
+  if (!scan || !scan.data) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-600">No screenshot available</div>
+        <div className="text-sm text-gray-500 mt-2">Run a screenshot scan to capture the page</div>
+      </div>
+    );
+  }
+
+  const data = scan.data;
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">📸 Screenshot</h2>
+
+      <div className="mb-4">
+        <div className="text-sm text-gray-600 mb-2">
+          Viewport: {data.viewport?.width || 1920} × {data.viewport?.height || 1080}
+        </div>
+        <div className="text-sm text-gray-600 mb-4">
+          Captured at: {new Date(scan.scannedAt).toLocaleString()}
+        </div>
+      </div>
+
+      {data.screenshotUrl && (
+        <div className="border rounded-lg overflow-hidden">
+          <img
+            src={data.screenshotUrl}
+            alt="Page screenshot"
+            className="w-full h-auto"
+          />
+        </div>
+      )}
+
+      {data.screenshotPath && !data.screenshotUrl && (
+        <div className="text-sm text-gray-600">
+          Screenshot saved to: {data.screenshotPath}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SecurityTab({ scan }: { scan: ScanResult | null }) {
+  if (!scan || !scan.data) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-gray-600">No security scan data available</div>
+        <div className="text-sm text-gray-500 mt-2">Run a security scan to see vulnerabilities and secrets</div>
+      </div>
+    );
+  }
+
+  const data = scan.data;
+  const vulnerabilities = data.vulnerabilities || [];
+  const findings = data.findings || [];
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">🔒 Security Findings</h2>
+
+      {/* NPM Vulnerabilities */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-3">NPM Vulnerabilities</h3>
+        {vulnerabilities.length === 0 ? (
+          <div className="text-sm text-green-600 bg-green-50 rounded-lg p-4">
+            ✅ No critical or high severity vulnerabilities found
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {vulnerabilities.map((vuln: any, idx: number) => (
+              <div key={idx} className="border rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="font-semibold">{vuln.name}</div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    vuln.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                    vuln.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {vuln.severity}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-600 mb-2">{vuln.title}</div>
+                <div className="text-xs text-gray-500">
+                  Range: {vuln.range} | Recommendation: {vuln.fixAvailable ? 'Update available' : 'No fix available'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Secrets Detection */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-3">Secrets Detection</h3>
+        {findings.length === 0 ? (
+          <div className="text-sm text-green-600 bg-green-50 rounded-lg p-4">
+            ✅ No exposed secrets detected
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {findings.map((finding: any, idx: number) => (
+              <div key={idx} className="border rounded-lg p-4 bg-red-50">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="font-semibold text-red-800">{finding.type}</div>
+                  <span className="text-xs text-gray-600">Line {finding.line}</span>
+                </div>
+                <div className="text-sm text-gray-700 font-mono bg-white rounded p-2">
+                  {finding.content}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="text-sm text-gray-600">
+        Scanned at: {new Date(scan.scannedAt).toLocaleString()}
       </div>
     </div>
   );
