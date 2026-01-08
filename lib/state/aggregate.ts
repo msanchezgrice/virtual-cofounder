@@ -245,7 +245,7 @@ export async function calculateLaunchChecklist(projectId: string): Promise<Launc
   }
 
   const latestScan = (type: string) => 
-    project.scans.find(s => s.scanType === type && s.status === 'ok');
+    project.scans.find((s: any) => s.scanType === type && s.status === 'ok');
 
   const checklist: LaunchChecklist = {
     repository_exists: !!project.repo,

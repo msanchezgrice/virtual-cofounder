@@ -24,7 +24,7 @@ import { sendSlackNotification } from '../lib/slack';
 import { updateLinearTaskStatus, getTeamWorkflowStates, addLinearComment } from '../lib/linear';
 import { featureFlags } from '../lib/config/feature-flags';
 import { runAgentWithSDK } from '../lib/agents/sdk-runner';
-import { codeGenerationAgent } from '../lib/agents';
+import { codeGenerationAgent } from '../lib/agents/index';
 
 // Database client
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');

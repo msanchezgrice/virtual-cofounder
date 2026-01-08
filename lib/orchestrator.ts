@@ -19,7 +19,7 @@ import {
   headOfProductAgent, 
   getAgentDefinition,
   type AgentDefinition 
-} from '@/lib/agents';
+} from '@/lib/agents/index';
 import { runAgentWithSDK, spawnSubagent } from '@/lib/agents/sdk-runner';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -278,7 +278,7 @@ async function runOrchestratorSDK(
     findings: scoredFindings,
     stories,
     conversation,
-    agentsSpawned: [...new Set(agentsSpawned)],
+    agentsSpawned: Array.from(new Set(agentsSpawned)),
     totalTokens,
     estimatedCost,
   };
@@ -542,12 +542,14 @@ export async function runOrchestrator(
   scanContexts: ScanContext[],
   options?: { workspaceId?: string }
 ): Promise<OrchestratorResult> {
+  // Generate a unique run ID
+  const generatedRunId = `orch_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  
   // Create orchestrator run record
   const runRecord = await prisma.orchestratorRun.create({
     data: {
-      workspaceId: options?.workspaceId,
+      runId: generatedRunId,
       status: 'running',
-      projectsAnalyzed: scanContexts.length,
       conversation: [],
     },
   });
@@ -570,7 +572,7 @@ export async function runOrchestrator(
       data: {
         status: 'completed',
         findingsCount: result.findings.length,
-        storiesCreated: result.stories.length,
+        storiesCount: result.stories.length,
         conversation: result.conversation,
         totalTokens: result.totalTokens,
         estimatedCost: result.estimatedCost,
@@ -608,7 +610,7 @@ export async function triggerPriorityRerun(
     where: { id: projectId },
     include: {
       scans: {
-        orderBy: { createdAt: 'desc' },
+        orderBy: { scannedAt: 'desc' },
         take: 5,
       },
     },
@@ -619,23 +621,32 @@ export async function triggerPriorityRerun(
   }
 
   // Build scan context with priority signal
+  // Aggregate scan results by type
+  const scanResults: Record<string, unknown> = {};
+  for (const scan of project.scans) {
+    const scanType = scan.scanType.toLowerCase();
+    // Use the appropriate result field based on scan type
+    if (scan.seoDetail) scanResults[scanType] = scan.seoDetail;
+    else if (scan.domainData) scanResults[scanType] = scan.domainData;
+    else if (scan.securityIssues) scanResults[scanType] = scan.securityIssues;
+    else if (scan.analyticsData) scanResults[scanType] = scan.analyticsData;
+    else if (scan.vercelData) scanResults[scanType] = scan.vercelData;
+    else if (scan.playwrightMetrics) scanResults[scanType] = scan.playwrightMetrics;
+  }
+
   const scanContext: ScanContext = {
     project: {
       id: project.id,
       name: project.name,
       domain: project.domain,
       status: project.status,
-      repoUrl: project.repoUrl,
+      repoUrl: project.repo, // Use 'repo' field from schema
     },
-    scans: project.scans.reduce((acc, scan) => {
-      acc[scan.type.toLowerCase()] = scan.result;
-      return acc;
-    }, {} as Record<string, any>),
+    scans: scanResults,
     prioritySignals: [prioritySignal],
   };
 
   return runOrchestrator([scanContext], options);
 }
 
-// Re-export types for backwards compatibility
-export type { AgentFinding, Story, OrchestratorResult, ScanContext };
+// Note: Types AgentFinding, Story, OrchestratorResult, ScanContext are already exported above as interfaces
