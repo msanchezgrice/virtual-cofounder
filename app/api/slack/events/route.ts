@@ -1,9 +1,17 @@
-// Slack event webhook - handles messages, button clicks, etc.
+/**
+ * Slack Event Webhook
+ * 
+ * Handles all Slack events: messages, app mentions, reactions, button clicks.
+ * All inbound messages are logged to SlackInbound table and processed for priority signals.
+ */
 import { NextResponse } from 'next/server';
 import { storeUserPriority } from '@/lib/priority-parser';
 import { db } from '@/lib/db';
 import { getSlackClient } from '@/lib/slack';
 import Anthropic from '@anthropic-ai/sdk';
+import { featureFlags } from '@/lib/config/feature-flags';
+import { processPrioritySignal } from '@/lib/priority/classifier';
+import { enqueueStoryForExecution } from '@/lib/queue/execution';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,6 +53,9 @@ export async function POST(request: Request) {
 
       console.log(`[Slack Events] Received event: ${event.type}`);
 
+      // Log all events to SlackInbound for comprehensive signal tracking
+      await logSlackInbound(event, body.team_id);
+
       // Handle message events (user replies to check-in)
       // Filter out bot messages, message edits, and other subtypes
       if (
@@ -64,6 +75,11 @@ export async function POST(request: Request) {
       // Handle button interactions
       if (event.type === 'block_actions') {
         await handleButtonClick(event);
+      }
+
+      // Handle reaction events (emoji as priority signals)
+      if (event.type === 'reaction_added') {
+        await handleReactionAdded(event);
       }
 
       // Acknowledge event receipt immediately (Slack requires response within 3s)
@@ -696,5 +712,120 @@ async function snoozeStory(storyId: string, userId?: string, channelId?: string)
       user: userId,
       text: `⏰ Snoozed story ID: ${storyId} for 24 hours.\n(Snooze functionality coming in Phase 5)`,
     });
+  }
+}
+
+/**
+ * Log all Slack inbound events for comprehensive signal tracking
+ */
+async function logSlackInbound(event: any, teamId?: string): Promise<void> {
+  const workspaceId = process.env.WORKSPACE_ID;
+  if (!workspaceId) return;
+
+  try {
+    await db.slackInbound.create({
+      data: {
+        workspaceId,
+        userId: event.user || 'unknown',
+        channelId: event.channel || 'unknown',
+        channelType: event.channel_type || 'channel',
+        text: event.text || '',
+        messageTs: event.ts || '',
+        threadTs: event.thread_ts,
+        eventType: event.type,
+        extractedData: event, // Store full event as extractedData
+      },
+    });
+    console.log(`[Slack Events] Logged inbound event: ${event.type}`);
+  } catch (error) {
+    // Ignore duplicate key errors (message already logged)
+    if ((error as any)?.code !== 'P2002') {
+      console.error('[Slack Events] Error logging inbound:', error);
+    }
+  }
+}
+
+/**
+ * Handle reaction_added events (emoji as priority signals)
+ * Maps certain emojis to priority levels
+ */
+async function handleReactionAdded(event: any): Promise<void> {
+  const workspaceId = process.env.WORKSPACE_ID;
+  if (!workspaceId) return;
+
+  if (!featureFlags.PRIORITY_SYSTEM_ENABLED) return;
+
+  const reaction = event.reaction;
+  const userId = event.user;
+  const itemUser = event.item_user;
+
+  // Only process if reacting to bot's message or in relevant channels
+  if (!reaction) return;
+
+  console.log(`[Slack Events] Reaction added: ${reaction}`);
+
+  // Map emoji names to priority signals
+  const emojiPriorityMap: Record<string, string> = {
+    'red_circle': 'P0',
+    'rotating_light': 'P0',
+    'fire': 'P0',
+    'warning': 'P0',
+    'bangbang': 'P0',
+    'orange_circle': 'P1',
+    'exclamation': 'P1',
+    'zap': 'P1',
+    'yellow_circle': 'P2',
+    'memo': 'P2',
+    'green_circle': 'P3',
+    'clipboard': 'P3',
+    'white_check_mark': 'approve',
+    'x': 'reject',
+    '+1': 'approve',
+    '-1': 'reject',
+  };
+
+  const action = emojiPriorityMap[reaction];
+  if (!action) return;
+
+  try {
+    // If it's a priority emoji, process as signal
+    if (action.startsWith('P')) {
+      await processPrioritySignal({
+        source: 'slack',
+        signalType: 'emoji_reaction',
+        rawContent: `User reacted with :${reaction}: (${action})`,
+        workspaceId,
+        metadata: {
+          emoji: reaction,
+          user_id: userId,
+          item_user: itemUser,
+          message_ts: event.item?.ts,
+          channel: event.item?.channel,
+        },
+      });
+      console.log(`[Slack Events] Priority signal from emoji: ${action}`);
+    }
+
+    // If it's an approve/reject emoji on a story message, handle approval
+    if ((action === 'approve' || action === 'reject') && event.item?.ts) {
+      // Try to find a story associated with this message
+      const slackMessage = await db.slackMessage.findFirst({
+        where: {
+          messageTs: event.item.ts,
+          channelId: event.item.channel,
+        },
+      });
+
+      if (slackMessage && slackMessage.commandType?.startsWith('story_')) {
+        const storyId = slackMessage.commandType.replace('story_', '');
+        
+        if (action === 'approve' && featureFlags.MULTI_SOURCE_APPROVAL) {
+          await enqueueStoryForExecution(storyId, undefined, 'slack');
+          console.log(`[Slack Events] Story ${storyId} approved via emoji`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[Slack Events] Error handling reaction:', error);
   }
 }
