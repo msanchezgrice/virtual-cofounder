@@ -5,6 +5,8 @@
  * Processes scan jobs from Redis queue (BullMQ)
  * Executes all scanners: domain, SEO, analytics, Vercel, performance, screenshot, npm_audit, secrets
  * Saves results to database
+ *
+ * Last updated: 2026-01-07
  */
 
 // Load environment variables from .env.local when running locally
