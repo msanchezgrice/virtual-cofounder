@@ -239,12 +239,12 @@ export default function ProjectDetailPage() {
 }
 
 function OverviewTab({ project }: { project: ProjectDetail }) {
-  const scanTypes = ['domain', 'seo', 'analytics'] as const;
+  const scanTypes = ['domain', 'seo', 'analytics', 'vercel', 'performance', 'screenshot', 'security'] as const;
 
   return (
     <div>
       <h2 className="text-xl font-semibold mb-4">Scan Overview</h2>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
         {scanTypes.map((type) => {
           const scan = project.scans[type];
           return (
