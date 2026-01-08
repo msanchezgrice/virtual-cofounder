@@ -282,71 +282,117 @@ export default function DashboardPage() {
     }
   };
 
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      {/* Manual Trigger Buttons */}
-      <div className="flex gap-2 mb-6 justify-end">
-        <button
-          onClick={() => handleTrigger('/api/scans/trigger', 'Scans')}
-          disabled={triggering !== null}
-          className="px-4 py-2 rounded-lg font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {triggering === 'Scans' ? '⏳ Running...' : '🔄 Run Scans'}
-        </button>
-        <button
-          onClick={() => handleTrigger('/api/orchestrator/run', 'Orchestrator')}
-          disabled={triggering !== null}
-          className="px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
-        </button>
-        <button
-          onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
-          disabled={triggering !== null}
-          className="px-4 py-2 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
-        </button>
-        <button
-          onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
-          disabled={triggering !== null}
-          className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {triggering === 'Slack Test' ? '⏳ Sending...' : '💬 Test Slack'}
+    <div className="app-page">
+      {/* Page Header - Mockup Style */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{getGreeting()}, Miguel 👋</h1>
+          <p className="page-subtitle">Here's what's happening with your projects</p>
+        </div>
+        <button className="btn btn-primary">
+          ➕ New Priority
         </button>
       </div>
 
+      {/* Stats Row */}
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="stat-label">Work In Progress</div>
+          <div className="stat-value">{scanData?.stats?.high || 0}</div>
+          <div className="stat-trend trend-up">↑ Active stories</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Ready for Review</div>
+          <div className="stat-value" style={{ color: 'var(--accent-amber)' }}>
+            {scanData?.highPriority?.length || 0}
+          </div>
+          <div className="stat-trend">→ Needs attention</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Projects Scanned</div>
+          <div className="stat-value" style={{ color: 'var(--accent-green)' }}>
+            {scanData?.stats?.scannedToday || 0}
+          </div>
+          <div className="stat-trend trend-up">Today</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Health Score</div>
+          <div className="stat-value" style={{ color: 'var(--accent-purple)' }}>
+            {scanData?.stats?.healthy || 0}
+          </div>
+          <div className="stat-trend">Healthy projects</div>
+        </div>
+      </div>
+
+      {/* Quick Actions Card */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">⚡ Quick Actions</span>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => handleTrigger('/api/scans/trigger', 'Scans')}
+            disabled={triggering !== null}
+            className="btn btn-secondary"
+          >
+            {triggering === 'Scans' ? '⏳ Running...' : '🔄 Run Scans'}
+          </button>
+          <button
+            onClick={() => handleTrigger('/api/orchestrator/run', 'Orchestrator')}
+            disabled={triggering !== null}
+            className="btn btn-primary"
+          >
+            {triggering === 'Orchestrator' ? '⏳ Running...' : '🤖 Run Orchestrator'}
+          </button>
+          <button
+            onClick={() => handleTrigger('/api/slack/check-in', 'Check-in')}
+            disabled={triggering !== null}
+            className="btn btn-secondary"
+          >
+            {triggering === 'Check-in' ? '⏳ Sending...' : '☀️ Daily Check-in'}
+          </button>
+          <button
+            onClick={() => handleTrigger('/api/slack/test-message', 'Slack Test')}
+            disabled={triggering !== null}
+            className="btn btn-secondary"
+          >
+            {triggering === 'Slack Test' ? '⏳ Sending...' : '💬 Test Slack'}
+          </button>
+        </div>
+      </div>
+
       {/* Dashboard View Toggle */}
-      <div className="flex gap-2 mb-6">
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
         <button
           onClick={() => setView('overview')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            view === 'overview'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
+          className={`btn ${view === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
         >
           Overview
         </button>
         <button
           onClick={() => setView('portfolio')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            view === 'portfolio'
-              ? 'bg-brand-blue text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:border-brand-blue'
-          }`}
+          className={`btn ${view === 'portfolio' ? 'btn-primary' : 'btn-secondary'}`}
         >
           Portfolio
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-12">
-          <div className="text-gray-600">Loading scan data...</div>
+        <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+          <div style={{ color: 'var(--text-muted)' }}>Loading scan data...</div>
         </div>
       ) : !scanData ? (
-        <div className="text-center py-12">
-          <div className="text-gray-600">No scan data available</div>
+        <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
+          <div style={{ color: 'var(--text-muted)' }}>No scan data available</div>
         </div>
       ) : view === 'overview' ? (
         <OverviewView scanData={scanData} />
