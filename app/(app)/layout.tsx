@@ -24,11 +24,14 @@ export default function AppLayout({
               <Link href="/progress" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
                 Progress
               </Link>
+              <Link href="/projects" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+                Projects
+              </Link>
+              <Link href="/history" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+                History
+              </Link>
               <Link href="/scans" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
                 Scans
-              </Link>
-              <Link href="/stories" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
-                Stories
               </Link>
               <Link href="/agents" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
                 Agents
@@ -37,7 +40,7 @@ export default function AppLayout({
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">Miguel</span>
-            <button className="text-sm text-gray-600 hover:text-brand-blue">Settings</button>
+            <Link href="/settings" className="text-sm text-gray-600 hover:text-brand-blue">Settings</Link>
           </div>
         </div>
       </nav>
