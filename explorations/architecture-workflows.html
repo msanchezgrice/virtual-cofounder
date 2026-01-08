@@ -3,238 +3,1820 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Virtual Cofounder Workflow Diagrams</title>
+    <title>Virtual Cofounder Architecture + Agent SDK Integration</title>
     <style>
       :root {
         color-scheme: light;
       }
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        background: #f8fafc;
-        color: #0f172a;
+        background: #0f172a;
+        color: #e2e8f0;
         margin: 0;
         padding: 32px 20px 60px;
       }
       main {
-        max-width: 980px;
+        max-width: 1100px;
         margin: 0 auto;
       }
       h1 {
-        font-size: 28px;
+        font-size: 32px;
         margin: 0 0 8px;
+        color: #f8fafc;
+        font-weight: 700;
       }
-      p {
-        color: #475569;
-        margin: 0 0 24px;
+      .subtitle {
+        color: #94a3b8;
+        margin: 0 0 32px;
+        font-size: 18px;
       }
       section {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: #1e293b;
+        border: 1px solid #334155;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 18px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      }
+      .alert {
+        background: linear-gradient(135deg, #7c3aed15, #a855f715);
+        border: 1px solid #7c3aed;
+      }
+      .alert-success {
+        background: linear-gradient(135deg, #059669 15%, #047857);
+        border: 1px solid #10b981;
+      }
+      .alert-warning {
+        background: linear-gradient(135deg, #d97706 15%, #b45309);
+        border: 1px solid #f59e0b;
       }
       .before-after {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 16px;
-        margin-bottom: 18px;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
       }
       .before-after section {
         margin-bottom: 0;
       }
+      .before {
+        background: linear-gradient(135deg, #dc262615, #b9191915);
+        border-color: #dc2626;
+      }
+      .after {
+        background: linear-gradient(135deg, #16a34a15, #15803d15);
+        border-color: #16a34a;
+      }
       h2 {
-        font-size: 18px;
-        margin: 0 0 12px;
+        font-size: 20px;
+        margin: 0 0 16px;
+        color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      h3 {
+        font-size: 16px;
+        margin: 16px 0 8px;
+        color: #cbd5e1;
       }
       .note {
         font-size: 13px;
-        color: #64748b;
+        color: #94a3b8;
         margin-top: 12px;
+        padding: 12px;
+        background: #0f172a;
+        border-radius: 6px;
+        border-left: 3px solid #475569;
+      }
+      code {
+        background: #0f172a;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: 13px;
+        color: #a5b4fc;
+      }
+      pre.mermaid {
+        margin: 0;
+      }
+      ul {
+        margin: 8px 0;
+        padding-left: 20px;
+      }
+      li {
+        margin: 4px 0;
+        line-height: 1.5;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 8px;
+      }
+      .badge-p0 { background: #dc2626; color: white; }
+      .badge-p1 { background: #f59e0b; color: black; }
+      .badge-p2 { background: #3b82f6; color: white; }
+      .table-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 16px;
+      }
+      .table-grid ul {
+        margin: 0;
+      }
+      a {
+        color: #818cf8;
+      }
+      .sdk-feature {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 12px 0;
+      }
+      .sdk-feature h4 {
+        margin: 0 0 8px;
+        color: #a5b4fc;
+        font-size: 14px;
+      }
+      .sdk-feature pre {
+        margin: 0;
+        font-size: 12px;
+        overflow-x: auto;
       }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   </head>
   <body>
     <main>
-      <h1>Virtual Cofounder Workflow Diagrams</h1>
-      <p>Local visualization of scans, orchestrator runs, agents, Slack, and execution flows.</p>
+      <h1>🤖 Virtual Cofounder Architecture</h1>
+      <p class="subtitle">Claude Agent SDK Integration Plan + Current System Workflows</p>
 
-      <section>
-        <h2>1) System Overview</h2>
-        <pre class="mermaid">
-graph LR
-  UI[Next.js UI] --> API[Next.js API routes]
-  API --> DB[(Supabase Postgres)]
-  API --> Redis[(Upstash Redis / BullMQ)]
-  API --> Slack[Slack API]
-  API --> Linear[Linear API]
-  API --> Anthropic[Anthropic API]
-  Redis --> ScanWorker[Railway scan-worker.ts]
-  Redis --> ExecWorker[Railway execution-worker.ts]
-        </pre>
+      <!-- Executive Summary -->
+      <section class="alert">
+        <h2>📋 Executive Summary: The Gap</h2>
+        <p style="margin: 0 0 16px; color: #e2e8f0; font-size: 15px;">
+          <strong>PRD Phase 3 specified:</strong> "Create Head of Product orchestrator using Claude Agent SDK"<br/>
+          <strong>What was built:</strong> Manual orchestration with <code>@anthropic-ai/sdk</code> direct API calls
+        </p>
+        <p style="margin: 0 0 16px; color: #e2e8f0; font-size: 15px;">
+          <strong>Why it happened:</strong> The Agent SDK didn't exist at implementation time. <strong>It exists now.</strong>
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px;">
+            <div style="color: #f87171; font-weight: 600; margin-bottom: 8px;">❌ Current State</div>
+            <ul style="margin: 0; padding-left: 16px; font-size: 13px;">
+              <li>Single API call per agent (no tools)</li>
+              <li>Placeholder code in PRs</li>
+              <li>Manual execution script required</li>
+              <li>Priorities stored but never used</li>
+            </ul>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px;">
+            <div style="color: #4ade80; font-weight: 600; margin-bottom: 8px;">✅ Proposed State</div>
+            <ul style="margin: 0; padding-left: 16px; font-size: 13px;">
+              <li>Multi-turn agents with built-in tools</li>
+              <li>Real code changes via Agent SDK</li>
+              <li>Auto-enqueue on approval</li>
+              <li>P0-P3 priority system from all signals</li>
+            </ul>
+          </div>
+          <div style="background: #0f172a; padding: 12px; border-radius: 8px;">
+            <div style="color: #818cf8; font-weight: 600; margin-bottom: 8px;">📦 The SDK</div>
+            <ul style="margin: 0; padding-left: 16px; font-size: 13px;">
+              <li><code>@anthropic-ai/claude-agent-sdk</code></li>
+              <li>Requires Claude Code CLI runtime</li>
+              <li>Built-in: Read, Write, Edit, Bash, Glob, Grep</li>
+              <li>Subagents, Hooks, Sessions, MCP</li>
+            </ul>
+          </div>
+        </div>
+        <div class="note" style="margin-top: 16px;">
+          <strong>📄 Full Plan:</strong> <a href="./agent-sdk-integration-plan.md">agent-sdk-integration-plan.md</a>
+        </div>
       </section>
 
+      <!-- Before/After Comparison -->
       <div class="before-after">
-        <section>
-          <h2>Change View (Before)</h2>
+        <section class="before">
+          <h2>🔴 BEFORE (Current Architecture)</h2>
           <pre class="mermaid">
 graph TD
-  SlackCheckin["Slack check-in (scheduled)"] --> Priorities["user_priorities (check-in only)"]
-  Scans["scans (daily)"] --> Orchestrator["/api/orchestrator/run (manual/cron)"]
-  Priorities -.-> Orchestrator
-  Orchestrator --> Completions["completions (ranked by findings)"]
-  Approve["Slack approve button"] --> SlackEvents["/api/slack/events"]
-  SlackEvents --> Status["completion.status = in_progress"]
-  Status -.-> Script["queue-completion-to-production script"]
-  Script --> ExecQueue["execution-queue"]
-  ExecQueue --> Worker["execution-worker.ts (when running)"]
+  Check["Slack check-in (scheduled only)"] --> UP["user_priorities"]
+  UP -.->|NEVER READ| Orch
+  Scans["scans table"] --> Orch["/api/orchestrator/run"]
+  Orch --> Agents["5 'Agents' = config objects"]
+  Agents -->|1 API call each| Findings["findings (JSON parse)"]
+  Findings --> Formula["rankFindings() formula"]
+  Formula --> Stories["stories table"]
+  Stories --> Slack["Slack notify"]
+  Slack -->|approve button| Status["status = in_progress"]
+  Status -.->|MANUAL SCRIPT| Queue["execution-queue"]
+  Queue --> Worker["execution-worker.ts"]
+  Worker --> Placeholder["AI_IMPROVEMENTS.md"]
+  Placeholder --> PR["GitHub PR"]
           </pre>
           <div class="note">
-            Before: only check-in messages become priorities; approvals do not auto-queue execution.
+            <strong>Problems:</strong><br/>
+            • Agents can't investigate (1 call = 1 response)<br/>
+            • Priorities never affect ranking<br/>
+            • Manual script to execute approved work<br/>
+            • Placeholder content, not real code
           </div>
         </section>
 
-        <section>
-          <h2>Change View (After)</h2>
+        <section class="after">
+          <h2>🟢 AFTER (With Agent SDK)</h2>
           <pre class="mermaid">
 graph TD
-  SlackAll["Slack inbound (DMs, channels, mentions)"] --> SlackEvents["/api/slack/events"]
-  LinearComments["Linear comments"] --> LinearWebhook["/api/linear/webhook"]
-  SlackEvents --> Inbounds["slack_inbounds"]
-  Inbounds --> Signals["priority_signals (P0-P3 + factors)"]
-  LinearWebhook --> Signals
-  Signals --> Rerank["rerank trigger (user: immediate, others: 2x/day)"]
-  Scans["scans (daily)"] --> Orchestrator["/api/orchestrator/run"]
-  Signals --> Orchestrator
-  Orchestrator --> StackRank["stack-ranked work per project"]
-  StackRank --> Completions["completions (score + rank + priority)"]
-  Completions --> Queue["execution-queue (priority)"]
-  Approve["Slack approve button"] --> Queue
-  Queue --> Worker["execution-worker.ts (always on)"]
+  AllSlack["ALL Slack signals"] --> Inbounds["slack_inbounds"]
+  Linear["Linear comments"] --> Signals["priority_signals"]
+  Inbounds --> Signals
+  Signals -->|P0-P3| Rerank["Re-rank (immediate/batch)"]
+  Scans["scans"] --> Orch["Orchestrator Agent"]
+  Signals --> Orch
+  Orch -->|"Task tool"| Security["Security Subagent"]
+  Orch -->|"Task tool"| Analytics["Analytics Subagent"]
+  Security -->|multi-turn| Findings["Evidence-based findings"]
+  Analytics --> Findings
+  Findings --> Stack["Stack-ranked per project"]
+  Stack --> Stories["stories + priority_level"]
+  Approve["Slack approve"] -->|AUTO| Queue["execution-queue (priority)"]
+  Queue --> CodeAgent["Code Gen Agent"]
+  CodeAgent -->|"Read/Write/Edit/Bash"| RealCode["Real code changes"]
+  RealCode --> PR["PR + thinking trace"]
           </pre>
           <div class="note">
-            After: all inbound signals affect rank; approvals enqueue work immediately.
+            <strong>Improvements:</strong><br/>
+            • Agents investigate with tools (multi-turn)<br/>
+            • All signals feed into P0-P3 ranking<br/>
+            • Auto-enqueue on approval<br/>
+            • Real code via Agent SDK
           </div>
         </section>
       </div>
 
-      <section>
-        <h2>2) Priority Intake (Slack Check-in)</h2>
-        <pre class="mermaid">
-graph TD
-  Cron9[Vercel Cron 9:00] --> Checkin[/api/slack/check-in/]
-  Checkin --> SlackMsg[Slack message]
-  SlackMsg -->|user reply| Events[/api/slack/events/]
-  Events --> Parser[priority-parser]
-  Parser --> Priorities[(user_priorities)]
-  Priorities -.->|planned weighting input| Orchestrator[/api/orchestrator/run/]
-        </pre>
+      <!-- Claude Agent SDK Features -->
+      <section style="background: linear-gradient(135deg, #312e81, #1e1b4b); border-color: #6366f1;">
+        <h2>🔧 Claude Agent SDK: What You Get</h2>
+        <p style="margin: 0 0 16px; color: #c7d2fe;">
+          The SDK (<code>@anthropic-ai/claude-agent-sdk</code>) provides everything needed for autonomous agents:
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+          <div class="sdk-feature">
+            <h4>Built-in Tools (No Implementation!)</h4>
+            <pre style="color: #a5b4fc;">
+Read     - Read any file
+Write    - Create new files
+Edit     - Precise file edits
+Bash     - Run terminal commands
+Glob     - Find files by pattern
+Grep     - Search file contents
+WebSearch - Search the web
+WebFetch  - Fetch web pages
+            </pre>
+          </div>
+          
+          <div class="sdk-feature">
+            <h4>Subagents (Task Tool)</h4>
+            <pre style="color: #a5b4fc;">
+query({
+  prompt: "Review this code",
+  options: {
+    allowedTools: ["Read", "Task"],
+    agents: {
+      "security-agent": {
+        prompt: "Find vulnerabilities",
+        tools: ["Read", "Grep", "Bash"]
+      }
+    }
+  }
+})
+            </pre>
+          </div>
+          
+          <div class="sdk-feature">
+            <h4>Hooks (Lifecycle Events)</h4>
+            <pre style="color: #a5b4fc;">
+hooks: {
+  PreToolUse: [validate],
+  PostToolUse: [{ 
+    matcher: "Edit|Write", 
+    hooks: [auditLog] 
+  }],
+  Stop: [saveResults]
+}
+            </pre>
+          </div>
+          
+          <div class="sdk-feature">
+            <h4>MCP (External Systems)</h4>
+            <pre style="color: #a5b4fc;">
+mcpServers: {
+  playwright: { 
+    command: "npx", 
+    args: ["@anthropic-ai/mcp-playwright"] 
+  },
+  postgres: {
+    command: "npx",
+    args: ["@anthropic-ai/mcp-postgres"]
+  }
+}
+            </pre>
+          </div>
+        </div>
+        
+        <div class="note" style="color: #c7d2fe; border-color: #6366f1;">
+          <strong>Reference:</strong> <a href="https://platform.claude.com/docs/en/agent-sdk/overview" style="color: #a5b4fc;">platform.claude.com/docs/en/agent-sdk/overview</a>
+        </div>
       </section>
 
+      <!-- Refactoring Phases -->
       <section>
-        <h2>3) Scanning Pipeline</h2>
+        <h2>📋 Refactoring Phases</h2>
+        
+        <div style="display: grid; gap: 16px;">
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span class="badge badge-p0">P0</span>
+              <strong style="color: #f8fafc;">Phase 1: Code Generation Agent</strong>
+              <span style="color: #94a3b8; font-size: 13px;">• 3-4 days • +$15/mo</span>
+            </div>
+            <p style="margin: 0; color: #cbd5e1; font-size: 14px;">
+              Replace <code>execution-worker.ts:180-189</code> placeholder with Agent SDK code generation.
+              Agent uses Read/Write/Edit/Bash to make real changes. Thinking traces in PR description.
+            </p>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #dc2626;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span class="badge badge-p0">P0</span>
+              <strong style="color: #f8fafc;">Phase 2: Priority System</strong>
+              <span style="color: #94a3b8; font-size: 13px;">• 4-5 days • +$5/mo</span>
+            </div>
+            <p style="margin: 0; color: #cbd5e1; font-size: 14px;">
+              P0-P3 levels, stack-ranked lists per project, all Slack signals logged, Linear comments feed priorities.
+              Auto-enqueue on Slack approval. Immediate re-rank for user signals.
+            </p>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span class="badge badge-p1">P1</span>
+              <strong style="color: #f8fafc;">Phase 3: Specialist Agents with Tools</strong>
+              <span style="color: #94a3b8; font-size: 13px;">• 5-6 days • +$53/mo</span>
+            </div>
+            <p style="margin: 0; color: #cbd5e1; font-size: 14px;">
+              Convert Security/Analytics/SEO/Domain/Deployment agents to use SDK tools.
+              Agents investigate actively instead of analyzing passively. Evidence in findings.
+            </p>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <span class="badge badge-p2">P2</span>
+              <strong style="color: #f8fafc;">Phase 4: Head of Product Meta-Agent</strong>
+              <span style="color: #94a3b8; font-size: 13px;">• 4-5 days • +$20/mo</span>
+            </div>
+            <p style="margin: 0; color: #cbd5e1; font-size: 14px;">
+              Replace hard-coded <code>getRelevantAgents()</code> with meta-agent that spawns specialists via Task tool.
+              Intelligent agent selection based on project type and scan results.
+            </p>
+          </div>
+        </div>
+        
+        <div class="note">
+          <strong>Total:</strong> ~20 days, +$93/month<br/>
+          <strong>Recommendation:</strong> Start with Phase 1+2 (7-9 days, +$20/mo) for 80% of value
+        </div>
+      </section>
+
+      <!-- What to Keep vs Replace -->
+      <section>
+        <h2>✅ Keep vs 🔄 Replace</h2>
+        <div class="table-grid">
+          <div>
+            <h3 style="color: #4ade80;">✅ KEEP (Working Infrastructure)</h3>
+            <ul style="font-size: 14px;">
+              <li><strong>BullMQ Queues</strong> - orchestrator, execution, scans</li>
+              <li><strong>Scan Workers</strong> - domain, SEO, analytics scanners</li>
+              <li><strong>Database Schema</strong> - add tables, don't replace</li>
+              <li><strong>Slack Integration</strong> - lib/slack.ts</li>
+              <li><strong>Linear Integration</strong> - lib/linear.ts</li>
+              <li><strong>Git/GitHub</strong> - lib/git.ts, lib/github.ts</li>
+              <li><strong>Next.js API Routes</strong> - UI data sources</li>
+              <li><strong>Railway Workers</strong> - deployment infra</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="color: #f87171;">🔄 REPLACE with Agent SDK</h3>
+            <ul style="font-size: 14px;">
+              <li><strong>execution-worker.ts:180-189</strong> → Code Gen Agent</li>
+              <li><strong>orchestrator.ts runAgent()</strong> → Subagent spawning</li>
+              <li><strong>agents.ts configs</strong> → AgentDefinition objects</li>
+              <li><strong>getRelevantAgents()</strong> → Meta-agent decides</li>
+              <li><strong>rankFindings() formula</strong> → Include priority_signals</li>
+              <li><strong>user_priorities (unused)</strong> → priority_signals</li>
+              <li><strong>Manual exec script</strong> → Auto-enqueue on approve</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scanning vs Agents Tradeoffs -->
+      <section>
+        <h2>🔍 Scanning: Current Scanners vs Agent-Based Scanning</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Question:</strong> Should we use fixed scanners or agents for scanning?<br/>
+          <strong>Answer:</strong> Use BOTH - fixed scanners for fast/cheap, agents for deep analysis.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <div style="background: #1e293b; padding: 20px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+            <h3 style="margin: 0 0 16px 0; color: #3b82f6;">📊 Current Scanners (8 implemented)</h3>
+            <ul style="color: #94a3b8; font-size: 14px; line-height: 1.8;">
+              <li><code>domain.ts</code> - DNS, SSL, headers</li>
+              <li><code>seo.ts</code> - meta tags, robots.txt</li>
+              <li><code>analytics.ts</code> - tracking scripts</li>
+              <li><code>vercel.ts</code> - deployment status</li>
+              <li><code>performance.ts</code> - lighthouse metrics</li>
+              <li><code>security-npm.ts</code> - npm audit</li>
+              <li><code>security-secrets.ts</code> - exposed keys</li>
+              <li><code>screenshot.ts</code> - visual capture</li>
+            </ul>
+            <div style="margin-top: 16px; padding: 12px; background: #0f172a; border-radius: 8px;">
+              <strong style="color: #4ade80;">✅ Pros:</strong> Fast, cheap, deterministic<br/>
+              <strong style="color: #f87171;">❌ Cons:</strong> Surface-level, no reasoning
+            </div>
+          </div>
+          
+          <div style="background: #1e293b; padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+            <h3 style="margin: 0 0 16px 0; color: #8b5cf6;">🤖 Agent-Based Scanning</h3>
+            <ul style="color: #94a3b8; font-size: 14px; line-height: 1.8;">
+              <li>Security Agent reads npm audit + thinks about impact</li>
+              <li>SEO Agent compares to competitors</li>
+              <li>Design Agent evaluates UX patterns</li>
+              <li>Code Agent reads source for vulnerabilities</li>
+            </ul>
+            <div style="margin-top: 16px; padding: 12px; background: #0f172a; border-radius: 8px;">
+              <strong style="color: #4ade80;">✅ Pros:</strong> Deep analysis, context-aware<br/>
+              <strong style="color: #f87171;">❌ Cons:</strong> Expensive ($0.02-0.10/scan), slower
+            </div>
+          </div>
+        </div>
+        
+        <div style="background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #475569;">
+          <h3 style="margin: 0 0 16px 0; color: #f59e0b;">💡 Recommended Hybrid Approach</h3>
+          <pre class="mermaid">
+flowchart LR
+    CRON["Cron (Daily)"] --> SCANNERS["8 Fixed Scanners<br/>Fast + Cheap"]
+    SCANNERS --> SCANS_TABLE["scans table<br/>(raw data)"]
+    SCANS_TABLE --> AGENTS["Agent Analysis<br/>2x/day"]
+    AGENTS --> FINDINGS["agent_findings<br/>(prioritized insights)"]
+    FINDINGS --> STORIES["stories<br/>(actionable work)"]
+          </pre>
+        </div>
+      </section>
+
+      <!-- Project State Blob -->
+      <section>
+        <h2>💾 Project State: Where Is It Stored?</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Question:</strong> Is there a blob that records current state of a project?<br/>
+          <strong>Answer:</strong> Currently NO single blob. State is distributed across tables.
+        </p>
+        
+        <pre class="mermaid">
+erDiagram
+    PROJECTS ||--o{ SCANS : "has"
+    PROJECTS ||--o{ STORIES : "has"
+    PROJECTS ||--o{ ORCHESTRATOR_RUNS : "has"
+    
+    PROJECTS {
+        uuid id
+        string name
+        string domain
+        string repoUrl
+        json config
+        timestamp lastScannedAt
+    }
+    
+    SCANS {
+        uuid id
+        string type
+        json result
+        timestamp createdAt
+    }
+    
+    STORIES {
+        uuid id
+        string status
+        int priority
+        json metadata
+    }
+    
+    ORCHESTRATOR_RUNS {
+        uuid id
+        json conversation
+        json findings
+        timestamp createdAt
+    }
+        </pre>
+        
+        <div style="margin-top: 24px; padding: 20px; background: #1e293b; border-radius: 12px; border-left: 4px solid #f59e0b;">
+          <h3 style="margin: 0 0 12px 0; color: #f59e0b;">📦 Proposed: Project Snapshot Table</h3>
+          <p style="color: #94a3b8;">Add a <code>project_snapshots</code> table to consolidate state:</p>
+          <pre style="background: #0f172a; padding: 16px; border-radius: 8px; color: #a5f3fc; font-size: 13px; overflow-x: auto;">
+CREATE TABLE project_snapshots (
+  id UUID PRIMARY KEY,
+  project_id UUID REFERENCES projects(id),
+  snapshot_at TIMESTAMP DEFAULT NOW(),
+  health_score INT,           -- 0-100
+  latest_scans JSONB,         -- merged scan results
+  open_stories INT,
+  active_agents TEXT[],
+  priority_stack JSONB,       -- ordered story IDs
+  last_deployment JSONB,
+  tech_stack TEXT[]           -- detected: ['next.js', 'postgres', etc]
+);
+          </pre>
+        </div>
+      </section>
+
+      <!-- Current System Diagrams -->
+      <section>
+        <h2>📊 Current System: Scanning Pipeline</h2>
         <pre class="mermaid">
 graph TD
-  Cron905["Vercel Cron 9:05"] --> Trigger["/api/scans/trigger"]
-  Trigger --> Queue["BullMQ scans queue"]
-  Queue --> Worker["scan-worker.ts"]
-  Worker --> Domain["scanDomain"]
-  Worker --> SEO["scanSEO"]
-  Worker --> Analytics["scanAnalytics"]
-  Domain --> Scans["scans (table)"]
+  Cron905["Vercel Cron 9:05 UTC"] --> Trigger["/api/scans/trigger"]
+  Trigger --> Queue["BullMQ scans-queue"]
+  Queue --> Worker["scan-worker.ts (Railway)"]
+  Worker --> Domain["scanDomain()"]
+  Worker --> SEO["scanSEO()"]
+  Worker --> Analytics["scanAnalytics()"]
+  Worker --> Vercel["scanVercel()"]
+  Worker --> Performance["scanPerformance()"]
+  Domain --> Scans["scans table"]
   SEO --> Scans
   Analytics --> Scans
-  Scans --> ScansAPI["/api/scans"]
-  ScansAPI --> Dashboard["/dashboard"]
+  Vercel --> Scans
+  Performance --> Scans
         </pre>
+        <div class="note">Scanners are simple HTTP requests + parsing. No AI needed. <strong>Keep as-is.</strong></div>
       </section>
 
       <section>
-        <h2>4) Orchestrator Run + Outputs</h2>
+        <h2>📊 Current System: Orchestrator Flow</h2>
         <pre class="mermaid">
 graph TD
-  RunAPI[/api/orchestrator/run/] --> FetchScans[fetch scans last 24h]
-  FetchScans --> Context[ScanContext builder]
-  Context --> Orchestrator[lib/orchestrator.ts]
-  Orchestrator --> Agents[Agents + Anthropic]
-  Agents --> Findings[(agent_findings)]
-  Orchestrator --> Rank[rankFindings]
-  Rank --> Completions[(completions)]
-  Orchestrator --> RunRow[(orchestrator_runs)]
-  Completions --> SlackNotify[Slack completion notifications]
-  Completions --> LinearTasks[Linear tasks + comments]
-        </pre>
-      </section>
-
-      <section>
-        <h2>5) Run Data Lineage</h2>
-        <pre class="mermaid">
-graph LR
-  RunId[runId] --> OrchestratorRuns[(orchestrator_runs)]
-  RunId --> Findings[(agent_findings)]
-  RunId --> Completions[(completions)]
-  Findings -.-> Completions
-        </pre>
-      </section>
-
-      <section>
-        <h2>6) Execution Worker Pipeline</h2>
-        <pre class="mermaid">
-graph TD
-  Approve[Slack Approve button] --> Events[/api/slack/events/]
-  Events --> UpdateStatus[completion status = in_progress]
-  UpdateStatus -.->|queue via script| Queue[(execution-queue)]
-  Queue --> Worker[execution-worker.ts]
-  Worker --> Git[clone/branch/commit/push]
-  Git --> PR[GitHub PR]
-  PR --> UpdateCompletion[completion.status=completed + prUrl]
-  UpdateCompletion --> SlackDone[Slack notification]
-  UpdateCompletion --> LinearUpdate[Linear status + comments]
-        </pre>
-      </section>
-
-      <section>
-        <h2>7) UI Data Surfaces</h2>
-        <pre class="mermaid">
-graph TD
-  Dashboard["/dashboard (scan overview)"] --> ScansAPI["/api/scans"]
-  Agents["/agents (activity view)"] --> AgentsAPI["/api/agents"]
-  Completions["/completions (work queue)"] --> CompletionsAPI["/api/completions"]
-  Project["/projects/:id (detail)"] --> ProjectAPI["/api/projects/:id"]
-  AgentsAPI --> CompletionsTable["completions (table)"]
-  ProjectAPI --> CompletionsTable
-  ProjectAPI -.->|legacy scan fields| ProjectTable["projects (table)"]
+  RunAPI["/api/orchestrator/run"] --> FetchScans["Fetch scans (last 24h)"]
+  FetchScans --> Context["Build ScanContext[]"]
+  Context --> Queue["BullMQ orchestrator-queue"]
+  Queue --> Worker["orchestrator-worker.ts"]
+  Worker --> GetAgents["getRelevantAgents()"]
+  GetAgents --> RunAgents["runAgent() × 5"]
+  RunAgents -->|1 API call each| Findings["AgentFinding[]"]
+  Findings --> Rank["rankFindings()"]
+  Rank --> CreateStories["createStories()"]
+  CreateStories --> DB["stories + agent_findings + orchestrator_runs"]
+  DB --> Linear["Create Linear tasks"]
+  DB --> Slack["Send Slack notifications"]
         </pre>
         <div class="note">
-          Notes: Agents UI derives activity from completions text, not agent_findings. Project detail API reads legacy scan fields; canonical scan data is in scans.
+          <strong>Problems to fix:</strong><br/>
+          • <code>getRelevantAgents()</code> is hard-coded logic<br/>
+          • <code>runAgent()</code> is 1 API call, no tools<br/>
+          • <code>rankFindings()</code> ignores user priorities
         </div>
       </section>
 
       <section>
-        <h2>8) User-Facing UX Flow (Your Perspective)</h2>
+        <h2>📊 Current System: Execution Flow</h2>
         <pre class="mermaid">
 graph TD
-  You["You"] --> Checkin["Slack check-in (set priorities)"]
-  Checkin --> Priorities["Priorities saved (72h)"]
-  DailyScans["Projects scanned daily"] --> Orchestrator["Orchestrator + agents analyze"]
-  Priorities --> Orchestrator
-  Orchestrator --> Ranked["Ranked work (completions)"]
-  Ranked --> Slack["Slack: approvals + updates"]
-  Ranked --> Dashboard["Dashboard: scans + work queue"]
-  Ranked --> Linear["Linear: tasks + status"]
-  Slack --> You
-  Dashboard --> You
-  Linear --> You
+  Slack["Slack approve button"] --> Events["/api/slack/events"]
+  Events --> Update["story.status = in_progress"]
+  Update -.->|MANUAL| Script["queue-completion-to-production.ts"]
+  Script --> Queue["execution-queue"]
+  Queue --> Worker["execution-worker.ts"]
+  Worker --> Clone["cloneRepo()"]
+  Clone --> Branch["createBranch()"]
+  Branch --> Changes["applyChanges()"]
+  Changes --> Placeholder["AI_IMPROVEMENTS.md ONLY"]
+  Placeholder --> Commit["commitChanges()"]
+  Commit --> Push["pushBranch()"]
+  Push --> PR["createPullRequest()"]
+  PR --> Notify["Slack + Linear update"]
+        </pre>
+        <div class="note">
+          <strong>Critical fix needed:</strong><br/>
+          • Auto-enqueue on approval (no manual script)<br/>
+          • Replace placeholder with Agent SDK code generation
+        </div>
+      </section>
+
+      <!-- Priority System -->
+      <section style="background: linear-gradient(135deg, #1e3a5f, #0f172a); border-color: #3b82f6;">
+        <h2>🎯 Proposed: Priority System</h2>
+        <pre class="mermaid">
+graph TD
+  SlackDM["Slack DMs"] --> Events["/api/slack/events"]
+  SlackChannel["Slack channels"] --> Events
+  SlackMention["@mentions"] --> Events
+  SlackReaction["Emoji reactions 🔥⭐👍"] --> Events
+  LinearComment["Linear comments"] --> Webhook["/api/linear/webhook"]
+  
+  Events --> Classify["Priority Classifier"]
+  Webhook --> Classify
+  
+  Classify -->|Explicit| P0P3["P0/P1/P2/P3 tag"]
+  Classify -->|Emoji| P0P3
+  Classify -->|LLM fallback| P0P3
+  
+  P0P3 --> Signals["priority_signals table"]
+  Signals --> Rerank["Re-rank trigger"]
+  
+  Rerank -->|User signal| Immediate["Immediate (5min debounce)"]
+  Rerank -->|System signal| Batch["2×/day batch"]
+  
+  Immediate --> Stack["Update stack ranks"]
+  Batch --> Stack
+  Stack --> Stories["stories.priority_level + rank_in_project"]
+        </pre>
+        <div class="note">
+          <strong>Classification rules:</strong><br/>
+          • <code>P0|critical|urgent|ASAP|today|blocking</code> → P0<br/>
+          • <code>🔥⚠️🚨</code> → P0, <code>⭐</code> → P1, <code>👍</code> → P2, <code>💡</code> → P3<br/>
+          • No match → LLM classifies to P0-P3 with confidence
+        </div>
+      </section>
+
+      <!-- Code Generation Agent -->
+      <section style="background: linear-gradient(135deg, #14532d, #0f172a); border-color: #16a34a;">
+        <h2>💻 Proposed: Code Generation Agent</h2>
+        <pre class="mermaid">
+graph TD
+  Story["Approved story"] --> Queue["execution-queue"]
+  Queue --> Worker["execution-worker.ts"]
+  Worker --> Clone["Clone repo"]
+  Clone --> Agent["Code Generation Agent"]
+  
+  Agent -->|Read| Files["Read relevant files"]
+  Agent -->|Grep| Search["Search codebase"]
+  Agent -->|Edit| Changes["Make code changes"]
+  Agent -->|Bash| Tests["Run tests"]
+  
+  Changes --> Validate["Validate changes work"]
+  Tests --> Validate
+  Validate --> Commit["Commit + Push"]
+  Commit --> PR["Create PR"]
+  
+  Agent -->|Thinking| Traces["Thinking traces"]
+  Traces --> PRBody["PR description"]
+  Traces --> Slack["Slack thread"]
+  Traces --> DB["story.thinking_trace"]
+        </pre>
+        <div class="note">
+          <strong>Built-in tools used:</strong> Read, Write, Edit, Bash, Grep, Glob<br/>
+          <strong>No custom implementation</strong> - SDK provides all file operations
+        </div>
+      </section>
+
+      <!-- User UX Flow -->
+      <section>
+        <h2>👤 User-Facing UX Flow</h2>
+        <pre class="mermaid">
+graph TD
+  You["You"] --> Slack["Slack (any message)"]
+  You --> Linear["Linear comments"]
+  You --> Dashboard["Dashboard"]
+  
+  Slack --> Priority["Set priority (P0-P3)"]
+  Linear --> Priority
+  Priority --> Stack["Stack-ranked work lists"]
+  
+  DailyScans["Projects scanned daily"] --> Orchestrator["Orchestrator + agents"]
+  Stack --> Orchestrator
+  Orchestrator --> NewWork["New prioritized work"]
+  
+  NewWork --> SlackNotify["Slack: approval cards"]
+  NewWork --> LinearTasks["Linear: tasks created"]
+  NewWork --> DashQueue["Dashboard: work queue"]
+  
+  Approve["Approve in Slack"] -->|AUTO| Execution["Execution queue"]
+  Execution --> CodeAgent["Code generation agent"]
+  CodeAgent --> PR["Real PR with code changes"]
+  
+  PR --> You
+  DashQueue --> You
+  SlackNotify --> You
         </pre>
       </section>
+
+      <!-- User Interaction Flows with Agent SDK -->
+      <section>
+        <h2>🔄 User Interaction Flows (With Agent SDK)</h2>
+
+        <h3 style="color: #60a5fa; margin-top: 24px;">Priority Setting & Work Generation</h3>
+        <pre class="mermaid">
+graph TD
+  User[User] -->|"DM: Fix auth bug"| SlackBot[Slack Bot]
+  User -->|"@mention in channel"| SlackBot
+  User -->|"React with 🔥"| SlackBot
+  User -->|"Create Linear issue"| LinearWebhook[Linear Webhook]
+  User -->|"Comment: this is urgent"| LinearWebhook
+
+  SlackBot --> PrioritySignals[(priority_signals)]
+  LinearWebhook --> PrioritySignals
+
+  PrioritySignals -->|"Immediate rerank"| Orchestrator[Head of Product Agent]
+  Orchestrator -->|"Spawn specialist agents"| Specialists[Security/Analytics/SEO Agents]
+  Specialists -->|"Findings + evidence"| StackRank[Stack-Ranked Lists]
+
+  StackRank --> SlackThread[Slack Thread: Proposed Work]
+  SlackThread -->|"✅ Approve"| ExecQueue[(execution-queue FIFO)]
+  SlackThread -->|"💬 Feedback"| Orchestrator
+  SlackThread -->|"❌ Reject"| Rejected[Mark rejected]
+
+  ExecQueue --> CodeGenAgent[Code Generation Agent]
+  CodeGenAgent -->|"Real-time updates"| SlackUpdates[Slack: thinking traces]
+  CodeGenAgent -->|"Status updates"| LinearComments[Linear: progress comments]
+  CodeGenAgent -->|"PR created"| GitHubPR[GitHub PR]
+
+  GitHubPR --> LinearDone[Linear: Done + PR link]
+  GitHubPR --> SlackDone[Slack: PR ready for review]
+        </pre>
+
+        <h3 style="color: #60a5fa; margin-top: 24px;">Agent Thinking Traces Flow</h3>
+        <pre class="mermaid">
+sequenceDiagram
+  participant User
+  participant Slack
+  participant Orchestrator
+  participant SecurityAgent
+  participant CodeGenAgent
+  participant Linear
+
+  User->>Slack: Approve "Fix SSL certificate issue"
+  Slack->>Orchestrator: completion.status = in_progress
+  Orchestrator->>SecurityAgent: Spawn via Task tool
+
+  SecurityAgent->>Slack: 🤔 "Analyzing SSL configuration..."
+  SecurityAgent->>Linear: Comment: "Checking certificate expiry"
+  SecurityAgent->>SecurityAgent: Use fetch_url tool
+  SecurityAgent->>Slack: 🤔 "Certificate expires in 7 days"
+  SecurityAgent->>Linear: Comment: "Found: cert expires Jan 15"
+
+  SecurityAgent-->>Orchestrator: Evidence: {expiry: "2026-01-15", provider: "Let's Encrypt"}
+  Orchestrator->>CodeGenAgent: Generate renewal script
+
+  CodeGenAgent->>Slack: 🤔 "Reading existing cert config..."
+  CodeGenAgent->>Linear: Comment: "Creating renewal automation"
+  CodeGenAgent->>CodeGenAgent: Use Read/Write/Edit tools
+  CodeGenAgent->>Slack: 🤔 "Created certbot automation script"
+  CodeGenAgent->>Linear: Comment: "Added weekly renewal cron job"
+
+  CodeGenAgent->>Linear: Status: Done + PR link
+  CodeGenAgent->>Slack: ✅ "PR #123 ready: SSL auto-renewal"
+  Slack->>User: Notification with PR link
+        </pre>
+
+        <h3 style="color: #60a5fa; margin-top: 24px;">Daily Orchestration Cycle</h3>
+        <pre class="mermaid">
+graph LR
+  Morning[9:00 AM Check-in] --> UserInput{User responds?}
+  UserInput -->|Yes| Priorities[Capture P0-P3 priorities]
+  UserInput -->|No| FallbackMode[Use scan results + past patterns]
+
+  Priorities --> Scans[Daily scans run]
+  FallbackMode --> Scans
+
+  Scans --> Orchestrator[Head of Product analyzes]
+  Orchestrator --> Specialists[Spawn specialist agents]
+  Specialists --> Findings[Evidence-based findings]
+  Findings --> Rank[Stack rank by priority + score]
+
+  Rank --> Evening[6:00 PM Check-in]
+  Evening --> Present[Present top 5 items to user]
+  Present --> UserDecision{User approves?}
+
+  UserDecision -->|Approve items| Queue[Add to execution queue]
+  UserDecision -->|Request changes| Orchestrator
+  UserDecision -->|No response| OneRound[Execute 1 item, wait for approval]
+
+  Queue --> Execution[Overnight execution]
+  OneRound --> WaitApproval[Stop until approved]
+  Execution --> NextMorning[Next morning: results ready]
+        </pre>
+      </section>
+
+      <!-- USER STORIES CHECKLIST -->
+      <section>
+        <h2>📋 User Stories Checklist</h2>
+        <p style="color: #94a3b8; margin-bottom: 20px;">Complete UX vision for Virtual Cofounder</p>
+        
+        <div style="display: grid; gap: 12px;">
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #ef4444;">
+            <h3 style="margin: 0 0 12px; color: #fca5a5;">🔴 Not Implemented (Need Work)</h3>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.8; color: #e2e8f0;">
+              <li>I can talk to Head of Product in Slack at any time and set priority</li>
+              <li>Evening check-in (PM recap) sets work for next cycle</li>
+              <li>I can see all agents' thinking traces</li>
+              <li>User can approve, request feedback, or reject work in Linear or Slack</li>
+              <li>User can generate new work from Slack or Linear</li>
+              <li>Agents can do non-code work via specialist subagents (Design, Copy, Research)</li>
+              <li>Non-code work hosted at unique URL for review</li>
+              <li>Orchestrator keeps stack-ranked priority list per project with thinking</li>
+              <li>If not approved, orchestrator stops</li>
+            </ul>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <h3 style="margin: 0 0 12px; color: #fcd34d;">🟡 Partially Implemented</h3>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.8; color: #e2e8f0;">
+              <li>All projects analyzed daily + morning check-in <span style="color: #94a3b8;">(scans work, but no PM check-in)</span></li>
+              <li>Agents update Linear stories <span style="color: #94a3b8;">(only on complete, not in progress)</span></li>
+              <li>Can see agents assigned to projects <span style="color: #94a3b8;">(UI exists but limited)</span></li>
+              <li>Agent thinking in Linear comments <span style="color: #94a3b8;">(only final rationale)</span></li>
+              <li>Agents can do code work <span style="color: #94a3b8;">(placeholder only)</span></li>
+              <li>Priority tracked by orchestrator <span style="color: #94a3b8;">(formula-only, not changeable)</span></li>
+            </ul>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #22c55e;">
+            <h3 style="margin: 0 0 12px; color: #86efac;">🟢 Working</h3>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.8; color: #e2e8f0;">
+              <li>Projects scanned daily (domain, SEO, analytics, security)</li>
+              <li>Morning check-in via Slack</li>
+              <li>Linear task creation from findings</li>
+              <li>Slack notifications for new work</li>
+              <li>Git operations (clone, branch, commit, PR)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- DEPLOYMENT INFO -->
+      <section class="alert">
+        <h2>🌐 Deployment: Online vs Local</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px;">
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+            <h3 style="margin: 0 0 8px; color: #a5b4fc;">✅ Works Online (Cloud)</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 12px;">The Claude Agent SDK works in server environments</p>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; color: #e2e8f0; font-size: 14px;">
+              <li>Railway workers ✓</li>
+              <li>Vercel API routes ✓</li>
+              <li>Any Node.js server ✓</li>
+              <li>No CLI needed in headless mode</li>
+            </ul>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+            <h3 style="margin: 0 0 8px; color: #86efac;">✅ Already Have</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 12px;">Your current infrastructure supports it:</p>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; color: #e2e8f0; font-size: 14px;">
+              <li>ANTHROPIC_API_KEY ✓</li>
+              <li>Railway workers with /tmp ✓</li>
+              <li>Supabase DB + Storage ✓</li>
+              <li>Redis/BullMQ queues ✓</li>
+              <li>Git operations ✓</li>
+            </ul>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+            <h3 style="margin: 0 0 8px; color: #fcd34d;">⚡ What to Add</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 12px;">Minimal changes needed:</p>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; color: #e2e8f0; font-size: 14px;">
+              <li><code>npm install @anthropic-ai/claude-agent-sdk</code></li>
+              <li>New DB tables (3 migrations)</li>
+              <li>Deploy updated workers</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="note" style="margin-top: 16px;">
+          <strong>Bottom line:</strong> No new infrastructure needed. Just install the SDK package and add the new database tables.
+        </div>
+      </section>
+
+      <!-- SPECIALIST AGENTS -->
+      <section>
+        <h2>🤖 Specialist Agents (Subagents)</h2>
+        <pre class="mermaid">
+flowchart TB
+    subgraph HOP["HEAD OF PRODUCT AGENT"]
+        HOP_DESC["Meta-Agent Orchestrator<br/>Tools: Task, Read, Grep"]
+    end
+
+    subgraph CODE_AGENTS["Code Agents"]
+        SEC["Security Agent<br/>Tools: Read, Grep, Bash<br/>Output: Vulnerabilities"]
+        ANALYTICS["Analytics Agent<br/>Tools: WebFetch, Read<br/>Output: Missing tracking"]
+        SEO["SEO Agent<br/>Tools: WebFetch<br/>Output: Meta issues"]
+        CODEGEN["Code Gen Agent<br/>Tools: Read, Write, Edit, Bash<br/>Output: Actual PRs"]
+    end
+
+    subgraph NON_CODE_AGENTS["Non-Code Agents"]
+        DESIGN["Design Agent<br/>Tools: Read, Write, WebFetch<br/>Output: HTML mockups<br/>Hosted preview URL"]
+        COPY["Copy Agent<br/>Tools: Read, Write, WebSearch<br/>Output: Content suggestions"]
+        RESEARCH["Research Agent<br/>Tools: WebSearch, WebFetch<br/>Output: Analysis report"]
+    end
+
+    HOP_DESC --> SEC
+    HOP_DESC --> ANALYTICS
+    HOP_DESC --> SEO
+    HOP_DESC --> CODEGEN
+    HOP_DESC --> DESIGN
+    HOP_DESC --> COPY
+    HOP_DESC --> RESEARCH
+
+    style HOP fill:#312e81,stroke:#6366f1
+    style CODE_AGENTS fill:#1e3a5f,stroke:#3b82f6
+    style NON_CODE_AGENTS fill:#365314,stroke:#84cc16
+        </pre>
+        <div class="note">
+          <strong>Non-code agents</strong> create outputs that are uploaded to Supabase Storage and served at unique preview URLs for user review.
+        </div>
+      </section>
+
+      <!-- PRIORITY SYSTEM -->
+      <section>
+        <h2>⚡ Priority System (P0-P3)</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          <div style="background: #7f1d1d; padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: bold;">P0</div>
+            <div style="font-size: 13px; color: #fca5a5;">Urgent / User Request</div>
+            <div style="font-size: 12px; color: #f87171; margin-top: 4px;">Execute immediately</div>
+          </div>
+          <div style="background: #78350f; padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: bold;">P1</div>
+            <div style="font-size: 13px; color: #fcd34d;">High Impact</div>
+            <div style="font-size: 12px; color: #f59e0b; margin-top: 4px;">Execute tonight</div>
+          </div>
+          <div style="background: #1e3a5f; padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: bold;">P2</div>
+            <div style="font-size: 13px; color: #93c5fd;">Normal</div>
+            <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">Queue for next cycle</div>
+          </div>
+          <div style="background: #1e293b; padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: bold;">P3</div>
+            <div style="font-size: 13px; color: #94a3b8;">Low / Nice-to-have</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">When time permits</div>
+          </div>
+        </div>
+        
+        <pre class="mermaid">
+flowchart LR
+    subgraph SIGNALS["Priority Signals"]
+        SLACK["Slack DM or Mention"]
+        LINEAR["Linear Comment"]
+        UI["Dashboard UI"]
+        SCAN["Scan Findings"]
+    end
+
+    subgraph CLASSIFY["Classification"]
+        EXPLICIT["Explicit tags<br/>P0, urgent, today"]
+        EMOJI["Emoji shortcuts"]
+        LLM["LLM fallback<br/>for ambiguous"]
+    end
+
+    subgraph SCORE["Stack Ranking"]
+        FORMULA["Score = Impact x 3<br/>plus Urgency x 2<br/>plus Confidence<br/>minus Cost"]
+        RERANK["Re-rank triggers"]
+    end
+
+    subgraph OUTPUT["Output"]
+        PERPROJECT["Per-project list"]
+        OVERALL["Overall queue"]
+    end
+
+    SLACK --> EXPLICIT
+    LINEAR --> EXPLICIT
+    UI --> EXPLICIT
+    SCAN --> LLM
+    EXPLICIT --> FORMULA
+    EMOJI --> FORMULA
+    LLM --> FORMULA
+    FORMULA --> RERANK
+    RERANK --> PERPROJECT
+    RERANK --> OVERALL
+
+    style SIGNALS fill:#1e3a5f,stroke:#3b82f6
+    style CLASSIFY fill:#312e81,stroke:#6366f1
+    style SCORE fill:#365314,stroke:#84cc16
+    style OUTPUT fill:#713f12,stroke:#f59e0b
+        </pre>
+      </section>
+
+      <!-- ORCHESTRATOR SUBAGENT SPAWNING -->
+      <section>
+        <h2>🎯 Where Subagents Spawn</h2>
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+          <strong>Location:</strong> lib/orchestrator.ts (Railway Worker)<br/>
+          <strong>Controller:</strong> Head of Product Agent (meta-agent)<br/>
+          <strong>When:</strong> During daily orchestrator run (9:30 AM)
+        </p>
+
+        <h3 style="color: #60a5fa; margin-top: 24px;">Execution Flow</h3>
+        <pre class="mermaid">
+sequenceDiagram
+  participant Cron as Vercel Cron
+  participant API as /api/orchestrator/run
+  participant Queue as BullMQ Queue
+  participant Worker as Railway Worker
+  participant HOP as Head of Product Agent
+  participant SEC as Security Agent
+  participant ANALYTICS as Analytics Agent
+  participant DB as Database
+
+  Cron->>API: Trigger (9:30 AM)
+  API->>Queue: Queue orchestrator job
+  Queue->>Worker: Pick up job
+  Worker->>Worker: Fetch scans + priority_signals
+  Worker->>HOP: Start query() with Agent SDK
+
+  Note over HOP: "I'll analyze each project..."
+
+  HOP->>HOP: Use Task tool
+  Note over HOP: spawn('security-agent', 'Warmstart')
+
+  HOP->>SEC: Spawn Security Agent
+  Note over SEC: Runs with Read/Grep/Bash tools
+  SEC->>SEC: Check package.json for CVEs
+  SEC->>SEC: Scan for exposed secrets
+  SEC-->>HOP: Return findings + thinking
+
+  HOP->>HOP: Use Task tool
+  Note over HOP: spawn('analytics-agent', 'Warmstart')
+
+  HOP->>ANALYTICS: Spawn Analytics Agent
+  Note over ANALYTICS: Runs with WebFetch/Read tools
+  ANALYTICS->>ANALYTICS: Check PostHog installation
+  ANALYTICS->>ANALYTICS: Verify event tracking
+  ANALYTICS-->>HOP: Return findings + thinking
+
+  Note over HOP: "Warmstart has P0 security issue, P1 analytics gap"
+
+  HOP->>DB: Create stories with P0/P1 priorities
+  HOP->>DB: Store conversation (full thinking trace)
+  HOP-->>Worker: Return stack-ranked findings
+        </pre>
+
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; margin-top: 20px;">
+          <h3 style="margin: 0 0 12px; color: #a5b4fc;">📝 Code in lib/orchestrator.ts</h3>
+          <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; color: #e2e8f0; font-size: 12px; margin: 0;">
+<span style="color: #c678dd;">import</span> { query } <span style="color: #c678dd;">from</span> <span style="color: #98c379;">'@anthropic-ai/claude-agent-sdk'</span>;
+
+<span style="color: #c678dd;">export async function</span> <span style="color: #61afef;">runOrchestrator</span>(runId: <span style="color: #e5c07b;">string</span>) {
+  <span style="color: #7f848e;">// Fetch context</span>
+  <span style="color: #c678dd;">const</span> scans = <span style="color: #c678dd;">await</span> getRecentScans();
+  <span style="color: #c678dd;">const</span> signals = <span style="color: #c678dd;">await</span> getPrioritySignals();
+
+  <span style="color: #7f848e;">// Head of Product Agent spawns specialists</span>
+  <span style="color: #c678dd;">for await</span> (<span style="color: #c678dd;">const</span> message <span style="color: #c678dd;">of</span> <span style="color: #61afef;">query</span>({
+    prompt: <span style="color: #98c379;">`You are Head of Product.
+
+    Review scans and spawn specialist agents
+    to investigate issues. Available:
+    security-agent, analytics-agent, seo-agent`</span>,
+
+    options: {
+      allowedTools: [<span style="color: #98c379;">'Task'</span>, <span style="color: #98c379;">'Read'</span>],
+
+      <span style="color: #7f848e;">// Define subagents</span>
+      agents: {
+        <span style="color: #98c379;">'security-agent'</span>: {
+          prompt: <span style="color: #98c379;">'Check for vulnerabilities...'</span>,
+          tools: [<span style="color: #98c379;">'Read'</span>, <span style="color: #98c379;">'Grep'</span>, <span style="color: #98c379;">'Bash'</span>]
+        },
+        <span style="color: #98c379;">'analytics-agent'</span>: {
+          prompt: <span style="color: #98c379;">'Verify tracking setup...'</span>,
+          tools: [<span style="color: #98c379;">'WebFetch'</span>, <span style="color: #98c379;">'Read'</span>]
+        }
+      }
+    }
+  })) {
+    <span style="color: #7f848e;">// When HOP spawns a subagent</span>
+    <span style="color: #c678dd;">if</span> (message.toolUse?.name === <span style="color: #98c379;">'Task'</span>) {
+      console.log(<span style="color: #98c379;">'Spawning:'</span>, message.toolUse.input.agentName);
+    }
+
+    <span style="color: #7f848e;">// When subagent returns findings</span>
+    <span style="color: #c678dd;">if</span> (message.taskResult) {
+      <span style="color: #c678dd;">await</span> storeFindings(message.taskResult);
+    }
+  }
+}</pre>
+        </div>
+
+        <div class="note" style="margin-top: 16px;">
+          <strong>Key Point:</strong> All subagents run in the same Railway worker process. The Head of Product Agent (running via SDK's <code>query()</code>) decides which specialists to spawn and when. The SDK handles the spawning automatically when the Head of Product uses the Task tool.
+        </div>
+      </section>
+
+      <!-- Approval Sources (Multi-Source) -->
+      <section>
+        <h2>✅ Multi-Source Approval (Linear + Slack + Dashboard)</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Current:</strong> Only Slack approval triggers execution<br/>
+          <strong>Proposed:</strong> Linear status change OR Slack approve OR Dashboard button → all trigger execution queue
+        </p>
+        <pre class="mermaid">
+flowchart LR
+    subgraph APPROVAL_SOURCES["Approval Sources"]
+        SLACK["Slack 'Approve' Button"]
+        LINEAR["Linear: Move to 'In Progress'"]
+        DASHBOARD["Dashboard 'Approve' Button"]
+    end
+
+    subgraph WEBHOOK_HANDLERS["Webhook Handlers"]
+        SLACK_EVENTS["/api/slack/events"]
+        LINEAR_WEBHOOK["/api/linear/webhook"]
+        DASHBOARD_API["/api/stories/[id]/approve"]
+    end
+
+    subgraph UNIFIED_APPROVAL["Unified Approval Logic"]
+        APPROVE_FN["approveStory(storyId)"]
+    end
+
+    subgraph EXECUTION["Execution Queue"]
+        QUEUE["BullMQ execution-queue"]
+        WORKER["execution-worker.ts"]
+        PR["GitHub PR"]
+    end
+
+    SLACK --> SLACK_EVENTS
+    LINEAR --> LINEAR_WEBHOOK
+    DASHBOARD --> DASHBOARD_API
+
+    SLACK_EVENTS --> APPROVE_FN
+    LINEAR_WEBHOOK --> APPROVE_FN
+    DASHBOARD_API --> APPROVE_FN
+
+    APPROVE_FN -->|"userApproved=true"| QUEUE
+    QUEUE --> WORKER
+    WORKER --> PR
+
+    style APPROVAL_SOURCES fill:#312e81,stroke:#6366f1
+    style UNIFIED_APPROVAL fill:#365314,stroke:#84cc16
+    style EXECUTION fill:#1e3a5f,stroke:#3b82f6
+        </pre>
+        <div class="note">
+          <strong>Key Change:</strong> When Linear task moves to "In Progress" state, the webhook now:<br/>
+          1. Sets <code>story.userApproved = true</code><br/>
+          2. Adds story to <code>execution-queue</code> with priority<br/>
+          This means users can approve from Linear without touching Slack!
+        </div>
+      </section>
+
+      <!-- Scanning vs Agents -->
+      <section>
+        <h2>🔍 Scanning vs Agent Analysis: Where They Meet</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Current Scanners:</strong> Simple HTTP requests + parsing (no AI)<br/>
+          <strong>Current Agents:</strong> Analyze scan results with single LLM call<br/>
+          <strong>Proposed:</strong> Agents can investigate deeper using tools
+        </p>
+        <pre class="mermaid">
+flowchart TB
+    subgraph SCANNERS["Current Scanners (Keep)"]
+        direction TB
+        DOMAIN["Domain Scanner<br/>HTTP requests to check DNS, SSL"]
+        SEO["SEO Scanner<br/>Fetch HTML, parse meta tags"]
+        ANALYTICS["Analytics Scanner<br/>Check for PostHog/GA scripts"]
+        VERCEL["Vercel Scanner<br/>API call to Vercel"]
+        PERF["Performance Scanner<br/>Playwright metrics"]
+    end
+
+    subgraph SCAN_DATA["Scan Results (Database)"]
+        SCANS_TABLE["scans table<br/>JSONB: domainData, seoDetail, etc."]
+    end
+
+    subgraph ORCHESTRATOR["Orchestrator (Proposed)"]
+        direction TB
+        HOP["Head of Product Agent"]
+        CONTEXT["Receives scan context"]
+    end
+
+    subgraph AGENTS["Specialist Agents (With Tools)"]
+        direction TB
+        SEC_AGENT["Security Agent<br/>Tools: Read, Grep, Bash<br/>Can investigate files"]
+        SEO_AGENT["SEO Agent<br/>Tools: WebFetch<br/>Can test competitor sites"]
+        ANALYTICS_AGENT["Analytics Agent<br/>Tools: WebFetch, Read<br/>Can verify tracking"]
+    end
+
+    subgraph OUTPUT["Output"]
+        FINDINGS["Evidence-based findings"]
+        STORIES["stories + priority_level"]
+    end
+
+    DOMAIN --> SCANS_TABLE
+    SEO --> SCANS_TABLE
+    ANALYTICS --> SCANS_TABLE
+    VERCEL --> SCANS_TABLE
+    PERF --> SCANS_TABLE
+
+    SCANS_TABLE --> CONTEXT
+    CONTEXT --> HOP
+    HOP -->|"Spawn via Task tool"| SEC_AGENT
+    HOP -->|"Spawn via Task tool"| SEO_AGENT
+    HOP -->|"Spawn via Task tool"| ANALYTICS_AGENT
+
+    SEC_AGENT --> FINDINGS
+    SEO_AGENT --> FINDINGS
+    ANALYTICS_AGENT --> FINDINGS
+    FINDINGS --> STORIES
+
+    style SCANNERS fill:#1e3a5f,stroke:#3b82f6
+    style ORCHESTRATOR fill:#312e81,stroke:#6366f1
+    style AGENTS fill:#365314,stroke:#84cc16
+        </pre>
+        
+        <h3 style="margin-top: 24px; color: #60a5fa;">Tradeoffs: Agent-Based Scanning vs Current</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 12px;">
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <h4 style="color: #93c5fd; margin: 0 0 12px;">Current: Dedicated Scanners</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #e2e8f0;">
+              <li><strong>✅ Fast:</strong> Simple HTTP requests, ~1-5s each</li>
+              <li><strong>✅ Cheap:</strong> No LLM costs for scanning</li>
+              <li><strong>✅ Reliable:</strong> Deterministic results</li>
+              <li><strong>❌ Shallow:</strong> Can't investigate further</li>
+              <li><strong>❌ Rigid:</strong> Each scanner is custom code</li>
+            </ul>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px; border-left: 4px solid #22c55e;">
+            <h4 style="color: #86efac; margin: 0 0 12px;">Proposed: Agent-Enhanced Analysis</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #e2e8f0;">
+              <li><strong>✅ Deep:</strong> Agents can investigate anomalies</li>
+              <li><strong>✅ Flexible:</strong> One agent can adapt to any project</li>
+              <li><strong>✅ Evidence:</strong> Thinking traces explain findings</li>
+              <li><strong>❌ Slower:</strong> Multi-turn reasoning takes 30-60s</li>
+              <li><strong>❌ Costlier:</strong> ~$0.10-0.50 per agent run</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="note" style="margin-top: 16px;">
+          <strong>Recommendation:</strong> Keep current scanners for fast, cheap data collection. Use Agent SDK for <em>analysis</em> of scan results. Agents investigate when scanners flag issues, not for every scan.
+        </div>
+      </section>
+
+      <!-- Project State Blob -->
+      <section>
+        <h2>📊 Project State: Current vs Proposed</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Current:</strong> No single "project state" blob — scan results are scattered across multiple rows<br/>
+          <strong>Proposed:</strong> Add <code>project_state</code> column with aggregated health snapshot
+        </p>
+        
+        <h3 style="color: #60a5fa;">Current Data Model</h3>
+        <pre style="background: #0f172a; padding: 16px; border-radius: 8px; overflow-x: auto; color: #e2e8f0; font-size: 13px;">
+// Multiple scans table rows per project
+scans: [
+  { projectId, scanType: 'domain', domainData: {...}, scannedAt },
+  { projectId, scanType: 'seo', seoDetail: {...}, scannedAt },
+  { projectId, scanType: 'analytics', analyticsData: {...}, scannedAt },
+  // No aggregated view!
+]
+
+// To get "project state", code must:
+// 1. Fetch latest scan of each type
+// 2. Merge results manually
+// 3. Compute health scores
+        </pre>
+        
+        <h3 style="color: #60a5fa; margin-top: 16px;">Proposed: Project State Snapshot</h3>
+        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; color: #e2e8f0; font-size: 13px;">
+// Add to Project model or new ProjectState table
+model ProjectState {
+  id          String   @id @default(uuid())
+  projectId   String   @unique @map("project_id")
+  
+  // Aggregated health
+  overallHealth   String   // 'healthy' | 'warning' | 'critical'
+  healthScore     Int      // 0-100
+  
+  // Latest scan summaries (JSONB)
+  domainStatus    Json?    // { ssl: 'valid', dnsOk: true }
+  seoStatus       Json?    // { score: 85, issues: [...] }
+  securityStatus  Json?    // { vulns: 0, warnings: 2 }
+  analyticsStatus Json?    // { postHog: true, events: 1234 }
+  
+  // Priority context
+  openIssues      Int      // Count of unresolved stories
+  topPriority     String?  // Highest priority issue summary
+  
+  // Timestamps
+  lastFullScan    DateTime @map("last_full_scan")
+  lastAgentRun    DateTime? @map("last_agent_run")
+  updatedAt       DateTime @updatedAt
+}
+        </pre>
+        
+        <div class="note">
+          <strong>Benefits:</strong><br/>
+          • Dashboard can show project health at a glance<br/>
+          • Orchestrator can quickly assess priority across projects<br/>
+          • Linear/Slack can include health summary in messages<br/>
+          • Reduces DB queries (one read vs 5+ scan fetches)
+        </div>
+      </section>
+
+      <!-- Chat Implementation Options -->
+      <section>
+        <h2>💬 Chat Implementation: Slack vs Native</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Current:</strong> Chat mockup is UI-only. All real-time communication happens via Slack.<br/>
+          <strong>Question:</strong> Should we build native chat? What's involved?
+        </p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+          <div style="background: #1e293b; padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+            <h4 style="color: #8b5cf6; margin: 0 0 12px 0;">Option A: Keep Slack Only</h4>
+            <div style="color: #10b981; font-size: 14px; margin-bottom: 8px;">✓ Recommended for V1</div>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Already implemented</li>
+              <li>Push notifications built-in</li>
+              <li>Thread management</li>
+              <li>Mobile app free</li>
+              <li>No infra to maintain</li>
+            </ul>
+            <div style="color: #f59e0b; font-size: 12px; margin-top: 12px;">Cost: $0 additional</div>
+          </div>
+          
+          <div style="background: #1e293b; padding: 20px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+            <h4 style="color: #3b82f6; margin: 0 0 12px 0;">Option B: Native Chat (V2)</h4>
+            <div style="color: #f59e0b; font-size: 14px; margin-bottom: 8px;">⏳ Requires 2-4 weeks</div>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>SDK: Stream.io / SendBird / Ably</li>
+              <li>WebSocket for real-time</li>
+              <li>Push notifs via FCM/APNs</li>
+              <li>New tables: messages, threads</li>
+              <li>Better UX integration</li>
+            </ul>
+            <div style="color: #ef4444; font-size: 12px; margin-top: 12px;">Cost: ~$100-300/mo + dev time</div>
+          </div>
+        </div>
+        
+        <pre class="mermaid">
+flowchart LR
+    subgraph OPTION_A["Option A: Slack (Current)"]
+        USER_SLACK["User types in Slack"] --> SLACK_API["Slack Events API"]
+        SLACK_API --> OUR_WEBHOOK["/api/slack/events"]
+        OUR_WEBHOOK --> PROCESS["Process + Respond"]
+        PROCESS --> SLACK_RESPONSE["Post to Slack"]
+    end
+    
+    subgraph OPTION_B["Option B: Native Chat (Future)"]
+        USER_NATIVE["User types in Dashboard"] --> WS["WebSocket Server"]
+        WS --> QUEUE["BullMQ Queue"]
+        QUEUE --> AGENT["Agent Processing"]
+        AGENT --> WS_RESPONSE["Push via WebSocket"]
+        WS_RESPONSE --> NOTIF["Push Notification"]
+    end
+    
+    style OPTION_A fill:#1e3a5f,stroke:#3b82f6
+    style OPTION_B fill:#3d1f5c,stroke:#8b5cf6
+        </pre>
+      </section>
+      
+      <!-- Login/Auth Architecture -->
+      <section>
+        <h2>🔐 Authentication & Multi-User Setup</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Current:</strong> Schema has User, Workspace, WorkspaceMember tables. Auth not yet implemented.<br/>
+          <strong>Recommendation:</strong> Use Clerk or NextAuth for quick setup.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #10b981;">
+            <h4 style="color: #10b981; margin: 0 0 8px 0;">✓ Already Have</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>User table</li>
+              <li>Workspace table</li>
+              <li>WorkspaceMember table</li>
+              <li>workspace_id on all tables</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b;">
+            <h4 style="color: #f59e0b; margin: 0 0 8px 0;">⏳ Need to Add</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Auth provider (Clerk)</li>
+              <li>Session middleware</li>
+              <li>API route protection</li>
+              <li>Workspace switching UI</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+            <h4 style="color: #3b82f6; margin: 0 0 8px 0;">📋 Recommended Stack</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Clerk (auth)</li>
+              <li>Clerk webhooks (sync)</li>
+              <li>Middleware protection</li>
+              <li>~1-2 days to implement</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Scanning Architecture -->
+      <section>
+        <h2>🔍 Scanning: Cloud vs Local</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Current Implementation:</strong> Scanning runs in the CLOUD via Vercel API routes + Railway workers.<br/>
+          <strong>Flow:</strong> API trigger → BullMQ queue → Scan worker → Store in DB
+        </p>
+        
+        <pre class="mermaid">
+flowchart TB
+    subgraph TRIGGER["Scan Triggers"]
+        CRON["Vercel Cron<br/>(daily @ 6am)"]
+        MANUAL["Dashboard Button<br/>/api/scans/trigger"]
+        SLACK["Slack Command<br/>'run scans'"]
+    end
+    
+    subgraph CLOUD_INFRA["Cloud Infrastructure"]
+        API["/api/scans/trigger<br/>(Vercel)"]
+        REDIS["Redis Queue<br/>(Upstash)"]
+        WORKER["Scan Worker<br/>(Railway)"]
+    end
+    
+    subgraph SCANNERS["Scanner Functions"]
+        DOMAIN["scanDomain()"]
+        SEO["scanSEO()"]
+        ANALYTICS["scanAnalytics()"]
+        VERCEL["scanVercel()"]
+        PERF["scanPerformance()"]
+        SEC_NPM["scanSecurityNpm()"]
+        SEC_SECRETS["scanSecuritySecrets()"]
+    end
+    
+    subgraph STORAGE["Data Storage"]
+        DB[(Supabase Postgres)]
+    end
+    
+    CRON & MANUAL & SLACK --> API
+    API --> REDIS
+    REDIS --> WORKER
+    WORKER --> DOMAIN & SEO & ANALYTICS & VERCEL & PERF & SEC_NPM & SEC_SECRETS
+    DOMAIN & SEO & ANALYTICS & VERCEL & PERF & SEC_NPM & SEC_SECRETS --> DB
+    
+    style CLOUD_INFRA fill:#1e3a5f,stroke:#3b82f6
+    style SCANNERS fill:#3d1f5c,stroke:#8b5cf6
+        </pre>
+        
+        <div style="background: #1e293b; padding: 20px; border-radius: 12px; margin-top: 20px;">
+          <h4 style="color: #ef4444; margin: 0 0 12px 0;">⚠️ Known Issues to Repair</h4>
+          <ul style="color: #94a3b8; font-size: 14px; margin: 0; padding-left: 20px;">
+            <li><strong>Security scanners</strong> need repo access (GitHub token) - currently placeholder</li>
+            <li><strong>Vercel scanner</strong> needs VERCEL_TOKEN env var configured</li>
+            <li><strong>Performance scanner</strong> times out on some sites - needs retry logic</li>
+            <li><strong>No project state blob</strong> - each scan is independent, no aggregated "project health" cache</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Dashboard vs Linear -->
+      <section style="background: linear-gradient(135deg, #1e3a5f, #0f172a); border-color: #3b82f6;">
+        <h2>🖥️ Dashboard vs Linear: Component Ownership</h2>
+        <p style="color: #c7d2fe; margin-bottom: 16px;">
+          Linear is powerful for task management. The dashboard should focus on AI-specific views that Linear can't provide.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+            <h3 style="margin: 0 0 12px; color: #818cf8;">Keep in Dashboard (AI-Specific)</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #e2e8f0; line-height: 1.8;">
+              <li><strong>Orchestrator Chat History</strong> — Full AI thinking traces</li>
+              <li><strong>Agent Activity View</strong> — Which agents are running, what tools they're using</li>
+              <li><strong>Scan Results</strong> — Raw scan data with visualizations</li>
+              <li><strong>Project Health Dashboard</strong> — Cross-project overview</li>
+              <li><strong>Non-Code Output Gallery</strong> — Design mockups, research reports</li>
+              <li><strong>Settings</strong> — WIP limits, cost controls, agent config</li>
+              <li><strong>Execution Queue</strong> — Priority reordering, queue management</li>
+            </ul>
+          </div>
+          
+          <div style="background: #0f172a; padding: 16px; border-radius: 8px;">
+            <h3 style="margin: 0 0 12px; color: #4ade80;">Use Linear For (Standard PM)</h3>
+            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #e2e8f0; line-height: 1.8;">
+              <li><strong>Task List</strong> — Issues, status, assignees</li>
+              <li><strong>Priority/Labels</strong> — P0/P1/P2/P3 labels</li>
+              <li><strong>Kanban Board</strong> — Workflow states</li>
+              <li><strong>Comments/Discussion</strong> — Team collaboration</li>
+              <li><strong>PR Links</strong> — GitHub integration</li>
+              <li><strong>History</strong> — Task timeline</li>
+              <li><strong>Filtering/Search</strong> — Find tasks quickly</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; margin-top: 16px;">
+          <h3 style="margin: 0 0 12px; color: #fcd34d;">Could Move to Linear (With Deep Integration)</h3>
+          <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #e2e8f0; line-height: 1.8;">
+            <li><strong>Stack Ranked List</strong> — Linear has priority + custom views</li>
+            <li><strong>Project Detail</strong> — Linear has project views (but no scan integration)</li>
+            <li><strong>Story Detail</strong> — Linear issue detail (but thinking traces need custom field)</li>
+          </ul>
+          <p style="color: #94a3b8; font-size: 13px; margin: 12px 0 0;">
+            <strong>Tradeoff:</strong> More in Linear = less custom UI to build, but lose AI-specific visualizations
+          </p>
+        </div>
+        
+        <div class="note" style="color: #c7d2fe; border-color: #6366f1; margin-top: 16px;">
+          <strong>Recommendation:</strong> Keep dashboard minimal but focused on what Linear can't do:
+          <ol style="margin: 8px 0 0; padding-left: 20px;">
+            <li><strong>P0:</strong> Orchestrator Chat, Agent Activity, Settings</li>
+            <li><strong>P1:</strong> Scan Results, Execution Queue</li>
+            <li><strong>P2:</strong> Gallery (non-code outputs)</li>
+          </ol>
+          Let Linear handle task management, approval, and collaboration.
+        </div>
+      </section>
+
+      <!-- Project Launch Readiness Score -->
+      <section>
+        <h2>🚀 Project Launch Readiness Score (NEW)</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Problem:</strong> Health score is vague. We need a "Launch Readiness" score that tracks progress from idea → paying users.<br/>
+          <strong>Solution:</strong> A stage-based progress system where each stage has specific criteria that inform work priority.
+        </p>
+        
+        <pre class="mermaid">
+flowchart LR
+    subgraph STAGES["Launch Stages"]
+        IDEA["💡 Idea<br/>Score: 0-15"]
+        MVP["🔧 MVP<br/>Score: 16-35"]
+        ALPHA["🧪 Alpha<br/>Score: 36-55"]
+        BETA["🎯 Beta<br/>Score: 56-75"]
+        LAUNCH["🚀 Launch<br/>Score: 76-90"]
+        GROWTH["📈 Growth<br/>Score: 91-100"]
+    end
+    
+    IDEA --> MVP --> ALPHA --> BETA --> LAUNCH --> GROWTH
+    
+    style IDEA fill:#fef3c7,stroke:#f59e0b
+    style MVP fill:#fce7f3,stroke:#ec4899
+    style ALPHA fill:#e0e7ff,stroke:#6366f1
+    style BETA fill:#d1fae5,stroke:#10b981
+    style LAUNCH fill:#dbeafe,stroke:#3b82f6
+    style GROWTH fill:#f3e8ff,stroke:#8b5cf6
+        </pre>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px;">
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b;">
+            <h4 style="color: #f59e0b; margin: 0 0 8px 0;">💡 Idea Stage (0-15)</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Repo exists</li>
+              <li>README drafted</li>
+              <li>Tech stack chosen</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #ec4899;">
+            <h4 style="color: #ec4899; margin: 0 0 8px 0;">🔧 MVP Stage (16-35)</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Core features built</li>
+              <li>Database schema</li>
+              <li>Basic auth</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #6366f1;">
+            <h4 style="color: #6366f1; margin: 0 0 8px 0;">🧪 Alpha Stage (36-55)</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Domain configured</li>
+              <li>CI/CD pipeline</li>
+              <li>Error tracking</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #10b981;">
+            <h4 style="color: #10b981; margin: 0 0 8px 0;">🎯 Beta Stage (56-75)</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>SSL secured</li>
+              <li>Analytics installed</li>
+              <li>SEO basics</li>
+              <li>Test users</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+            <h4 style="color: #3b82f6; margin: 0 0 8px 0;">🚀 Launch Stage (76-90)</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Payment integration</li>
+              <li>Terms/Privacy pages</li>
+              <li>Performance optimized</li>
+              <li>Launch marketing</li>
+            </ul>
+          </div>
+          <div style="background: #1e293b; padding: 16px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+            <h4 style="color: #8b5cf6; margin: 0 0 8px 0;">📈 Growth Stage (91-100)</h4>
+            <ul style="color: #94a3b8; font-size: 13px; margin: 0; padding-left: 16px;">
+              <li>Paying customers</li>
+              <li>Retention metrics</li>
+              <li>Scale infrastructure</li>
+              <li>Feature expansion</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Launch Score Calculation -->
+      <section>
+        <h2>📊 Launch Score Calculation & Priority Impact</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          The orchestrator uses launch readiness to inform which work to prioritize.
+          Work that advances stage progress is weighted higher than optimization work.
+        </p>
+        
+        <pre class="mermaid">
+flowchart TB
+    subgraph INPUTS["Score Inputs (Scanners + Checks)"]
+        DOMAIN_SCAN["🌐 Domain Scanner<br/>+10 if SSL valid<br/>+5 if fast response"]
+        SEO_SCAN["🔍 SEO Scanner<br/>+5 if meta tags<br/>+5 if OG tags"]
+        ANALYTICS_SCAN["📊 Analytics Scanner<br/>+10 if tracking installed"]
+        SECURITY_SCAN["🔒 Security Scanner<br/>+10 if no secrets exposed"]
+        PERF_SCAN["⚡ Performance Scanner<br/>+5 if LCP under 2.5s"]
+    end
+    
+    subgraph MANUAL_CHECKS["Manual Checkpoints"]
+        REPO_CHECK["📁 Repo exists: +5"]
+        AUTH_CHECK["🔐 Auth configured: +10"]
+        PAYMENT_CHECK["💳 Payments: +15"]
+        CUSTOMER_CHECK["👥 Paying customers: +20"]
+    end
+    
+    subgraph CALCULATION["Score Aggregation"]
+        SCANNER_TOTAL["Scanner Total<br/>(max 40 pts)"]
+        MANUAL_TOTAL["Manual Total<br/>(max 50 pts)"]
+        BONUS["Stage Completion Bonus<br/>(max 10 pts)"]
+        FINAL["FINAL SCORE<br/>0-100"]
+    end
+    
+    DOMAIN_SCAN & SEO_SCAN & ANALYTICS_SCAN & SECURITY_SCAN & PERF_SCAN --> SCANNER_TOTAL
+    REPO_CHECK & AUTH_CHECK & PAYMENT_CHECK & CUSTOMER_CHECK --> MANUAL_TOTAL
+    SCANNER_TOTAL & MANUAL_TOTAL & BONUS --> FINAL
+    
+    style FINAL fill:#8b5cf6,stroke:#6d28d9,color:white
+        </pre>
+      </section>
+      
+      <!-- Priority Weighting with Launch Score -->
+      <section>
+        <h2>🎯 Priority Weighting with Launch Score</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          Work items are ranked by combining user signals, scan findings, AND launch progress impact.
+        </p>
+        
+        <pre class="mermaid">
+flowchart LR
+    subgraph FACTORS["Priority Factors"]
+        USER_SIGNAL["👤 User Signal<br/>Weight: 3.0x"]
+        SCAN_FINDING["🔍 Scan Finding<br/>Weight: 1.0x"]
+        LAUNCH_IMPACT["🚀 Launch Impact<br/>Weight: 2.0x"]
+    end
+    
+    subgraph LAUNCH_MULTIPLIER["Launch Impact Multiplier"]
+        STAGE_ADVANCE["Advances Stage: 2.0x"]
+        BLOCKS_LAUNCH["Blocks Launch: 3.0x"]
+        OPTIMIZATION["Optimization: 0.5x"]
+    end
+    
+    subgraph FORMULA["Final Score"]
+        CALC["score = (userWeight × 3) +<br/>(scanSeverity × 1) +<br/>(launchImpact × 2)"]
+    end
+    
+    USER_SIGNAL & SCAN_FINDING & LAUNCH_IMPACT --> CALC
+    LAUNCH_MULTIPLIER --> LAUNCH_IMPACT
+        </pre>
+        
+        <div style="background: #1e293b; padding: 20px; border-radius: 12px; margin-top: 20px;">
+          <h4 style="color: #10b981; margin: 0 0 12px 0;">Example Priority Calculation</h4>
+          <pre style="color: #94a3b8; font-size: 13px; margin: 0; font-family: 'DM Mono', monospace;">
+// Story: "Add Stripe payment integration"
+userSignal = 0              // Not explicitly requested
+scanSeverity = "medium" (1) // Found by analytics agent
+launchImpact = "advances_stage" (2.0)  // Required for Launch stage
+
+finalScore = (0 × 3) + (1 × 1) + (2.0 × 2) = 5.0
+
+// Story: "Fix exposed API key"  
+userSignal = "P0" (3)       // User marked as critical
+scanSeverity = "high" (3)   // Security scanner found it
+launchImpact = "blocks_launch" (3.0)
+
+finalScore = (3 × 3) + (3 × 1) + (3.0 × 2) = 18.0  // Higher priority!
+          </pre>
+        </div>
+      </section>
+
+      <!-- Agent Spawning: Upfront vs Dynamic -->
+      <section>
+        <h2>🤖 Agent Spawning: Upfront vs Dynamic</h2>
+        <p style="color: #94a3b8; margin-bottom: 16px;">
+          <strong>Question:</strong> Do we need to define subagents upfront or does the SDK dynamically spawn them?<br/>
+          <strong>Answer:</strong> You define the MENU of available agents. The orchestrator decides WHEN/IF to spawn them.
+        </p>
+        <pre class="mermaid">
+flowchart TB
+    subgraph YOU_DEFINE["Layer 1: You Define (Upfront)"]
+        REGISTRY["Agent Registry<br/>17 agent definitions<br/>with tools + prompts"]
+        
+        subgraph AGENTS["Available Agents"]
+            SEC["🔒 Security Agent<br/>Tools: Read, Grep, Bash"]
+            DESIGN["🎨 Design Agent<br/>Tools: Read, Write, WebFetch"]
+            CODE["💻 Code Agent<br/>Tools: Read, Write, Edit, Bash"]
+            ANALYTICS["📊 Analytics Agent<br/>Tools: Read, WebFetch"]
+        end
+        
+        REGISTRY --> AGENTS
+    end
+    
+    subgraph SDK_HANDLES["Layer 2: SDK + Orchestrator (Dynamic)"]
+        HOP["Head of Product<br/>(Main Agent)"]
+        TASK_TOOL["Task Tool<br/>(spawn subagent)"]
+        
+        HOP -->|"Analyzes context"| DECISION{"Which agents<br/>to spawn?"}
+        DECISION -->|"If security scan failed"| SEC
+        DECISION -->|"If needs new UI"| DESIGN
+        DECISION -->|"If needs code fix"| CODE
+        DECISION -->|"If needs metrics"| ANALYTICS
+        
+        HOP --> TASK_TOOL
+    end
+    
+    YOU_DEFINE --> SDK_HANDLES
+
+    style REGISTRY fill:#1e293b,stroke:#8b5cf6,color:#fff
+    style HOP fill:#8b5cf6,stroke:#a78bfa,color:#fff
+    style SEC fill:#059669,stroke:#34d399,color:#fff
+    style DESIGN fill:#ec4899,stroke:#f472b6,color:#fff
+    style CODE fill:#f59e0b,stroke:#fbbf24,color:#000
+    style ANALYTICS fill:#3b82f6,stroke:#60a5fa,color:#fff
+        </pre>
+        
+        <div style="margin-top: 24px; padding: 20px; background: #1e293b; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+          <h3 style="margin: 0 0 12px 0; color: #f1f5f9;">Key Insight</h3>
+          <ul style="color: #94a3b8; line-height: 1.8;">
+            <li><strong>You define the menu</strong> - what agents exist, their tools, their prompts</li>
+            <li><strong>SDK handles the spawning</strong> - orchestrator calls Task tool with agent name</li>
+            <li><strong>Context drives decisions</strong> - HoP sees scan results and decides what to spawn</li>
+            <li><strong>Examples improve quality</strong> - give design agent style examples in its prompt</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Installation -->
+      <section style="background: #0f172a; border-color: #475569;">
+        <h2>🚀 Getting Started</h2>
+        <pre style="background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; color: #e2e8f0; font-size: 13px;">
+# 1. Install Claude Code CLI (required runtime for local dev)
+curl -fsSL https://claude.ai/install.sh | bash
+
+# 2. Install the SDK (works in Railway/Vercel without CLI)
+npm install @anthropic-ai/claude-agent-sdk
+
+# 3. Set API key (already configured in Railway)
+export ANTHROPIC_API_KEY=your-api-key
+
+# 4. Test with a simple query
+node -e "
+const { query } = require('@anthropic-ai/claude-agent-sdk');
+(async () => {
+  for await (const msg of query({
+    prompt: 'List files in current directory',
+    options: { allowedTools: ['Bash'] }
+  })) {
+    console.log(JSON.stringify(msg, null, 2));
+  }
+})();
+"
+        </pre>
+        <div class="note">
+          <strong>Note:</strong> For cloud deployment (Railway workers), you don't need the CLI installed. 
+          The SDK uses your ANTHROPIC_API_KEY and works in any Node.js environment with file system access.
+        </div>
+      </section>
+
     </main>
 
     <script>
       mermaid.initialize({
         startOnLoad: true,
-        theme: "default",
+        theme: "dark",
+        themeVariables: {
+          darkMode: true,
+          background: "#1e293b",
+          primaryColor: "#6366f1",
+          primaryTextColor: "#f8fafc",
+          primaryBorderColor: "#6366f1",
+          lineColor: "#64748b",
+          secondaryColor: "#475569",
+          tertiaryColor: "#334155"
+        },
         securityLevel: "loose"
       });
     </script>

@@ -16,15 +16,15 @@ datasource db {
 // ============================================================================
 
 model Workspace {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
+  id          String @id @default(uuid())
+  name        String
+  slug        String @unique
   ownerUserId String @map("owner_user_id")
 
   // Limits per workspace
-  plan           String   @default("free") // 'free', 'pro', 'enterprise'
-  maxProjects    Int      @default(10) @map("max_projects")
-  maxScansPerDay Int      @default(50) @map("max_scans_per_day")
+  plan           String @default("free") // 'free', 'pro', 'enterprise'
+  maxProjects    Int    @default(10) @map("max_projects")
+  maxScansPerDay Int    @default(50) @map("max_scans_per_day")
 
   // Integrations (per workspace)
   githubInstallationId String? @map("github_installation_id")
@@ -35,16 +35,17 @@ model Workspace {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  owner    User               @relation("WorkspaceOwner", fields: [ownerUserId], references: [id])
-  members  WorkspaceMember[]
-  projects Project[]
-  scans    Scan[]
-  stories Story[]
-  userPriorities UserPriority[]
-  agentFindings AgentFinding[]
-  linearTasks LinearTask[]
+  owner               User                 @relation("WorkspaceOwner", fields: [ownerUserId], references: [id])
+  members             WorkspaceMember[]
+  projects            Project[]
+  scans               Scan[]
+  stories             Story[]
+  userPriorities      UserPriority[]
+  agentFindings       AgentFinding[]
+  linearTasks         LinearTask[]
   projectAgentConfigs ProjectAgentConfig[]
-  slackMessages SlackMessage[]
+  slackMessages       SlackMessage[]
+  slackInbounds       SlackInbound[]
 
   @@map("workspaces")
 }
@@ -61,17 +62,17 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  ownedWorkspaces  Workspace[]         @relation("WorkspaceOwner")
+  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
 
   @@map("users")
 }
 
 model WorkspaceMember {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  userId      String   @map("user_id")
-  role        String   @default("member") // 'owner', 'admin', 'member', 'viewer'
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  userId      String @map("user_id")
+  role        String @default("member") // 'owner', 'admin', 'member', 'viewer'
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -88,8 +89,8 @@ model WorkspaceMember {
 // ============================================================================
 
 model Project {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
 
   name   String
   domain String?
@@ -108,31 +109,32 @@ model Project {
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  workspace         Workspace            @relation(fields: [workspaceId], references: [id])
-  scans             Scan[]
-  stories           Story[]
-  agentFindings     AgentFinding[]
-  linearTasks       LinearTask[]
-  agentConfig       ProjectAgentConfig?
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id])
+  scans         Scan[]
+  stories       Story[]
+  agentFindings AgentFinding[]
+  linearTasks   LinearTask[]
+  agentConfig   ProjectAgentConfig?
+  snapshots     ProjectSnapshot[]
 
   @@unique([workspaceId, name])
   @@map("projects")
 }
 
 model Scan {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  projectId   String   @map("project_id")
-  scanType    String   @map("scan_type") // 'domain'|'seo'|'vercel'|'playwright'|'security'|'analytics'
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  projectId   String @map("project_id")
+  scanType    String @map("scan_type") // 'domain'|'seo'|'vercel'|'playwright'|'security'|'analytics'
 
   // Results (JSONB for flexibility)
-  status            String  // 'ok'|'error'|'timeout'
-  seoDetail         Json?   @map("seo_detail") // { title, metaDesc, ogTags, h1 }
-  vercelData        Json?   @map("vercel_data") // { deploymentId, status, buildTime }
-  playwrightMetrics Json?   @map("playwright_metrics") // { fcp, lcp, cls, screenshots }
-  securityIssues    Json?   @map("security_issues") // [{ type, severity, file, line }]
-  domainData        Json?   @map("domain_data") // { ssl, dns, redirects }
-  analyticsData     Json?   @map("analytics_data") // { posthog, ga, etc. }
+  status            String // 'ok'|'error'|'timeout'
+  seoDetail         Json?  @map("seo_detail") // { title, metaDesc, ogTags, h1 }
+  vercelData        Json?  @map("vercel_data") // { deploymentId, status, buildTime }
+  playwrightMetrics Json?  @map("playwright_metrics") // { fcp, lcp, cls, screenshots }
+  securityIssues    Json?  @map("security_issues") // [{ type, severity, file, line }]
+  domainData        Json?  @map("domain_data") // { ssl, dns, redirects }
+  analyticsData     Json?  @map("analytics_data") // { posthog, ga, etc. }
 
   scannedAt  DateTime @map("scanned_at")
   durationMs Int?     @map("duration_ms")
@@ -146,22 +148,27 @@ model Scan {
 }
 
 model Story {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  runId       String   @map("run_id")
-  projectId   String   @map("project_id")
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  runId       String @map("run_id")
+  projectId   String @map("project_id")
 
   title     String
-  rationale String   @db.Text
-  priority  String   // 'high'|'medium'|'low'
-  policy    String   // 'approval_required'|'auto_safe'|'suggest_only'
+  rationale String @db.Text
+  priority  String // 'high'|'medium'|'low' (legacy)
+  policy    String // 'approval_required'|'auto_safe'|'suggest_only'
+
+  // New priority system (Agent SDK integration)
+  priorityLevel       String  @default("P2") @map("priority_level") // 'P0'|'P1'|'P2'|'P3'
+  priorityScore       Int     @default(50) @map("priority_score") // 0-100 computed score
+  advancesLaunchStage Boolean @default(false) @map("advances_launch_stage")
 
   // Execution tracking
-  status        String    @default("pending") // 'pending'|'in_progress'|'completed'|'failed'|'rejected'
-  prUrl         String?   @map("pr_url")
-  linearTaskId  String?   @map("linear_task_id") // Linear issue ID
-  commitSha     String?   @map("commit_sha")
-  executedAt    DateTime? @map("executed_at")
+  status       String    @default("pending") // 'pending'|'in_progress'|'completed'|'failed'|'rejected'
+  prUrl        String?   @map("pr_url")
+  linearTaskId String?   @map("linear_task_id") // Linear issue ID
+  commitSha    String?   @map("commit_sha")
+  executedAt   DateTime? @map("executed_at")
 
   // User input
   userApproved Boolean? @map("user_approved")
@@ -175,15 +182,16 @@ model Story {
   linearTasks LinearTask[]
 
   @@index([workspaceId, status, priority])
+  @@index([workspaceId, priorityLevel, priorityScore])
   @@map("completions")
 }
 
 model UserPriority {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
 
-  userInput    String   @map("user_input") @db.Text // Raw Slack message
-  parsedIntent Json     @map("parsed_intent") // { projects: [{ name, tasks, weight }] }
+  userInput    String @map("user_input") @db.Text // Raw Slack message
+  parsedIntent Json   @map("parsed_intent") // { projects: [{ name, tasks, weight }] }
 
   weight    Float    @default(2.0)
   expiresAt DateTime @map("expires_at") // created_at + 72h
@@ -199,19 +207,19 @@ model UserPriority {
 }
 
 model AgentFinding {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  runId       String   @map("run_id")
-  projectId   String   @map("project_id")
-  agent       String   // 'security'|'domain'|'seo'|'analytics'|'deployment'|etc.
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  runId       String @map("run_id")
+  projectId   String @map("project_id")
+  agent       String // 'security'|'domain'|'seo'|'analytics'|'deployment'|etc.
 
   issue  String @db.Text
   action String @db.Text
 
-  severity   String  // 'high'|'medium'|'low'
-  effort     String  // 'low'|'medium'|'high'
-  impact     String  // 'high'|'medium'|'low'
-  confidence Float   // 0.0-1.0
+  severity   String // 'high'|'medium'|'low'
+  effort     String // 'low'|'medium'|'high'
+  impact     String // 'high'|'medium'|'low'
+  confidence Float // 0.0-1.0
 
   rank Int?
 
@@ -226,10 +234,10 @@ model AgentFinding {
 }
 
 model LinearTask {
-  id            String   @id @default(uuid())
-  workspaceId   String   @map("workspace_id")
-  projectId     String   @map("project_id")
-  storyId       String?  @map("completion_id")
+  id          String  @id @default(uuid())
+  workspaceId String  @map("workspace_id")
+  projectId   String  @map("project_id")
+  storyId     String? @map("completion_id")
 
   linearIssueId String @unique @map("linear_issue_id")
   linearTeamId  String @map("linear_team_id")
@@ -240,24 +248,24 @@ model LinearTask {
   syncedAt DateTime @default(now()) @map("synced_at")
 
   // Relations
-  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
-  project    Project     @relation(fields: [projectId], references: [id])
-  story      Story?      @relation(fields: [storyId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  story     Story?    @relation(fields: [storyId], references: [id])
 
   @@index([workspaceId, projectId])
   @@map("linear_tasks")
 }
 
 model ProjectAgentConfig {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
-  projectId   String   @unique @map("project_id")
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  projectId   String @unique @map("project_id")
 
   stage String // 'ideation'|'mvp'|'launch'|'growth'|'mature'
 
-  enabledAgents    Json @default("[]") @map("enabled_agents") // ['security', 'seo', 'analytics', ...]
-  agentSettings    Json @default("{}") @map("agent_settings") // { "seo": { "target_keywords": [...] } }
-  agentPriorities  Json @default("{}") @map("agent_priorities") // { "security": 2.0, "seo": 1.5 }
+  enabledAgents   Json @default("[]") @map("enabled_agents") // ['security', 'seo', 'analytics', ...]
+  agentSettings   Json @default("{}") @map("agent_settings") // { "seo": { "target_keywords": [...] } }
+  agentPriorities Json @default("{}") @map("agent_priorities") // { "security": 2.0, "seo": 1.5 }
 
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -273,8 +281,8 @@ model ProjectAgentConfig {
 // ============================================================================
 
 model OrchestratorRun {
-  id          String   @id @default(uuid())
-  runId       String   @unique @map("run_id")
+  id    String @id @default(uuid())
+  runId String @unique @map("run_id")
 
   status String @default("running") // 'running'|'completed'|'failed'
 
@@ -283,30 +291,188 @@ model OrchestratorRun {
 
   conversation Json? // Agent dialogue from SDK
 
+  // Agent SDK metrics (added for integration)
+  totalTokens   Int?     @map("total_tokens")
+  estimatedCost Decimal? @map("estimated_cost") @db.Decimal(10, 4)
+  agentsSpawned String[] @map("agents_spawned")
+
   startedAt   DateTime  @default(now()) @map("started_at")
   completedAt DateTime? @map("completed_at")
+
+  // Relations
+  agentSessions AgentSession[]
 
   @@map("orchestrator_runs")
 }
 
 model SlackMessage {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
 
-  userId      String   @map("user_id")
-  channelId   String   @map("channel_id")
-  text        String   @db.Text
-  messageTs   String   @map("message_ts") // Slack message timestamp
-  threadTs    String?  @map("thread_ts")  // Thread timestamp if in thread
+  userId    String  @map("user_id")
+  channelId String  @map("channel_id")
+  text      String  @db.Text
+  messageTs String  @map("message_ts") // Slack message timestamp
+  threadTs  String? @map("thread_ts") // Thread timestamp if in thread
 
-  isCommand   Boolean  @default(false) @map("is_command") // Was this processed as a command?
-  commandType String?  @map("command_type") // e.g., "run_orchestrator", "help", "status"
+  isCommand   Boolean @default(false) @map("is_command") // Was this processed as a command?
+  commandType String? @map("command_type") // e.g., "run_orchestrator", "help", "status"
 
-  createdAt   DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
   workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId, createdAt])
   @@map("slack_messages")
+}
+
+// ============================================================================
+// AGENT SDK INTEGRATION TABLES
+// ============================================================================
+
+model ProjectSnapshot {
+  id        String @id @default(uuid())
+  projectId String @map("project_id")
+
+  snapshotAt  DateTime @default(now()) @map("snapshot_at")
+  launchStage String   @map("launch_stage") // 'idea'|'mvp'|'alpha'|'beta'|'launch'|'growth'
+  launchScore Int      @map("launch_score") // 0-100
+
+  // Aggregated data
+  scanScores      Json @map("scan_scores") // { security: 85, seo: 70, ... }
+  workSummary     Json @map("work_summary") // { pending: 5, completed: 12, ... }
+  launchChecklist Json @map("launch_checklist") // { has_domain: true, has_analytics: false, ... }
+
+  // AI-generated
+  aiAssessment     String?  @map("ai_assessment") @db.Text
+  recommendedFocus String[] @map("recommended_focus")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, snapshotAt])
+  @@index([projectId, snapshotAt])
+  @@map("project_snapshots")
+}
+
+model SlackInbound {
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+
+  // Message details
+  userId      String  @map("user_id")
+  channelId   String  @map("channel_id")
+  channelType String  @map("channel_type") // 'dm'|'channel'|'group'
+  text        String  @db.Text
+  messageTs   String  @map("message_ts")
+  threadTs    String? @map("thread_ts")
+
+  // Classification
+  eventType   String    @map("event_type") // 'message'|'reaction'|'mention'|'app_mention'
+  isProcessed Boolean   @default(false) @map("is_processed")
+  processedAt DateTime? @map("processed_at")
+
+  // Extracted data
+  mentionsBot   Boolean @default(false) @map("mentions_bot")
+  extractedData Json?   @map("extracted_data") // { priority: 'P0', projects: ['proj1'], ... }
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, isProcessed])
+  @@index([workspaceId, createdAt])
+  @@map("slack_inbounds")
+}
+
+model PrioritySignal {
+  id          String  @id @default(uuid())
+  workspaceId String  @map("workspace_id")
+  projectId   String? @map("project_id")
+  storyId     String? @map("story_id")
+
+  // Source
+  source   String // 'slack'|'linear'|'scan'|'dashboard'|'orchestrator'
+  sourceId String? @map("source_id") // Reference to source record
+
+  // Classification
+  signalType String  @map("signal_type") // 'priority_set'|'feedback'|'approval'|'rejection'|'scan_critical'
+  priority   String? // 'P0'|'P1'|'P2'|'P3'
+  rawText    String? @map("raw_text") @db.Text
+
+  // Processing
+  confidence Float   @default(1.0) // 0.0-1.0, how confident in classification
+  isExplicit Boolean @default(false) @map("is_explicit") // Was priority explicitly stated?
+
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt])
+  @@index([projectId, priority])
+  @@index([storyId])
+  @@map("priority_signals")
+}
+
+model AgentSession {
+  id                String  @id @default(uuid())
+  orchestratorRunId String? @map("orchestrator_run_id")
+  storyId           String? @map("story_id")
+  projectId         String? @map("project_id")
+
+  agentName String @map("agent_name") // 'Head of Product'|'Security'|'Code Gen'|etc.
+  agentType String @map("agent_type") // 'orchestrator'|'specialist'|'execution'
+  status    String @default("running") // 'running'|'completed'|'failed'|'cancelled'
+
+  // Thinking trace
+  thinkingTrace Json @default("[]") @map("thinking_trace") // Array of ThinkingStep
+  toolCalls     Json @default("[]") @map("tool_calls") // Array of { tool, input, output, duration }
+
+  // Metrics
+  tokensUsed    Int?     @map("tokens_used")
+  estimatedCost Decimal? @map("estimated_cost") @db.Decimal(10, 4)
+  turnsUsed     Int      @default(0) @map("turns_used")
+
+  startedAt   DateTime  @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  // Relations
+  orchestratorRun OrchestratorRun? @relation(fields: [orchestratorRunId], references: [id])
+  outputs         AgentOutput[]
+
+  @@index([orchestratorRunId])
+  @@index([storyId])
+  @@index([projectId])
+  @@index([agentName, status])
+  @@map("agent_sessions")
+}
+
+model AgentOutput {
+  id             String  @id @default(uuid())
+  agentSessionId String  @map("agent_session_id")
+  projectId      String? @map("project_id")
+
+  // Output details
+  outputType  String  @map("output_type") // 'design'|'document'|'research'|'analysis'|'code_review'
+  title       String
+  description String? @db.Text
+
+  // Storage
+  contentType String  @map("content_type") // 'html'|'markdown'|'json'|'image'|'pdf'
+  storageUrl  String? @map("storage_url") // Supabase storage URL
+  content     String? @db.Text // Inline content for small outputs
+
+  // Review status
+  status      String  @default("pending") // 'pending'|'approved'|'rejected'|'archived'
+  reviewNotes String? @map("review_notes") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  agentSession AgentSession @relation(fields: [agentSessionId], references: [id])
+
+  @@index([agentSessionId])
+  @@index([projectId, outputType])
+  @@map("agent_outputs")
 }

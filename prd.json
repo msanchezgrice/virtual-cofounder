@@ -52,9 +52,9 @@
     },
     {
       "id": "phase-7",
-      "name": "TBD - Future Enhancements",
-      "status": "planned",
-      "notes": "Phase 7 scope to be determined based on user priorities and product needs"
+      "name": "Advanced Scanning - Vercel, Playwright, Security",
+      "status": "done",
+      "notes": "Add Vercel deployment scanner, Playwright/Browserless for Core Web Vitals + screenshots, and security scanning (npm audit + secrets detection)"
     }
   ],
   "stories": [
@@ -1014,6 +1014,275 @@
       ],
       "status": "done",
       "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-106",
+      "phase": "phase-7",
+      "title": "Create Vercel deployment scanner",
+      "description": "Create scanner that uses Vercel API to check deployment status, build duration, and deployment URLs. Store results in scans table with scan_type='vercel'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/vercel.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/vercel.ts",
+          "pattern": "export async function scanVercelDeployment",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:vercel",
+          "expectedOutput": "✓ Vercel scanner test passed",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-107",
+      "phase": "phase-7",
+      "title": "Install Playwright and Browserless dependencies",
+      "description": "Install playwright and configure to use Browserless API for headless browser operations. Set up connection to Browserless cloud service using BROWSERLESS_API_KEY.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm list playwright",
+          "expectedOutput": "playwright",
+          "mustPass": true
+        },
+        {
+          "type": "file_contains",
+          "path": "package.json",
+          "pattern": "playwright",
+          "mustContain": true
+        },
+        {
+          "type": "file_exists",
+          "path": "lib/browserless.ts",
+          "mustExist": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "low",
+      "priority": "high"
+    },
+    {
+      "id": "vc-108",
+      "phase": "phase-7",
+      "title": "Create Core Web Vitals scanner with Playwright",
+      "description": "Create scanner that uses Playwright + Browserless to measure Core Web Vitals (LCP, FID, CLS) for each project URL. Test against warmstart.it. Store results in scans table with scan_type='performance'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/performance.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/performance.ts",
+          "pattern": "export async function scanPerformance",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:performance",
+          "expectedOutput": "✓ Performance scanner test passed",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-107"],
+      "status": "done",
+      "effort": "high",
+      "priority": "high"
+    },
+    {
+      "id": "vc-109",
+      "phase": "phase-7",
+      "title": "Create screenshot capture scanner",
+      "description": "Create scanner that uses Playwright + Browserless to capture screenshots of project homepages. Upload screenshots to Supabase Storage. Store image URLs in scans table with scan_type='screenshot'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/screenshot.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/screenshot.ts",
+          "pattern": "export async function captureScreenshot",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:screenshot",
+          "expectedOutput": "✓ Screenshot scanner test passed",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-107"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-110",
+      "phase": "phase-7",
+      "title": "Create npm audit security scanner",
+      "description": "Create scanner that runs npm audit on cloned repos to detect package vulnerabilities. Parse audit JSON output and store critical/high vulnerabilities in scans table with scan_type='security_npm'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/security-npm.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/security-npm.ts",
+          "pattern": "export async function scanNpmAudit",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:security:npm",
+          "expectedOutput": "✓ NPM security scanner test passed",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-111",
+      "phase": "phase-7",
+      "title": "Create secrets detection scanner",
+      "description": "Create scanner that scans code for exposed secrets (API keys, tokens, passwords) using regex patterns. Check for common patterns like API_KEY=, SECRET=, TOKEN=. Store findings in scans table with scan_type='security_secrets'.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/scanners/security-secrets.ts",
+          "mustExist": true
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/scanners/security-secrets.ts",
+          "pattern": "export async function scanSecrets",
+          "mustContain": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:scanner:security:secrets",
+          "expectedOutput": "✓ Secrets scanner test passed",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": [],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-112",
+      "phase": "phase-7",
+      "title": "Integrate advanced scanners into scan worker",
+      "description": "Update workers/scan-worker.ts to include all new scanners (Vercel, Performance, Screenshot, NPM Audit, Secrets). Add them to the scan execution pipeline.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/scan-worker.ts",
+          "pattern": "scanVercelDeployment",
+          "mustContain": true
+        },
+        {
+          "type": "file_contains",
+          "path": "workers/scan-worker.ts",
+          "pattern": "scanPerformance",
+          "mustContain": true
+        },
+        {
+          "type": "file_contains",
+          "path": "workers/scan-worker.ts",
+          "pattern": "captureScreenshot",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-106", "vc-108", "vc-109", "vc-110", "vc-111"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-113",
+      "phase": "phase-7",
+      "title": "Create validation test script for advanced scanners",
+      "description": "Create test script that validates all Phase 7 scanners work correctly. Test against warmstart.it and verify results are stored in database.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "tests/phase-7.test.ts",
+          "mustExist": true
+        },
+        {
+          "type": "command",
+          "command": "npm run test:phase-7",
+          "expectedOutput": "✓ All Phase 7 scanners validated",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-112"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "high"
+    },
+    {
+      "id": "vc-114",
+      "phase": "phase-7",
+      "title": "Update dashboard to display advanced scan results",
+      "description": "Update dashboard UI to show Vercel deployment status, Core Web Vitals scores, screenshots, and security findings. Add new columns/sections to project detail view.",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/projects/[id]/page.tsx",
+          "pattern": "Core Web Vitals",
+          "mustContain": true
+        },
+        {
+          "type": "file_contains",
+          "path": "app/projects/[id]/page.tsx",
+          "pattern": "Security Findings",
+          "mustContain": true
+        }
+      ],
+      "blockedBy": ["vc-112"],
+      "status": "done",
+      "effort": "medium",
+      "priority": "medium"
+    },
+    {
+      "id": "vc-115",
+      "phase": "phase-7",
+      "title": "E2E validation - Full Phase 7 advanced scanning",
+      "description": "End-to-end test: Trigger scan → All 5 new scanners execute → Results stored in DB → Dashboard displays all new data → Orchestrator analyzes advanced scan results.",
+      "acceptanceCriteria": [
+        {
+          "type": "command",
+          "command": "npm run validate:phase-7",
+          "expectedOutput": "✓ Vercel scanner\n✓ Performance scanner\n✓ Screenshot capture\n✓ NPM audit\n✓ Secrets detection",
+          "mustPass": true
+        }
+      ],
+      "blockedBy": ["vc-113", "vc-114"],
+      "status": "done",
+      "effort": "high",
       "priority": "high"
     }
   ]

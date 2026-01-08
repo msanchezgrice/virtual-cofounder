@@ -1,0 +1,1462 @@
+{
+  "$schema": "./prd-schema.json",
+  "version": "1.0.0",
+  "name": "Virtual Cofounder - Agent SDK Integration",
+  "description": "Implementation stories for deep Claude Agent SDK integration",
+  "createdAt": "2026-01-08T18:00:00.000Z",
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "Foundation",
+      "duration": "Week 1-2 (10 days)",
+      "riskLevel": "low",
+      "executionMode": "mixed"
+    },
+    {
+      "id": "phase-2",
+      "name": "Agent SDK Core",
+      "duration": "Week 2-3 (8 days)",
+      "riskLevel": "high",
+      "executionMode": "parallel-worktrees"
+    },
+    {
+      "id": "phase-3",
+      "name": "Multi-Source Approval",
+      "duration": "Week 3-4 (6 days)",
+      "riskLevel": "medium",
+      "executionMode": "ralph"
+    },
+    {
+      "id": "phase-4",
+      "name": "Launch Readiness",
+      "duration": "Week 4-5 (7 days)",
+      "riskLevel": "low",
+      "executionMode": "ralph"
+    },
+    {
+      "id": "phase-5",
+      "name": "Polish & Integration",
+      "duration": "Week 5-6 (8 days)",
+      "riskLevel": "low",
+      "executionMode": "ralph"
+    }
+  ],
+  "stories": [
+    {
+      "id": "impl-1.1",
+      "phase": "phase-1",
+      "title": "Install @anthropic-ai/claude-agent-sdk",
+      "description": "Add the Claude Agent SDK package to the project dependencies.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "command_succeeds",
+          "command": "npm ls @anthropic-ai/claude-agent-sdk",
+          "description": "Package is installed"
+        },
+        {
+          "type": "file_contains",
+          "path": "package.json",
+          "pattern": "@anthropic-ai/claude-agent-sdk",
+          "description": "Package in dependencies"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [],
+      "completedAt": "2026-01-08T19:54:56.598Z"
+    },
+    {
+      "id": "impl-1.2",
+      "phase": "phase-1",
+      "title": "Add feature flags config",
+      "description": "Create lib/config/feature-flags.ts with flags for AGENT_SDK_ENABLED, STATE_AGENT_ENABLED, MULTI_SOURCE_APPROVAL, LAUNCH_READINESS.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/config/feature-flags.ts",
+          "description": "Feature flags file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/config/feature-flags.ts",
+          "pattern": "AGENT_SDK_ENABLED",
+          "description": "Agent SDK flag defined"
+        },
+        {
+          "type": "file_contains",
+          "path": ".env.example",
+          "pattern": "AGENT_SDK_ENABLED",
+          "description": "Env vars documented"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.1"
+      ],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.3",
+      "phase": "phase-1",
+      "title": "Create project_snapshots migration",
+      "description": "Create a Prisma migration for the project_snapshots table as defined in MASTER-SPEC.md Section 2.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "prisma/migrations/*_add_project_snapshots/migration.sql",
+          "glob": true,
+          "description": "Migration file exists"
+        },
+        {
+          "type": "command_succeeds",
+          "command": "npx prisma migrate status",
+          "description": "Migration is applied"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.4",
+      "phase": "phase-1",
+      "title": "Create slack_inbounds migration",
+      "description": "Create a Prisma migration for the slack_inbounds table to store all Slack messages.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "prisma/migrations/*_add_slack_inbounds/migration.sql",
+          "glob": true,
+          "description": "Migration file exists"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.5",
+      "phase": "phase-1",
+      "title": "Create priority_signals migration",
+      "description": "Create a Prisma migration for the priority_signals table to store classified priority signals.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "prisma/migrations/*_add_priority_signals/migration.sql",
+          "glob": true,
+          "description": "Migration file exists"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.6",
+      "phase": "phase-1",
+      "title": "Create agent_sessions migration",
+      "description": "Create a Prisma migration for the agent_sessions table to store agent thinking traces.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "prisma/migrations/*_add_agent_sessions/migration.sql",
+          "glob": true,
+          "description": "Migration file exists"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.7",
+      "phase": "phase-1",
+      "title": "Create agent_outputs migration",
+      "description": "Create a Prisma migration for the agent_outputs table to store non-code agent outputs.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "prisma/migrations/*_add_agent_outputs/migration.sql",
+          "glob": true,
+          "description": "Migration file exists"
+        }
+      ],
+      "status": "done",
+      "priority": "medium",
+      "blockedBy": [
+        "impl-1.6"
+      ],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.8",
+      "phase": "phase-1",
+      "title": "Update Prisma schema with new models",
+      "description": "Add ProjectSnapshot, SlackInbound, PrioritySignal, AgentSession, AgentOutput models to prisma/schema.prisma.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "prisma/schema.prisma",
+          "pattern": "model ProjectSnapshot",
+          "description": "ProjectSnapshot model exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "prisma/schema.prisma",
+          "pattern": "model AgentSession",
+          "description": "AgentSession model exists"
+        },
+        {
+          "type": "command_succeeds",
+          "command": "npx prisma generate",
+          "description": "Prisma client generates successfully"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.3",
+        "impl-1.4",
+        "impl-1.5",
+        "impl-1.6",
+        "impl-1.7"
+      ],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.9",
+      "phase": "phase-1",
+      "title": "Implement lib/state/aggregate.ts",
+      "description": "Create SQL aggregation functions to compute launch score from scan results and story data.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/state/aggregate.ts",
+          "description": "Aggregate file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/state/aggregate.ts",
+          "pattern": "calculateLaunchScore",
+          "description": "Launch score function exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/state/aggregate.ts",
+          "pattern": "aggregateScanScores",
+          "description": "Scan aggregation function exists"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.3"
+      ],
+      "completedAt": "2026-01-08T19:56:40.697Z"
+    },
+    {
+      "id": "impl-1.10",
+      "phase": "phase-1",
+      "title": "Implement State Manager Agent",
+      "description": "Create lib/agents/state-manager.ts with agent that analyzes scans and generates ai_assessment.",
+      "executionMode": "sequential",
+      "effort": "2d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/state-manager.ts",
+          "description": "State manager file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/state-manager.ts",
+          "pattern": "generateStateAssessment",
+          "description": "Assessment function exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/state-manager.ts",
+          "pattern": "recommended_focus",
+          "description": "Recommendations included"
+        }
+      ],
+      "status": "done",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.9"
+      ],
+      "completedAt": "2026-01-08T19:56:40.698Z"
+    },
+    {
+      "id": "impl-1.11",
+      "phase": "phase-1",
+      "title": "Add Progress link to navigation",
+      "description": "Update app/(app)/layout.tsx to add Progress link to sidebar navigation.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/(app)/layout.tsx",
+          "pattern": "progress",
+          "description": "Progress link in navigation"
+        }
+      ],
+      "status": "done",
+      "priority": "medium",
+      "blockedBy": [],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-1.12",
+      "phase": "phase-1",
+      "title": "Create Progress page skeleton",
+      "description": "Create app/(app)/progress/page.tsx with placeholder content.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/progress/page.tsx",
+          "description": "Progress page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/progress/page.tsx",
+          "pattern": "export default",
+          "description": "Default export exists"
+        }
+      ],
+      "status": "done",
+      "priority": "medium",
+      "blockedBy": [
+        "impl-1.11"
+      ],
+      "completedAt": "2026-01-08T19:54:56.599Z"
+    },
+    {
+      "id": "impl-2.1",
+      "phase": "phase-2",
+      "title": "Create agent registry (lib/agents/index.ts)",
+      "description": "Create central agent registry with AgentDefinition interface and all 17 agent definitions.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/index.ts",
+          "description": "Agent registry exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/index.ts",
+          "pattern": "interface AgentDefinition",
+          "description": "AgentDefinition interface exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/index.ts",
+          "pattern": "agentRegistry",
+          "description": "Registry export exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.1"
+      ]
+    },
+    {
+      "id": "impl-2.2",
+      "phase": "phase-2",
+      "title": "Create AgentDefinition interface",
+      "description": "Define TypeScript interface with name, role, type, model, tools, prompt, maxTurns, canSpawnSubagents.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "lib/agents/index.ts",
+          "pattern": "tools: Tool[]",
+          "description": "Tools array defined"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/index.ts",
+          "pattern": "maxTurns",
+          "description": "Max turns defined"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.1"
+      ]
+    },
+    {
+      "id": "impl-2.3",
+      "phase": "phase-2",
+      "title": "Convert Security Agent to SDK",
+      "description": "Create lib/agents/security.ts using Agent SDK with Read, Grep, WebFetch tools.",
+      "executionMode": "worktree",
+      "worktreeBranch": "agent-sdk-security",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/security.ts",
+          "description": "Security agent file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/security.ts",
+          "pattern": "claude-agent-sdk",
+          "description": "Uses Agent SDK"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/security.ts",
+          "pattern": "Read",
+          "description": "Uses Read tool"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.1"
+      ]
+    },
+    {
+      "id": "impl-2.4",
+      "phase": "phase-2",
+      "title": "Convert Analytics Agent to SDK",
+      "description": "Create lib/agents/analytics.ts using Agent SDK with Read, WebFetch tools.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/analytics.ts",
+          "description": "Analytics agent file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/analytics.ts",
+          "pattern": "claude-agent-sdk",
+          "description": "Uses Agent SDK"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.3"
+      ]
+    },
+    {
+      "id": "impl-2.5",
+      "phase": "phase-2",
+      "title": "Convert Domain Agent to SDK",
+      "description": "Create lib/agents/domain.ts using Agent SDK with WebFetch tools.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/domain.ts",
+          "description": "Domain agent file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/domain.ts",
+          "pattern": "claude-agent-sdk",
+          "description": "Uses Agent SDK"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.3"
+      ]
+    },
+    {
+      "id": "impl-2.6",
+      "phase": "phase-2",
+      "title": "Convert SEO Agent to SDK",
+      "description": "Create lib/agents/seo.ts using Agent SDK with Read, WebFetch tools.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/seo.ts",
+          "description": "SEO agent file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/seo.ts",
+          "pattern": "claude-agent-sdk",
+          "description": "Uses Agent SDK"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.3"
+      ]
+    },
+    {
+      "id": "impl-2.7",
+      "phase": "phase-2",
+      "title": "Convert Deployment Agent to SDK",
+      "description": "Create lib/agents/deployment.ts using Agent SDK with Read, Bash tools.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/deployment.ts",
+          "description": "Deployment agent file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/deployment.ts",
+          "pattern": "claude-agent-sdk",
+          "description": "Uses Agent SDK"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.3"
+      ]
+    },
+    {
+      "id": "impl-2.8",
+      "phase": "phase-2",
+      "title": "Refactor lib/orchestrator.ts (Head of Product)",
+      "description": "Replace manual orchestration with Agent SDK agent loop. Head of Product meta-agent spawns specialist subagents.",
+      "executionMode": "worktree",
+      "worktreeBranch": "agent-sdk-orchestrator",
+      "effort": "2d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "claude-agent-sdk",
+          "description": "Uses Agent SDK"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "spawnAgent",
+          "description": "Spawns subagents"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "AGENT_SDK_ENABLED",
+          "description": "Feature flag check"
+        }
+      ],
+      "status": "todo",
+      "priority": "critical",
+      "blockedBy": [
+        "impl-2.1",
+        "impl-2.3",
+        "impl-2.4",
+        "impl-2.5",
+        "impl-2.6",
+        "impl-2.7"
+      ]
+    },
+    {
+      "id": "impl-2.9",
+      "phase": "phase-2",
+      "title": "Add thinking trace storage",
+      "description": "Store agent thinking traces in agent_sessions table after each orchestrator run.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "agentSession",
+          "description": "Creates agent sessions"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/orchestrator.ts",
+          "pattern": "thinkingTrace",
+          "description": "Stores thinking trace"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.8",
+        "impl-1.6"
+      ]
+    },
+    {
+      "id": "impl-2.10",
+      "phase": "phase-2",
+      "title": "Create Code Generation Agent",
+      "description": "Create lib/agents/code-generation.ts using Agent SDK with Read, Write, Edit, Bash tools.",
+      "executionMode": "worktree",
+      "worktreeBranch": "agent-sdk-codegen",
+      "effort": "2d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/agents/code-generation.ts",
+          "description": "Code gen agent exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/code-generation.ts",
+          "pattern": "Write",
+          "description": "Uses Write tool"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/code-generation.ts",
+          "pattern": "Edit",
+          "description": "Uses Edit tool"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/agents/code-generation.ts",
+          "pattern": "Bash",
+          "description": "Uses Bash tool"
+        }
+      ],
+      "status": "todo",
+      "priority": "critical",
+      "blockedBy": [
+        "impl-2.1"
+      ]
+    },
+    {
+      "id": "impl-2.11",
+      "phase": "phase-2",
+      "title": "Refactor execution worker",
+      "description": "Replace placeholder code generation with Code Generation Agent using Agent SDK tools.",
+      "executionMode": "worktree",
+      "worktreeBranch": "agent-sdk-execution",
+      "effort": "2d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "codeGenerationAgent",
+          "description": "Uses code gen agent"
+        },
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "AGENT_SDK_ENABLED",
+          "description": "Feature flag check"
+        }
+      ],
+      "status": "todo",
+      "priority": "critical",
+      "blockedBy": [
+        "impl-2.10"
+      ]
+    },
+    {
+      "id": "impl-2.12",
+      "phase": "phase-2",
+      "title": "Add execution trace storage",
+      "description": "Store execution tool calls and traces in agent_sessions table.",
+      "executionMode": "sequential",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "workers/execution-worker.ts",
+          "pattern": "agentSession",
+          "description": "Creates agent session"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-2.11",
+        "impl-1.6"
+      ]
+    },
+    {
+      "id": "impl-3.1",
+      "phase": "phase-3",
+      "title": "Update Linear webhook for 'in progress' trigger",
+      "description": "Modify app/api/linear/webhook/route.ts to enqueue story for execution when Linear status changes to 'in progress'.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/api/linear/webhook/route.ts",
+          "pattern": "executionQueue.add",
+          "description": "Enqueues to execution queue"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/linear/webhook/route.ts",
+          "pattern": "In Progress",
+          "description": "Checks for In Progress status"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-3.2",
+      "phase": "phase-3",
+      "title": "Add getPriorityNumber() helper",
+      "description": "Create helper function that converts P0/P1/P2/P3 to numeric values 1/2/3/4 for sorting.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/priority/helpers.ts",
+          "description": "Priority helpers file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority/helpers.ts",
+          "pattern": "getPriorityNumber",
+          "description": "Function exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-3.3",
+      "phase": "phase-3",
+      "title": "Create /api/stories/[id]/approve endpoint",
+      "description": "Create app/api/stories/[id]/approve/route.ts that approves a story and enqueues it for execution.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/stories/[id]/approve/route.ts",
+          "description": "Approve endpoint exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/stories/[id]/approve/route.ts",
+          "pattern": "executionQueue",
+          "description": "Enqueues to execution queue"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/stories/[id]/approve/route.ts",
+          "pattern": "POST",
+          "description": "Handles POST method"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-3.4",
+      "phase": "phase-3",
+      "title": "Create /api/stories/[id]/reject endpoint",
+      "description": "Create app/api/stories/[id]/reject/route.ts that rejects a story with a reason.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/stories/[id]/reject/route.ts",
+          "description": "Reject endpoint exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/stories/[id]/reject/route.ts",
+          "pattern": "reason",
+          "description": "Accepts reason parameter"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-3.3"
+      ]
+    },
+    {
+      "id": "impl-3.5",
+      "phase": "phase-3",
+      "title": "Create /api/stories/[id]/request-changes endpoint",
+      "description": "Create app/api/stories/[id]/request-changes/route.ts that adds a comment and keeps story pending.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/api/stories/[id]/request-changes/route.ts",
+          "description": "Request changes endpoint exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/api/stories/[id]/request-changes/route.ts",
+          "pattern": "comment",
+          "description": "Accepts comment parameter"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-3.3"
+      ]
+    },
+    {
+      "id": "impl-3.6",
+      "phase": "phase-3",
+      "title": "Add approval buttons to Story Detail UI",
+      "description": "Add Approve, Reject, and Request Changes buttons to the story detail component.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "components/story-detail.tsx",
+          "pattern": "Approve",
+          "description": "Approve button exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "components/story-detail.tsx",
+          "pattern": "Reject",
+          "description": "Reject button exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "components/story-detail.tsx",
+          "pattern": "Request Changes",
+          "description": "Request Changes button exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-3.3",
+        "impl-3.4",
+        "impl-3.5"
+      ]
+    },
+    {
+      "id": "impl-3.7",
+      "phase": "phase-3",
+      "title": "Implement priority signal classifier",
+      "description": "Create lib/priority/classifier.ts that classifies signals from Slack, Linear, scans into P0-P3.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/priority/classifier.ts",
+          "description": "Classifier file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority/classifier.ts",
+          "pattern": "classifyPriority",
+          "description": "Main function exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority/classifier.ts",
+          "pattern": "P0",
+          "description": "Handles P0 priority"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.5"
+      ]
+    },
+    {
+      "id": "impl-3.8",
+      "phase": "phase-3",
+      "title": "Create unified inbound handler",
+      "description": "Create lib/inbound/handler.ts that receives all signals and routes to priority_signals table.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/inbound/handler.ts",
+          "description": "Handler file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/inbound/handler.ts",
+          "pattern": "handleInbound",
+          "description": "Main function exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/inbound/handler.ts",
+          "pattern": "priority_signals",
+          "description": "Writes to priority_signals"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-3.7"
+      ]
+    },
+    {
+      "id": "impl-3.9",
+      "phase": "phase-3",
+      "title": "Implement stack ranker",
+      "description": "Create lib/priority/ranker.ts that computes priority score and ranks stories.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/priority/ranker.ts",
+          "description": "Ranker file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority/ranker.ts",
+          "pattern": "calculatePriorityScore",
+          "description": "Score function exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority/ranker.ts",
+          "pattern": "getStackRankedStories",
+          "description": "Ranking function exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-3.7"
+      ]
+    },
+    {
+      "id": "impl-4.1",
+      "phase": "phase-4",
+      "title": "Implement launch score calculation",
+      "description": "Create lib/launch/score.ts that calculates launch score 0-100 based on scan results, stories, and checklist.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/launch/score.ts",
+          "description": "Score file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/launch/score.ts",
+          "pattern": "calculateLaunchScore",
+          "description": "Main function exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.9"
+      ]
+    },
+    {
+      "id": "impl-4.2",
+      "phase": "phase-4",
+      "title": "Implement launch stage derivation",
+      "description": "Create function that derives launch stage (idea/mvp/alpha/beta/launch/growth) from score.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "lib/launch/score.ts",
+          "pattern": "deriveLaunchStage",
+          "description": "Stage derivation function exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/launch/score.ts",
+          "pattern": "idea",
+          "description": "Handles idea stage"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/launch/score.ts",
+          "pattern": "growth",
+          "description": "Handles growth stage"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-4.1"
+      ]
+    },
+    {
+      "id": "impl-4.3",
+      "phase": "phase-4",
+      "title": "Implement launch checklist",
+      "description": "Create lib/launch/checklist.ts that computes 12+ launch readiness checklist items.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "lib/launch/checklist.ts",
+          "description": "Checklist file exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/launch/checklist.ts",
+          "pattern": "calculateLaunchChecklist",
+          "description": "Main function exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-4.4",
+      "phase": "phase-4",
+      "title": "Create Progress screen header",
+      "description": "Update app/(app)/progress/page.tsx with header showing stage, score, and project info.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "app/(app)/progress/page.tsx",
+          "pattern": "launchStage",
+          "description": "Shows launch stage"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/progress/page.tsx",
+          "pattern": "launchScore",
+          "description": "Shows launch score"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-1.12"
+      ]
+    },
+    {
+      "id": "impl-4.5",
+      "phase": "phase-4",
+      "title": "Create Progress timeline component",
+      "description": "Create component showing visual timeline from idea to growth stages.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "components/progress-timeline.tsx",
+          "description": "Timeline component exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "components/progress-timeline.tsx",
+          "pattern": "stage",
+          "description": "Shows stages"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-4.4"
+      ]
+    },
+    {
+      "id": "impl-4.6",
+      "phase": "phase-4",
+      "title": "Create Progress checklist component",
+      "description": "Create component showing interactive checklist display with completion status.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "components/progress-checklist.tsx",
+          "description": "Checklist component exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "components/progress-checklist.tsx",
+          "pattern": "checklist",
+          "description": "Shows checklist items"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-4.3"
+      ]
+    },
+    {
+      "id": "impl-4.7",
+      "phase": "phase-4",
+      "title": "Create Progress recommendations component",
+      "description": "Create component showing AI-generated recommendations from State Agent.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "components/progress-recommendations.tsx",
+          "description": "Recommendations component exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "components/progress-recommendations.tsx",
+          "pattern": "recommended_focus",
+          "description": "Shows recommendations"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": [
+        "impl-4.6"
+      ]
+    },
+    {
+      "id": "impl-4.8",
+      "phase": "phase-4",
+      "title": "Integrate launch score into priority weighting",
+      "description": "Update priority ranker to weight stories that advance launch stage higher.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "lib/priority/ranker.ts",
+          "pattern": "launchScore",
+          "description": "Uses launch score in ranking"
+        },
+        {
+          "type": "file_contains",
+          "path": "lib/priority/ranker.ts",
+          "pattern": "advancesLaunchStage",
+          "description": "Considers launch advancement"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-4.1",
+        "impl-3.9"
+      ]
+    },
+    {
+      "id": "impl-4.9",
+      "phase": "phase-4",
+      "title": "Add 'advances launch stage' flag to stories",
+      "description": "Add computed flag to stories indicating if they advance the project's launch stage.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "prisma/schema.prisma",
+          "pattern": "advancesLaunchStage",
+          "description": "Field exists in schema"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": [
+        "impl-4.8"
+      ]
+    },
+    {
+      "id": "impl-5.1",
+      "phase": "phase-5",
+      "title": "Implement History page",
+      "description": "Create app/(app)/history/page.tsx showing all activity timeline.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/history/page.tsx",
+          "description": "History page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/history/page.tsx",
+          "pattern": "activity",
+          "description": "Shows activity"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-5.2",
+      "phase": "phase-5",
+      "title": "Implement Priorities page",
+      "description": "Create app/(app)/priorities/page.tsx showing stack-ranked lists by project.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/priorities/page.tsx",
+          "description": "Priorities page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/priorities/page.tsx",
+          "pattern": "stackRanked",
+          "description": "Shows ranked stories"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-3.9"
+      ]
+    },
+    {
+      "id": "impl-5.3",
+      "phase": "phase-5",
+      "title": "Implement Projects page",
+      "description": "Create app/(app)/projects/page.tsx showing project grid with health indicators.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/projects/page.tsx",
+          "description": "Projects page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/projects/page.tsx",
+          "pattern": "healthScore",
+          "description": "Shows health indicators"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-5.4",
+      "phase": "phase-5",
+      "title": "Implement Agents page",
+      "description": "Create app/(app)/agents/page.tsx showing real-time agent activity.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/agents/page.tsx",
+          "description": "Agents page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/agents/page.tsx",
+          "pattern": "agentSession",
+          "description": "Shows agent sessions"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": [
+        "impl-2.9"
+      ]
+    },
+    {
+      "id": "impl-5.5",
+      "phase": "phase-5",
+      "title": "Implement Scans page",
+      "description": "Create app/(app)/scans/page.tsx showing detailed scan results.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/scans/page.tsx",
+          "description": "Scans page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/scans/page.tsx",
+          "pattern": "scanResults",
+          "description": "Shows scan results"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-5.6",
+      "phase": "phase-5",
+      "title": "Implement Settings page",
+      "description": "Create app/(app)/settings/page.tsx showing integrations, limits, preferences.",
+      "executionMode": "ralph",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "app/(app)/settings/page.tsx",
+          "description": "Settings page exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "app/(app)/settings/page.tsx",
+          "pattern": "integrations",
+          "description": "Shows integrations"
+        }
+      ],
+      "status": "todo",
+      "priority": "low",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-5.7",
+      "phase": "phase-5",
+      "title": "Implement Gallery search/filter",
+      "description": "Add search and filter functionality to agent outputs gallery.",
+      "executionMode": "ralph",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_contains",
+          "path": "components/gallery.tsx",
+          "pattern": "search",
+          "description": "Has search input"
+        },
+        {
+          "type": "file_contains",
+          "path": "components/gallery.tsx",
+          "pattern": "filter",
+          "description": "Has filter options"
+        }
+      ],
+      "status": "todo",
+      "priority": "low",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-5.8",
+      "phase": "phase-5",
+      "title": "Unify UX across all screens",
+      "description": "Apply consistent styling using design system across all pages.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "visual_check",
+          "description": "All pages use same font family"
+        },
+        {
+          "type": "visual_check",
+          "description": "All pages use consistent color palette"
+        },
+        {
+          "type": "visual_check",
+          "description": "All pages have consistent sidebar"
+        }
+      ],
+      "status": "todo",
+      "priority": "high",
+      "blockedBy": [
+        "impl-5.1",
+        "impl-5.2",
+        "impl-5.3",
+        "impl-5.4",
+        "impl-5.5",
+        "impl-5.6",
+        "impl-5.7"
+      ]
+    },
+    {
+      "id": "impl-5.9",
+      "phase": "phase-5",
+      "title": "Write user documentation",
+      "description": "Create README and getting started guide with installation and usage instructions.",
+      "executionMode": "sequential",
+      "effort": "1d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "docs/getting-started.md",
+          "description": "Getting started guide exists"
+        },
+        {
+          "type": "file_contains",
+          "path": "README.md",
+          "pattern": "## Getting Started",
+          "description": "README has getting started section"
+        }
+      ],
+      "status": "todo",
+      "priority": "medium",
+      "blockedBy": []
+    },
+    {
+      "id": "impl-5.10",
+      "phase": "phase-5",
+      "title": "Create demo video",
+      "description": "Record 3-5 minute walkthrough video showing key features.",
+      "executionMode": "sequential",
+      "effort": "0.5d",
+      "acceptanceCriteria": [
+        {
+          "type": "file_exists",
+          "path": "docs/demo.mp4",
+          "description": "Demo video exists"
+        }
+      ],
+      "status": "todo",
+      "priority": "low",
+      "blockedBy": [
+        "impl-5.9"
+      ]
+    }
+  ]
+}

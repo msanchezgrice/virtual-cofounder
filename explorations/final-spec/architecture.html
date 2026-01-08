@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Cofounder - Architecture v1.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400&display=swap');
+    
+    :root {
+      --bg-cream: #FDF8F3;
+      --bg-warm: #F9F3ED;
+      --bg-card: #FFFFFF;
+      --text-primary: #1C1917;
+      --text-secondary: #57534E;
+      --text-muted: #A8A29E;
+      --accent-purple: #8B5CF6;
+      --accent-green: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-red: #EF4444;
+      --border-light: #E7E5E4;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--bg-cream);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 48px 24px; }
+    
+    h1 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+    h2 { font-size: 24px; font-weight: 600; margin: 48px 0 16px; }
+    h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent-purple), #7C3AED);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .subtitle { color: var(--text-secondary); font-size: 18px; margin-bottom: 48px; }
+    
+    .nav { 
+      position: sticky; 
+      top: 0; 
+      background: rgba(253,248,243,0.95); 
+      backdrop-filter: blur(10px); 
+      padding: 16px 0; 
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border-light);
+      z-index: 100;
+    }
+    
+    .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    
+    .nav-link:hover { background: var(--bg-card); border-color: var(--border-light); }
+    
+    .diagram-section {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-light);
+      padding: 32px;
+      margin-bottom: 32px;
+      scroll-margin-top: 100px;
+    }
+    
+    .diagram-section h3 { margin-top: 0; }
+    
+    .mermaid { margin: 24px 0; }
+    
+    .description { color: var(--text-secondary); margin-bottom: 16px; }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    
+    .badge-new { background: #D1FAE5; color: #065F46; }
+    .badge-change { background: #FEF3C7; color: #92400E; }
+    .badge-keep { background: #DBEAFE; color: #1E40AF; }
+    
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-light); }
+    th { background: var(--bg-warm); font-weight: 600; }
+    code { background: var(--bg-warm); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><span class="gradient-text">Architecture</span> v1.0</h1>
+    <p class="subtitle">System architecture and data flows for Virtual Cofounder</p>
+    
+    <nav class="nav">
+      <div class="nav-links">
+        <a href="#overview" class="nav-link">Overview</a>
+        <a href="#before-after" class="nav-link">Before/After</a>
+        <a href="#project-state" class="nav-link">Project State</a>
+        <a href="#launch-readiness" class="nav-link">Launch Readiness</a>
+        <a href="#priority" class="nav-link">Priority System</a>
+        <a href="#agents" class="nav-link">Agents</a>
+        <a href="#data-flow" class="nav-link">Data Flow</a>
+        <a href="#approval" class="nav-link">Multi-Source Approval</a>
+      </div>
+    </nav>
+
+    <!-- OVERVIEW -->
+    <section id="overview" class="diagram-section">
+      <h3>System Overview</h3>
+      <p class="description">High-level view of all system components and their interactions.</p>
+      
+      <div class="mermaid">
+flowchart TB
+    subgraph External["External Services"]
+        Slack[Slack API]
+        Linear[Linear API]
+        GitHub[GitHub API]
+        Stripe[Stripe API]
+    end
+    
+    subgraph Frontend["Frontend - Vercel"]
+        NextJS[Next.js App]
+        Dashboard[Dashboard UI]
+        API[API Routes]
+    end
+    
+    subgraph Workers["Background Workers - Railway"]
+        ScanWorker[Scan Worker]
+        OrchWorker[Orchestrator Worker]
+        ExecWorker[Execution Worker]
+    end
+    
+    subgraph Queue["Message Queue"]
+        BullMQ[BullMQ + Redis]
+    end
+    
+    subgraph AI["AI Layer"]
+        AgentSDK[Claude Agent SDK]
+        HoP[Head of Product Agent]
+        Specialists[Specialist Agents]
+    end
+    
+    subgraph Data["Data Layer - Supabase"]
+        Postgres[(PostgreSQL)]
+        Storage[(Storage)]
+    end
+    
+    Slack --> API
+    Linear --> API
+    API --> BullMQ
+    BullMQ --> ScanWorker
+    BullMQ --> OrchWorker
+    BullMQ --> ExecWorker
+    
+    ScanWorker --> Postgres
+    OrchWorker --> AgentSDK
+    AgentSDK --> HoP
+    HoP --> Specialists
+    Specialists --> Postgres
+    
+    ExecWorker --> GitHub
+    ExecWorker --> Postgres
+    
+    Dashboard --> API
+    API --> Postgres
+      </div>
+    </section>
+
+    <!-- BEFORE/AFTER -->
+    <section id="before-after" class="diagram-section">
+      <h3>Before vs After: Agent SDK Integration</h3>
+      <p class="description">Comparison of the current manual orchestration vs the proposed Agent SDK integration.</p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div>
+          <h4 style="color: var(--accent-red); margin-bottom: 16px;">❌ Before (Current)</h4>
+          <div class="mermaid">
+flowchart TD
+    A[Vercel Cron] --> B[BullMQ Queue]
+    B --> C[Worker]
+    C --> D[Single API Call]
+    D --> E[Anthropic SDK]
+    E --> F["Return JSON"]
+    F --> G[Store in DB]
+    
+    style D fill:#fee2e2,stroke:#dc2626
+    style F fill:#fee2e2,stroke:#dc2626
+          </div>
+          <ul style="font-size: 14px; color: var(--text-secondary); margin-top: 16px;">
+            <li>Single API call per "agent"</li>
+            <li>No tool use capability</li>
+            <li>Placeholder code in PRs</li>
+            <li>Manual script execution</li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 style="color: var(--accent-green); margin-bottom: 16px;">✅ After (Proposed)</h4>
+          <div class="mermaid">
+flowchart TD
+    A[Vercel Cron] --> B[BullMQ Queue]
+    B --> C[Worker]
+    C --> D[Agent SDK]
+    D --> E[Multi-turn Loop]
+    E --> F{Tool Use?}
+    F -->|Yes| G[Execute Tool]
+    G --> E
+    F -->|No| H[Return Result]
+    H --> I[Store Trace in DB]
+    
+    style D fill:#d1fae5,stroke:#059669
+    style E fill:#d1fae5,stroke:#059669
+    style G fill:#d1fae5,stroke:#059669
+          </div>
+          <ul style="font-size: 14px; color: var(--text-secondary); margin-top: 16px;">
+            <li>Multi-turn agents with tools</li>
+            <li>Built-in Read, Write, Edit, Bash</li>
+            <li>Real code changes</li>
+            <li>Automatic trace storage</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJECT STATE -->
+    <section id="project-state" class="diagram-section">
+      <h3>Project State Management</h3>
+      <span class="badge badge-new">NEW</span>
+      <p class="description">How project state is aggregated into daily snapshots.</p>
+      
+      <div class="mermaid">
+flowchart LR
+    subgraph Sources["Data Sources"]
+        Scans[(Scans)]
+        Stories[(Stories)]
+        Checks[(Launch Checks)]
+    end
+    
+    subgraph Compute["State Computation"]
+        SQL[SQL Aggregation]
+        Agent[State Manager Agent]
+    end
+    
+    subgraph Output["Project Snapshot"]
+        Score[Launch Score]
+        Stage[Launch Stage]
+        Summary[AI Assessment]
+        Actions[Recommended Actions]
+    end
+    
+    Scans --> SQL
+    Stories --> SQL
+    Checks --> SQL
+    
+    SQL --> Score
+    SQL --> Stage
+    SQL --> Agent
+    
+    Agent --> Summary
+    Agent --> Actions
+      </div>
+      
+      <h4 style="margin-top: 24px;">New Table: <code>project_snapshots</code></h4>
+      <table>
+        <tr><th>Column</th><th>Type</th><th>Purpose</th></tr>
+        <tr><td><code>launch_stage</code></td><td>TEXT</td><td>idea / mvp / alpha / beta / launch / growth</td></tr>
+        <tr><td><code>launch_score</code></td><td>INTEGER</td><td>0-100 computed score</td></tr>
+        <tr><td><code>scan_scores</code></td><td>JSONB</td><td>Aggregated scan results by type</td></tr>
+        <tr><td><code>work_summary</code></td><td>JSONB</td><td>Story counts by status</td></tr>
+        <tr><td><code>launch_checklist</code></td><td>JSONB</td><td>Boolean checklist items</td></tr>
+        <tr><td><code>ai_assessment</code></td><td>TEXT</td><td>Agent's summary of project health</td></tr>
+        <tr><td><code>recommended_focus</code></td><td>TEXT[]</td><td>Top 3-5 recommended next actions</td></tr>
+      </table>
+    </section>
+
+    <!-- LAUNCH READINESS -->
+    <section id="launch-readiness" class="diagram-section">
+      <h3>Launch Readiness System</h3>
+      <span class="badge badge-new">NEW</span>
+      <p class="description">How projects progress from idea to paying customers.</p>
+      
+      <div class="mermaid">
+flowchart LR
+    subgraph Stages
+        Idea["💡 Idea<br/>0-15 pts"]
+        MVP["🔧 MVP<br/>16-35 pts"]
+        Alpha["🧪 Alpha<br/>36-55 pts"]
+        Beta["🎯 Beta<br/>56-75 pts"]
+        Launch["🚀 Launch<br/>76-90 pts"]
+        Growth["📈 Growth<br/>91-100 pts"]
+    end
+    
+    Idea --> MVP --> Alpha --> Beta --> Launch --> Growth
+      </div>
+      
+      <h4 style="margin-top: 24px;">Score Components (100 pts total)</h4>
+      <table>
+        <tr><th>Category</th><th>Points</th><th>Items</th></tr>
+        <tr><td>Infrastructure</td><td>25</td><td>Repo exists (5), CI/CD (5), Deployment (10), Domain (5)</td></tr>
+        <tr><td>Product</td><td>35</td><td>Core feature (15), Auth (10), Error handling (5), Mobile (5)</td></tr>
+        <tr><td>Quality</td><td>20</td><td>Performance (5), SEO (5), Security (5), Analytics (5)</td></tr>
+        <tr><td>Business</td><td>20</td><td>Payment integration (10), Paying customers (10)</td></tr>
+      </table>
+    </section>
+
+    <!-- PRIORITY SYSTEM -->
+    <section id="priority" class="diagram-section">
+      <h3>Priority System (P0-P3)</h3>
+      <span class="badge badge-change">ENHANCED</span>
+      <p class="description">How signals from multiple sources are classified and ranked.</p>
+      
+      <div class="mermaid">
+flowchart TD
+    subgraph Sources["Signal Sources"]
+        SlackDM[Slack DM]
+        SlackChan[Slack Channel]
+        LinearCmt[Linear Comment]
+        LinearStatus[Linear Status]
+        ScanFind[Scan Finding]
+        CheckIn[Check-in Response]
+    end
+    
+    subgraph Classify["Classification"]
+        Explicit["Explicit Tags<br/>(P0:, urgent:)"]
+        Emoji["Emoji Shortcuts<br/>(🔴, 🟡, 🟢)"]
+        LLM["LLM Fallback"]
+    end
+    
+    subgraph Priority["Priority Levels"]
+        P0["🔴 P0 Critical<br/>Immediate"]
+        P1["🟡 P1 High<br/>Same day"]
+        P2["🟢 P2 Medium<br/>This week"]
+        P3["⚪ P3 Low<br/>Backlog"]
+    end
+    
+    Sources --> Explicit
+    Explicit --> Priority
+    Explicit -.->|Not found| Emoji
+    Emoji --> Priority
+    Emoji -.->|Not found| LLM
+    LLM --> Priority
+      </div>
+      
+      <h4 style="margin-top: 24px;">Priority Weighting Formula</h4>
+      <pre style="background: var(--bg-warm); padding: 16px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 13px; overflow-x: auto;">
+priority_score = (impact × 2) + (confidence × 1.5) + stage_bonus + proximity_bonus
+
+where:
+  stage_bonus = +20 if story advances launch stage
+  proximity_bonus = (launch_score / 100) × 10
+  optimization_penalty = -15 if project is pre-MVP and story is optimization
+      </pre>
+    </section>
+
+    <!-- AGENTS -->
+    <section id="agents" class="diagram-section">
+      <h3>Agent Registry (17 Agents)</h3>
+      <span class="badge badge-change">ENHANCED</span>
+      <p class="description">Specialist agents and their capabilities.</p>
+      
+      <div class="mermaid">
+flowchart TB
+    HoP[Head of Product<br/>Opus • Meta Agent]
+    
+    subgraph Analysis["Analysis Agents"]
+        Security[Security<br/>Opus]
+        Analytics[Analytics<br/>Sonnet]
+        SEO[SEO<br/>Sonnet]
+        Domain[Domain<br/>Sonnet]
+        Performance[Performance<br/>Sonnet]
+        A11y[Accessibility<br/>Sonnet]
+    end
+    
+    subgraph Code["Code Agents"]
+        CodeGen[Code Generation<br/>Opus]
+        Test[Test<br/>Sonnet]
+        Review[Review<br/>Opus]
+        Database[Database<br/>Opus]
+        API[API<br/>Sonnet]
+    end
+    
+    subgraph Creative["Creative Agents"]
+        Design[Design<br/>Opus]
+        Copy[Copy<br/>Sonnet]
+        Docs[Documentation<br/>Sonnet]
+    end
+    
+    subgraph Ops["Ops Agents"]
+        State[State Manager<br/>Sonnet]
+        Research[Research<br/>Sonnet]
+        Deployment[Deployment<br/>Sonnet]
+    end
+    
+    HoP --> Analysis
+    HoP --> Code
+    HoP --> Creative
+    HoP --> Ops
+      </div>
+      
+      <h4 style="margin-top: 24px;">Agent Tools</h4>
+      <table>
+        <tr><th>Tool</th><th>Description</th><th>Used By</th></tr>
+        <tr><td><code>Read</code></td><td>Read file contents</td><td>All code agents</td></tr>
+        <tr><td><code>Write</code></td><td>Write new files</td><td>CodeGen, Test, Docs</td></tr>
+        <tr><td><code>Edit</code></td><td>Edit existing files</td><td>CodeGen, Review</td></tr>
+        <tr><td><code>Bash</code></td><td>Run shell commands</td><td>CodeGen, Test, Deploy</td></tr>
+        <tr><td><code>WebFetch</code></td><td>Fetch web content</td><td>SEO, Domain, Research</td></tr>
+        <tr><td><code>WebSearch</code></td><td>Search the web</td><td>Research</td></tr>
+        <tr><td><code>spawnAgent</code></td><td>Spawn subagent</td><td>Head of Product</td></tr>
+      </table>
+    </section>
+
+    <!-- DATA FLOW -->
+    <section id="data-flow" class="diagram-section">
+      <h3>End-to-End Data Flow</h3>
+      <p class="description">How a user priority flows through the system to execution.</p>
+      
+      <div class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant S as Slack
+    participant API as API Route
+    participant Q as BullMQ
+    participant O as Orchestrator
+    participant A as Agent SDK
+    participant DB as Database
+    participant L as Linear
+    participant G as GitHub
+    
+    U->>S: "P1: Fix checkout bug"
+    S->>API: Webhook event
+    API->>DB: Store in slack_inbounds
+    API->>DB: Create priority_signal
+    API->>Q: Enqueue orchestrator run
+    
+    Q->>O: Process job
+    O->>A: Create Head of Product agent
+    A->>A: Analyze priorities
+    A->>A: Spawn Code Generation agent
+    A->>DB: Store thinking traces
+    A->>O: Return story recommendation
+    
+    O->>DB: Create story (status: PENDING)
+    O->>L: Create Linear issue
+    O->>S: Notify user for approval
+    
+    U->>S: "approved"
+    S->>API: Approval webhook
+    API->>DB: Update story (status: APPROVED)
+    API->>Q: Enqueue execution
+    
+    Q->>A: Code Generation agent
+    A->>A: Read files, analyze, edit
+    A->>G: Create PR
+    A->>DB: Update story (status: REVIEW)
+    A->>S: Notify PR ready
+      </div>
+    </section>
+
+    <!-- MULTI-SOURCE APPROVAL -->
+    <section id="approval" class="diagram-section">
+      <h3>Multi-Source Approval</h3>
+      <span class="badge badge-new">NEW</span>
+      <p class="description">Work can be approved from Linear, Slack, or the Dashboard.</p>
+      
+      <div class="mermaid">
+flowchart LR
+    subgraph Sources["Approval Sources"]
+        Linear["Linear<br/>Status → In Progress"]
+        Slack["Slack<br/>'approved' or ✅"]
+        Dashboard["Dashboard<br/>Approve button"]
+    end
+    
+    subgraph Handler["Unified Handler"]
+        Validate[Validate story exists]
+        Update[Update status → APPROVED]
+        Enqueue[Enqueue execution]
+    end
+    
+    subgraph Execution["Execution Queue"]
+        Queue[BullMQ Queue<br/>FIFO + Priority]
+        Worker[Execution Worker<br/>Always running]
+    end
+    
+    Linear --> Validate
+    Slack --> Validate
+    Dashboard --> Validate
+    Validate --> Update --> Enqueue --> Queue --> Worker
+      </div>
+      
+      <h4 style="margin-top: 24px;">Required Code Changes</h4>
+      <table>
+        <tr><th>File</th><th>Change</th></tr>
+        <tr><td><code>app/api/linear/webhook/route.ts</code></td><td>Add execution enqueue when status changes to "in progress"</td></tr>
+        <tr><td><code>app/api/slack/events/route.ts</code></td><td>Handle approval reactions and messages</td></tr>
+        <tr><td><code>app/api/stories/[id]/approve/route.ts</code></td><td>New endpoint for dashboard approval</td></tr>
+      </table>
+    </section>
+
+  </div>
+  
+  <script>
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#8B5CF6',
+        primaryTextColor: '#1C1917',
+        primaryBorderColor: '#E7E5E4',
+        lineColor: '#A8A29E',
+        secondaryColor: '#FDF8F3',
+        tertiaryColor: '#F9F3ED'
+      }
+    });
+  </script>
+</body>
+</html>

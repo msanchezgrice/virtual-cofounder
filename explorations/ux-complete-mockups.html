@@ -1,0 +1,3480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Cofounder - Complete UI/UX Mockups</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+    
+    /* Color Palette from virtualcofounder.ai */
+    :root {
+      --bg-cream: #FDF8F3;
+      --bg-warm: #F9F3ED;
+      --bg-card: #FFFFFF;
+      --bg-dark: #1C1917;
+      --bg-darker: #0C0A09;
+      
+      --text-primary: #1C1917;
+      --text-secondary: #57534E;
+      --text-muted: #A8A29E;
+      --text-light: #D6D3D1;
+      --text-on-dark: #FAFAF9;
+      
+      --accent-purple: #8B5CF6;
+      --accent-violet: #7C3AED;
+      --accent-indigo: #6366F1;
+      --accent-green: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-red: #EF4444;
+      --accent-blue: #3B82F6;
+      
+      --border-light: #E7E5E4;
+      --border-warm: #D6D3D1;
+      
+      --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(28, 25, 23, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(28, 25, 23, 0.1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-cream);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    
+    h1 {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 18px;
+      margin-bottom: 48px;
+    }
+    
+    /* Navigation */
+    .page-nav {
+      position: sticky;
+      top: 0;
+      background: rgba(253, 248, 243, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 16px 0;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border-light);
+      z-index: 100;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .nav-link {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    
+    .nav-link:hover {
+      background: var(--bg-card);
+      border-color: var(--border-light);
+    }
+    
+    .nav-link.active {
+      background: var(--accent-purple);
+      color: white;
+    }
+    
+    /* Screen Sections */
+    .screen-section {
+      margin-bottom: 80px;
+      scroll-margin-top: 100px;
+    }
+    
+    .screen-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .screen-number {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-purple);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+    }
+    
+    .screen-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    
+    .priority-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    
+    .p0 { background: #FEE2E2; color: #991B1B; }
+    .p1 { background: #FEF3C7; color: #92400E; }
+    .p2 { background: #DBEAFE; color: #1E40AF; }
+    
+    .screen-description {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      font-size: 16px;
+      max-width: 700px;
+    }
+    
+    /* Mockup Frame */
+    .mockup-frame {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .mockup-topbar {
+      background: var(--bg-warm);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .topbar-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .dot-red { background: #EF4444; }
+    .dot-yellow { background: #F59E0B; }
+    .dot-green { background: #10B981; }
+    
+    .topbar-url {
+      flex: 1;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+    }
+    
+    /* App Layout */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 650px;
+    }
+    
+    .sidebar {
+      background: var(--bg-dark);
+      color: var(--text-on-dark);
+      padding: 24px 0;
+    }
+    
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 24px;
+    }
+    
+    .logo-text {
+      font-weight: 700;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .nav-item, a.nav-item {
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 15px;
+      text-decoration: none;
+    }
+    
+    .nav-item:hover, a.nav-item:hover {
+      background: rgba(255,255,255,0.05);
+      color: white;
+    }
+    
+    .nav-item.active, a.nav-item.active {
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--accent-purple);
+      border-right: 3px solid var(--accent-purple);
+    }
+    
+    .nav-icon {
+      width: 22px;
+      text-align: center;
+      font-size: 16px;
+    }
+    
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent-purple);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .nav-section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .nav-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      padding: 0 24px;
+      margin-bottom: 12px;
+    }
+    
+    .main-content {
+      padding: 32px;
+      background: var(--bg-cream);
+      overflow-y: auto;
+    }
+    
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: var(--accent-purple);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-violet);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-light);
+    }
+    
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+    
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    
+    .stat-trend {
+      font-size: 13px;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    
+    .trend-up { color: var(--accent-green); }
+    .trend-down { color: var(--accent-red); }
+    
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    /* Queue Items */
+    .queue-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 48px 1fr 120px 160px;
+      align-items: center;
+      gap: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    
+    .queue-item:hover {
+      border-color: var(--accent-purple);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .queue-rank {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    
+    .rank-p0 { background: #FEE2E2; color: #991B1B; }
+    .rank-p1 { background: #FEF3C7; color: #92400E; }
+    .rank-p2 { background: #DBEAFE; color: #1E40AF; }
+    .rank-p3 { background: #F3F4F6; color: #4B5563; }
+    
+    .queue-info h4 {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+    
+    .queue-meta {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-pending { background: #FEF3C7; color: #92400E; }
+    .status-approved { background: #D1FAE5; color: #065F46; }
+    .status-progress { background: #DBEAFE; color: #1E40AF; }
+    
+    .queue-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .action-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    
+    .action-approve { background: var(--accent-green); color: white; }
+    .action-reject { background: var(--bg-warm); color: var(--text-secondary); border: 1px solid var(--border-light); }
+    
+    /* Chat */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .chat-message {
+      display: flex;
+      gap: 16px;
+      max-width: 85%;
+    }
+    
+    .chat-message.assistant { align-self: flex-start; }
+    .chat-message.user { align-self: flex-end; flex-direction: row-reverse; }
+    
+    .chat-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    
+    .avatar-bot { background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet)); }
+    .avatar-user { background: var(--accent-blue); color: white; }
+    .avatar-agent { background: var(--accent-amber); }
+    
+    .chat-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .chat-message.user .chat-bubble {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: white;
+    }
+    
+    .chat-sender {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    
+    .chat-text {
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    
+    .chat-tool-use {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: var(--bg-warm);
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--accent-green);
+    }
+    
+    .chat-thinking {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 13px;
+      padding: 10px 14px;
+      background: #F5F3FF;
+      border-radius: 8px;
+      margin-top: 10px;
+      border-left: 3px solid var(--accent-purple);
+    }
+    
+    /* Stack Ranked List */
+    .stack-header {
+      display: grid;
+      grid-template-columns: 60px 1fr 80px 80px 80px 100px;
+      gap: 16px;
+      padding: 12px 20px;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    
+    .stack-item {
+      display: grid;
+      grid-template-columns: 60px 1fr 80px 80px 80px 100px;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      gap: 16px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    
+    .stack-item:hover {
+      border-color: var(--accent-purple);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .stack-rank {
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text-muted);
+    }
+    
+    .stack-rank.top { color: var(--accent-purple); }
+    
+    .stack-title { font-weight: 600; font-size: 15px; }
+    .stack-project { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    
+    .score-cell { text-align: center; }
+    .score-value { font-weight: 700; font-size: 16px; }
+    .score-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .priority-tag {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+    
+    .tag-p0 { background: #FEE2E2; color: #991B1B; }
+    .tag-p1 { background: #FEF3C7; color: #92400E; }
+    .tag-p2 { background: #DBEAFE; color: #1E40AF; }
+    .tag-p3 { background: #F3F4F6; color: #4B5563; }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 28px;
+      background: var(--bg-warm);
+      padding: 4px;
+      border-radius: 12px;
+      width: fit-content;
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    
+    .tab.active {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    /* Project Grid */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.2s;
+    }
+    
+    .project-card:hover {
+      border-color: var(--accent-purple);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .project-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    
+    .project-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: var(--bg-warm);
+    }
+    
+    .project-name {
+      font-weight: 700;
+      font-size: 18px;
+    }
+    
+    .project-domain {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .project-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
+    
+    .project-stat {
+      text-align: center;
+    }
+    
+    .project-stat-value {
+      font-weight: 700;
+      font-size: 20px;
+    }
+    
+    .project-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    
+    /* Agent Cards */
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 56px 1fr 120px;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    
+    .agent-card:hover {
+      border-color: var(--accent-purple);
+    }
+    
+    .agent-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    
+    .agent-security { background: #FEE2E2; }
+    .agent-analytics { background: #DBEAFE; }
+    .agent-seo { background: #D1FAE5; }
+    .agent-design { background: #F5F3FF; }
+    .agent-code { background: #FEF3C7; }
+    .agent-domain { background: #FCE7F3; }
+    
+    .agent-name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+    .agent-status { font-size: 13px; color: var(--text-muted); }
+    
+    .agent-tools {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    
+    .tool-tag {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: var(--bg-warm);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    /* Settings */
+    .setting-group {
+      margin-bottom: 40px;
+    }
+    
+    .setting-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+    
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .setting-info h4 { font-weight: 600; margin-bottom: 4px; }
+    .setting-info p { font-size: 13px; color: var(--text-muted); }
+    
+    .toggle {
+      width: 48px;
+      height: 26px;
+      background: var(--bg-warm);
+      border-radius: 13px;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid var(--border-light);
+      transition: all 0.2s;
+    }
+    
+    .toggle.on {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+    }
+    
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .toggle.on::after { transform: translateX(22px); }
+    
+    .number-input {
+      width: 100px;
+      padding: 10px 14px;
+      background: var(--bg-warm);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 15px;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    /* Story Detail */
+    .story-header {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    .story-priority {
+      width: 80px;
+      height: 80px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 28px;
+    }
+    
+    .story-main h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    .story-meta {
+      display: flex;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border-light);
+    }
+    
+    .timeline-item {
+      position: relative;
+      padding-bottom: 24px;
+    }
+    
+    .timeline-dot {
+      position: absolute;
+      left: -32px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--accent-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    
+    .timeline-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    
+    .timeline-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    
+    /* Scan Results */
+    .scan-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    .scan-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    
+    .scan-header {
+      padding: 16px 20px;
+      background: var(--bg-warm);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .scan-type {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .scan-status {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    
+    .scan-ok { background: #D1FAE5; color: #065F46; }
+    .scan-warning { background: #FEF3C7; color: #92400E; }
+    .scan-error { background: #FEE2E2; color: #991B1B; }
+    
+    .scan-body {
+      padding: 20px;
+    }
+    
+    .scan-metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    .scan-metric:last-child { border-bottom: none; }
+    
+    .scan-metric-label { color: var(--text-secondary); font-size: 14px; }
+    .scan-metric-value { font-weight: 600; font-size: 14px; }
+    
+    /* Gallery */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    
+    .gallery-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    
+    .gallery-item:hover {
+      box-shadow: var(--shadow-md);
+    }
+    
+    .gallery-preview {
+      height: 180px;
+      background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+    
+    .gallery-info {
+      padding: 16px;
+    }
+    
+    .gallery-title { font-weight: 600; margin-bottom: 4px; }
+    .gallery-meta { font-size: 13px; color: var(--text-muted); }
+    
+    /* User Flow Section */
+    .flow-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 40px;
+    }
+    
+    .flow-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 32px;
+      background: var(--bg-warm);
+      border-radius: 12px;
+    }
+    
+    .flow-step {
+      background: var(--bg-card);
+      border: 2px solid var(--border-light);
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: center;
+      min-width: 140px;
+      transition: all 0.2s;
+    }
+    
+    .flow-step:hover {
+      border-color: var(--accent-purple);
+    }
+    
+    .flow-step-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    .flow-step-label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .flow-arrow {
+      color: var(--accent-purple);
+      font-size: 24px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .app-layout { grid-template-columns: 220px 1fr; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .project-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><span class="gradient-text">Virtual Cofounder</span> UI/UX</h1>
+    <p class="subtitle">Complete design system with all screens and user flows</p>
+    
+    <nav class="page-nav">
+      <div class="nav-links">
+        <a href="#dashboard" class="nav-link active">Dashboard</a>
+        <a href="#queue" class="nav-link">Queue</a>
+        <a href="#chat" class="nav-link">Chat History</a>
+        <a href="#priorities" class="nav-link">Priorities</a>
+        <a href="#projects" class="nav-link">Projects</a>
+        <a href="#project-detail" class="nav-link">Project Detail</a>
+        <a href="#story-detail" class="nav-link">Story Detail</a>
+        <a href="#agents" class="nav-link">Agents</a>
+        <a href="#scans" class="nav-link">Scans</a>
+        <a href="#gallery" class="nav-link">Gallery</a>
+        <a href="#settings" class="nav-link">Settings</a>
+        <a href="#flows" class="nav-link">User Flows</a>
+      </div>
+    </nav>
+
+    <!-- Screen 1: Dashboard -->
+    <section id="dashboard" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">1</div>
+        <h2 class="screen-title">Dashboard Home</h2>
+        <span class="priority-badge p0">P0 - Core</span>
+      </div>
+      <p class="screen-description">The main landing page after login. Shows daily summary, active work, and quick actions.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item active">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+              <span class="nav-badge">7</span>
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Good morning, Miguel 👋</h1>
+              <button class="btn btn-primary">➕ New Priority</button>
+            </div>
+            
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-label">Work In Progress</div>
+                <div class="stat-value">3</div>
+                <div class="stat-trend trend-up">↑ 2 added today</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Ready for Review</div>
+                <div class="stat-value" style="color: var(--accent-amber);">7</div>
+                <div class="stat-trend">→ 4 stories, 3 designs</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Shipped This Week</div>
+                <div class="stat-value" style="color: var(--accent-green);">12</div>
+                <div class="stat-trend trend-up">↑ 40% vs last week</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Projects Monitored</div>
+                <div class="stat-value">4</div>
+                <div class="stat-trend">All healthy</div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3 style="font-weight: 600; margin-bottom: 16px;">🔔 Today's Summary</h3>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+                <div>
+                  <h4 style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Morning Check-in</h4>
+                  <p style="font-size: 14px; line-height: 1.7;">
+                    <strong>Completed overnight:</strong> Added rate limiting to API routes, fixed mobile nav bug<br>
+                    <strong>Priority for today:</strong> SEO meta tags for marketing pages (P1), Performance audit review (P2)
+                  </p>
+                </div>
+                <div>
+                  <h4 style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Agents Active</h4>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <span class="status-badge status-progress">🔒 Security scanning...</span>
+                    <span class="status-badge status-pending">📊 Analytics ready</span>
+                    <span class="status-badge status-pending">🎨 Design waiting</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <h3 style="font-weight: 600; margin: 24px 0 16px;">Recent Activity</h3>
+            <div class="queue-item">
+              <div class="queue-rank rank-p1">P1</div>
+              <div class="queue-info">
+                <h4>Add SEO meta tags to marketing pages</h4>
+                <span class="queue-meta">virtualcofounder.ai • Updated 2 mins ago</span>
+              </div>
+              <span class="status-badge status-progress">In Progress</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">View</button>
+              </div>
+            </div>
+            <div class="queue-item">
+              <div class="queue-rank rank-p2">P2</div>
+              <div class="queue-info">
+                <h4>Performance audit findings ready</h4>
+                <span class="queue-meta">acme-dashboard • Completed 15 mins ago</span>
+              </div>
+              <span class="status-badge status-approved">Ready</span>
+              <div class="queue-actions">
+                <button class="action-btn action-approve">Review</button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 2: Execution Queue -->
+    <section id="queue" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">2</div>
+        <h2 class="screen-title">Execution Queue</h2>
+        <span class="priority-badge p0">P0 - Core</span>
+      </div>
+      <p class="screen-description">View all pending, in-progress, and completed work items with real-time status.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard/queue</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item active">
+              <span class="nav-icon">📋</span> Queue
+              <span class="nav-badge">7</span>
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Execution Queue</h1>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-sm">⏸️ Pause All</button>
+                <button class="btn btn-primary btn-sm">▶️ Run Next</button>
+              </div>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">All (7)</div>
+              <div class="tab">In Progress (3)</div>
+              <div class="tab">Pending (4)</div>
+              <div class="tab">Completed</div>
+            </div>
+            
+            <div class="queue-item" style="border-left: 4px solid var(--accent-blue);">
+              <div class="queue-rank rank-p0">P0</div>
+              <div class="queue-info">
+                <h4>🔄 Fix auth session timeout bug</h4>
+                <span class="queue-meta">acme-dashboard • Running for 8 mins • Code Agent</span>
+              </div>
+              <span class="status-badge status-progress">🔄 Running</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">View</button>
+                <button class="action-btn" style="background: var(--accent-red); color: white;">Stop</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p1">P1</div>
+              <div class="queue-info">
+                <h4>Add SEO meta tags to marketing pages</h4>
+                <span class="queue-meta">virtualcofounder.ai • Queued 23 mins ago</span>
+              </div>
+              <span class="status-badge status-pending">⏳ Queued</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">↑ Prioritize</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p1">P1</div>
+              <div class="queue-info">
+                <h4>Create new landing page variant for A/B test</h4>
+                <span class="queue-meta">virtualcofounder.ai • Design Agent assigned</span>
+              </div>
+              <span class="status-badge status-pending">⏳ Queued</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">↑ Prioritize</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p2">P2</div>
+              <div class="queue-info">
+                <h4>Add analytics to checkout flow</h4>
+                <span class="queue-meta">acme-store • Analytics Agent</span>
+              </div>
+              <span class="status-badge status-pending">⏳ Queued</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">↑ Prioritize</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p2">P2</div>
+              <div class="queue-info">
+                <h4>Update dependencies to fix vulnerabilities</h4>
+                <span class="queue-meta">internal-tools • Security Agent</span>
+              </div>
+              <span class="status-badge status-approved">✓ Approved</span>
+              <div class="queue-actions">
+                <button class="action-btn action-approve">View PR</button>
+              </div>
+            </div>
+            
+            <div class="queue-item" style="opacity: 0.7;">
+              <div class="queue-rank rank-p3">P3</div>
+              <div class="queue-info">
+                <h4>Refactor legacy CSS to Tailwind</h4>
+                <span class="queue-meta">acme-dashboard • Low priority</span>
+              </div>
+              <span class="status-badge" style="background: #F3F4F6; color: #6B7280;">Backlog</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">↑ Bump</button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 3: Chat History -->
+    <section id="chat" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">3</div>
+        <h2 class="screen-title">Orchestrator Chat History</h2>
+        <span class="priority-badge p0">P0 - Core</span>
+      </div>
+      <p class="screen-description">Full conversation history with the Head of Product orchestrator, including thinking traces.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard/history</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item active">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content" style="display: flex; flex-direction: column;">
+            <div class="page-header">
+              <h1 class="page-title">Chat with Head of Product</h1>
+              <button class="btn btn-secondary btn-sm">🔄 Clear History</button>
+            </div>
+            
+            <div class="chat-container" style="flex: 1; overflow-y: auto; padding-bottom: 100px;">
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot">🧠</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">Head of Product • 8:00 AM</div>
+                  <div class="chat-text">
+                    Good morning! Here's what I've been working on overnight:
+                    <br><br>
+                    <strong>✅ Completed:</strong>
+                    <br>• Fixed auth session timeout (PR #147 merged)
+                    <br>• Updated security dependencies
+                    <br><br>
+                    <strong>🔄 In Progress:</strong>
+                    <br>• SEO meta tags for marketing pages
+                    <br><br>
+                    <strong>📊 Today's priorities:</strong>
+                    <br>1. [P1] Complete SEO implementation
+                    <br>2. [P2] Performance audit review
+                    <br>3. [P2] Analytics for checkout
+                  </div>
+                  <div class="chat-thinking">
+                    💭 Thinking: Ranked SEO higher because it affects organic traffic. Performance audit is ready for review. Will spawn Design Agent for landing page after current work.
+                  </div>
+                </div>
+              </div>
+              
+              <div class="chat-message user">
+                <div class="chat-avatar avatar-user">M</div>
+                <div class="chat-bubble">
+                  <div class="chat-text">Actually, can we bump the A/B test landing page to P0? We have a launch next week.</div>
+                </div>
+              </div>
+              
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot">🧠</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">Head of Product • 8:02 AM</div>
+                  <div class="chat-text">
+                    Got it! Reprioritizing now:
+                    <br><br>
+                    <strong>Updated priorities:</strong>
+                    <br>1. [P0] 🎨 A/B test landing page variant
+                    <br>2. [P1] SEO meta tags
+                    <br>3. [P2] Performance audit
+                    <br><br>
+                    Spawning Design Agent for the landing page now.
+                  </div>
+                  <div class="chat-tool-use">
+                    🛠️ Tool: spawn_agent("design_agent", "landing_page_variant")
+                  </div>
+                  <div class="chat-thinking">
+                    💭 Thinking: User explicitly set P0 priority for landing page due to launch deadline. This takes precedence over my scoring. Moving SEO to P1 since it can wait a few hours.
+                  </div>
+                </div>
+              </div>
+              
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-agent" style="background: var(--accent-pink);">🎨</div>
+                <div class="chat-bubble" style="border-left: 3px solid var(--accent-pink);">
+                  <div class="chat-sender">Design Agent • 8:03 AM</div>
+                  <div class="chat-text">
+                    Starting work on landing page variant. I'll create 3 options:
+                    <br>• Option A: Hero-focused with large CTA
+                    <br>• Option B: Social proof emphasis
+                    <br>• Option C: Feature comparison
+                    <br><br>
+                    ETA: ~15 minutes. Will post preview URLs when ready.
+                  </div>
+                  <div class="chat-tool-use">
+                    🛠️ Tool: web_search("B2B SaaS landing page best practices 2026")
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="position: absolute; bottom: 0; left: 260px; right: 0; padding: 24px; background: var(--bg-cream); border-top: 1px solid var(--border-light);">
+              <div style="display: flex; gap: 12px; align-items: center; background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px 20px;">
+                <input type="text" placeholder="Message Head of Product..." style="flex: 1; border: none; outline: none; font-size: 15px; background: transparent;">
+                <button class="btn btn-primary btn-sm">Send</button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 4: Stack Ranked Priorities -->
+    <section id="priorities" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">4</div>
+        <h2 class="screen-title">Stack Ranked Priorities</h2>
+        <span class="priority-badge p0">P0 - Core</span>
+      </div>
+      <p class="screen-description">View and manage the priority stack for all projects or per-project basis.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard/priorities</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item active">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Priority Stack</h1>
+              <button class="btn btn-primary btn-sm">+ Add Story</button>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">All Projects</div>
+              <div class="tab">virtualcofounder.ai</div>
+              <div class="tab">acme-dashboard</div>
+              <div class="tab">acme-store</div>
+            </div>
+            
+            <div class="stack-header">
+              <span>Rank</span>
+              <span>Story</span>
+              <span>Impact</span>
+              <span>Effort</span>
+              <span>Conf.</span>
+              <span>Priority</span>
+            </div>
+            
+            <div class="stack-item">
+              <div class="stack-rank top">#1</div>
+              <div>
+                <div class="stack-title">A/B test landing page variant</div>
+                <div class="stack-project">virtualcofounder.ai • Design Agent</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value" style="color: var(--accent-green);">9.2</div>
+                <div class="score-label">Impact</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">4h</div>
+                <div class="score-label">Effort</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">95%</div>
+                <div class="score-label">Conf</div>
+              </div>
+              <div class="priority-tag tag-p0">P0</div>
+            </div>
+            
+            <div class="stack-item">
+              <div class="stack-rank">#2</div>
+              <div>
+                <div class="stack-title">Add SEO meta tags to marketing pages</div>
+                <div class="stack-project">virtualcofounder.ai • Code Agent</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value" style="color: var(--accent-green);">7.8</div>
+                <div class="score-label">Impact</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">2h</div>
+                <div class="score-label">Effort</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">90%</div>
+                <div class="score-label">Conf</div>
+              </div>
+              <div class="priority-tag tag-p1">P1</div>
+            </div>
+            
+            <div class="stack-item">
+              <div class="stack-rank">#3</div>
+              <div>
+                <div class="stack-title">Performance audit implementation</div>
+                <div class="stack-project">acme-dashboard • Code Agent</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">6.5</div>
+                <div class="score-label">Impact</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">6h</div>
+                <div class="score-label">Effort</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">85%</div>
+                <div class="score-label">Conf</div>
+              </div>
+              <div class="priority-tag tag-p2">P2</div>
+            </div>
+            
+            <div class="stack-item">
+              <div class="stack-rank">#4</div>
+              <div>
+                <div class="stack-title">Add analytics to checkout flow</div>
+                <div class="stack-project">acme-store • Analytics Agent</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">6.2</div>
+                <div class="score-label">Impact</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">3h</div>
+                <div class="score-label">Effort</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">92%</div>
+                <div class="score-label">Conf</div>
+              </div>
+              <div class="priority-tag tag-p2">P2</div>
+            </div>
+            
+            <div class="stack-item" style="opacity: 0.7;">
+              <div class="stack-rank">#5</div>
+              <div>
+                <div class="stack-title">Refactor legacy CSS to Tailwind</div>
+                <div class="stack-project">acme-dashboard • Code Agent</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">4.1</div>
+                <div class="score-label">Impact</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">12h</div>
+                <div class="score-label">Effort</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-value">70%</div>
+                <div class="score-label">Conf</div>
+              </div>
+              <div class="priority-tag tag-p3">P3</div>
+            </div>
+            
+            <div class="card" style="margin-top: 24px;">
+              <h4 style="font-weight: 600; margin-bottom: 12px;">🧠 Orchestrator Reasoning</h4>
+              <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7;">
+                <strong>Why A/B landing page is #1:</strong> User explicitly set P0 priority due to upcoming launch (Jan 15). High impact on conversion rates (estimated +15% lift based on similar experiments).
+                <br><br>
+                <strong>SEO vs Performance:</strong> SEO has higher impact-to-effort ratio (7.8/2h = 3.9) vs Performance (6.5/6h = 1.08). SEO also affects organic acquisition which is a key growth lever.
+                <br><br>
+                <strong>Last updated:</strong> 2 minutes ago • <a href="#" style="color: var(--accent-purple);">View full analysis →</a>
+              </p>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 5: Projects List -->
+    <section id="projects" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">5</div>
+        <h2 class="screen-title">Projects</h2>
+        <span class="priority-badge p1">P1 - Important</span>
+      </div>
+      <p class="screen-description">All monitored projects with health status, active work, and quick actions.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/projects</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item active">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Projects</h1>
+              <button class="btn btn-primary btn-sm">+ Add Project</button>
+            </div>
+            
+            <div class="project-grid">
+              <div class="project-card">
+                <div class="project-header">
+                  <div class="project-icon">⚡</div>
+                  <div>
+                    <div class="project-name">virtualcofounder.ai</div>
+                    <div class="project-domain">virtualcofounder.ai</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                  <span class="status-badge status-approved">Healthy</span>
+                  <span class="status-badge status-progress">3 active</span>
+                </div>
+                <div class="project-stats">
+                  <div class="project-stat">
+                    <div class="project-stat-value">12</div>
+                    <div class="project-stat-label">Stories</div>
+                  </div>
+                  <div class="project-stat">
+                    <div class="project-stat-value" style="color: var(--accent-green);">98</div>
+                    <div class="project-stat-label">Health</div>
+                  </div>
+                  <div class="project-stat">
+                    <div class="project-stat-value">4</div>
+                    <div class="project-stat-label">PRs Open</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="project-card">
+                <div class="project-header">
+                  <div class="project-icon">📊</div>
+                  <div>
+                    <div class="project-name">acme-dashboard</div>
+                    <div class="project-domain">dashboard.acme.co</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                  <span class="status-badge status-pending">⚠️ 2 warnings</span>
+                  <span class="status-badge status-progress">1 active</span>
+                </div>
+                <div class="project-stats">
+                  <div class="project-stat">
+                    <div class="project-stat-value">8</div>
+                    <div class="project-stat-label">Stories</div>
+                  </div>
+                  <div class="project-stat">
+                    <div class="project-stat-value" style="color: var(--accent-amber);">76</div>
+                    <div class="project-stat-label">Health</div>
+                  </div>
+                  <div class="project-stat">
+                    <div class="project-stat-value">2</div>
+                    <div class="project-stat-label">PRs Open</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="project-card">
+                <div class="project-header">
+                  <div class="project-icon">🛒</div>
+                  <div>
+                    <div class="project-name">acme-store</div>
+                    <div class="project-domain">store.acme.co</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                  <span class="status-badge status-approved">Healthy</span>
+                </div>
+                <div class="project-stats">
+                  <div class="project-stat">
+                    <div class="project-stat-value">5</div>
+                    <div class="project-stat-label">Stories</div>
+                  </div>
+                  <div class="project-stat">
+                    <div class="project-stat-value" style="color: var(--accent-green);">94</div>
+                    <div class="project-stat-label">Health</div>
+                  </div>
+                  <div class="project-stat">
+                    <div class="project-stat-value">1</div>
+                    <div class="project-stat-label">PRs Open</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 6: Project Detail -->
+    <section id="project-detail" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">6</div>
+        <h2 class="screen-title">Project Detail</h2>
+        <span class="priority-badge p1">P1 - Important</span>
+      </div>
+      <p class="screen-description">Deep dive into a single project's stories, scans, and agent assignments.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/projects/vc-001</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item active">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <a href="#" style="color: var(--text-muted); text-decoration: none; font-size: 14px;">Projects</a>
+              <span style="color: var(--text-muted);">/</span>
+            </div>
+            
+            <div class="page-header">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="project-icon" style="width: 56px; height: 56px; font-size: 28px;">⚡</div>
+                <div>
+                  <h1 class="page-title">virtualcofounder.ai</h1>
+                  <p style="color: var(--text-muted); font-size: 14px;">github.com/miguel/virtual-cofounder</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-sm">🔍 Run Scan</button>
+                <button class="btn btn-primary btn-sm">+ New Story</button>
+              </div>
+            </div>
+            
+            <div class="stats-row" style="grid-template-columns: repeat(5, 1fr);">
+              <div class="stat-card">
+                <div class="stat-label">Health Score</div>
+                <div class="stat-value" style="color: var(--accent-green);">98</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Open Stories</div>
+                <div class="stat-value">12</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">In Progress</div>
+                <div class="stat-value">3</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Shipped</div>
+                <div class="stat-value">24</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Last Scan</div>
+                <div class="stat-value" style="font-size: 20px;">2h ago</div>
+              </div>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">Stories (12)</div>
+              <div class="tab">Scans</div>
+              <div class="tab">Agents</div>
+              <div class="tab">Activity</div>
+              <div class="tab">Settings</div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p0">P0</div>
+              <div class="queue-info">
+                <h4>A/B test landing page variant</h4>
+                <span class="queue-meta">Design Agent • In Progress • ETA 15 mins</span>
+              </div>
+              <span class="status-badge status-progress">🔄 Running</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">View</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p1">P1</div>
+              <div class="queue-info">
+                <h4>Add SEO meta tags to marketing pages</h4>
+                <span class="queue-meta">Code Agent • Queued</span>
+              </div>
+              <span class="status-badge status-pending">⏳ Queued</span>
+              <div class="queue-actions">
+                <button class="action-btn action-reject">View</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank rank-p2">P2</div>
+              <div class="queue-info">
+                <h4>Improve lighthouse score to 95+</h4>
+                <span class="queue-meta">Performance Agent • Ready for review</span>
+              </div>
+              <span class="status-badge status-approved">✓ Ready</span>
+              <div class="queue-actions">
+                <button class="action-btn action-approve">Review</button>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 7: Story Detail -->
+    <section id="story-detail" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">7</div>
+        <h2 class="screen-title">Story Detail</h2>
+        <span class="priority-badge p1">P1 - Important</span>
+      </div>
+      <p class="screen-description">Full story view with timeline, agent thinking traces, and approval actions.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/stories/st-047</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item active">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="story-header">
+              <div class="story-priority rank-p0">P0</div>
+              <div class="story-main">
+                <h1>A/B test landing page variant</h1>
+                <div class="story-meta">
+                  <span>📁 virtualcofounder.ai</span>
+                  <span>🎨 Design Agent</span>
+                  <span>⏱️ Est. 4 hours</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 32px;">
+              <div>
+                <div class="card" style="margin-bottom: 24px;">
+                  <h3 style="font-weight: 600; margin-bottom: 12px;">Description</h3>
+                  <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7;">
+                    Create 3 landing page variants for A/B testing ahead of the Jan 15 launch:
+                    <br><br>
+                    <strong>Option A:</strong> Hero-focused with large CTA and animated background<br>
+                    <strong>Option B:</strong> Social proof emphasis with testimonials above fold<br>
+                    <strong>Option C:</strong> Feature comparison table with competitor analysis
+                    <br><br>
+                    Each variant should include mobile responsive design and be deployable to unique URLs for testing.
+                  </p>
+                </div>
+                
+                <h3 style="font-weight: 600; margin-bottom: 16px;">Timeline</h3>
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <div class="timeline-dot">🔄</div>
+                    <div class="timeline-content">
+                      <div class="timeline-time">Now • In Progress</div>
+                      <p style="font-size: 14px;"><strong>Design Agent:</strong> Creating Option A - Hero variant</p>
+                      <div class="chat-tool-use" style="margin-top: 8px;">
+                        🛠️ Running: web_fetch("dribbble.com/search/saas-landing")
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="timeline-item">
+                    <div class="timeline-dot">🧠</div>
+                    <div class="timeline-content">
+                      <div class="timeline-time">5 mins ago</div>
+                      <p style="font-size: 14px;"><strong>Head of Product:</strong> Spawned Design Agent with context</p>
+                      <div class="chat-thinking" style="margin-top: 8px;">
+                        💭 User explicitly set P0 priority. Passing brand guidelines and competitor analysis to Design Agent.
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="timeline-item">
+                    <div class="timeline-dot">👤</div>
+                    <div class="timeline-content">
+                      <div class="timeline-time">8 mins ago</div>
+                      <p style="font-size: 14px;"><strong>Miguel (via Slack):</strong> "Bump landing page to P0 - launch next week"</p>
+                    </div>
+                  </div>
+                  
+                  <div class="timeline-item">
+                    <div class="timeline-dot">📊</div>
+                    <div class="timeline-content">
+                      <div class="timeline-time">Yesterday • 6:00 PM</div>
+                      <p style="font-size: 14px;"><strong>Analytics Scan:</strong> Conversion rate 2.3% - below industry benchmark</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="card">
+                  <h4 style="font-weight: 600; margin-bottom: 16px;">Status</h4>
+                  <div style="margin-bottom: 20px;">
+                    <span class="status-badge status-progress" style="font-size: 14px; padding: 8px 16px;">🔄 In Progress</span>
+                  </div>
+                  
+                  <h4 style="font-weight: 600; margin-bottom: 12px;">Agent Assignment</h4>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <div style="width: 40px; height: 40px; background: #F5F3FF; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🎨</div>
+                    <div>
+                      <div style="font-weight: 600; font-size: 14px;">Design Agent</div>
+                      <div style="font-size: 12px; color: var(--text-muted);">Active now</div>
+                    </div>
+                  </div>
+                  
+                  <h4 style="font-weight: 600; margin-bottom: 12px;">Scoring</h4>
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+                    <div style="text-align: center; padding: 12px; background: var(--bg-warm); border-radius: 8px;">
+                      <div style="font-weight: 700; font-size: 20px;">9.2</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">IMPACT</div>
+                    </div>
+                    <div style="text-align: center; padding: 12px; background: var(--bg-warm); border-radius: 8px;">
+                      <div style="font-weight: 700; font-size: 20px;">95%</div>
+                      <div style="font-size: 11px; color: var(--text-muted);">CONFIDENCE</div>
+                    </div>
+                  </div>
+                  
+                  <h4 style="font-weight: 600; margin-bottom: 12px;">Actions</h4>
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn btn-primary" style="width: 100%;">✓ Approve</button>
+                    <button class="btn btn-secondary" style="width: 100%;">💬 Request Changes</button>
+                    <button class="btn btn-secondary" style="width: 100%; color: var(--accent-red);">✕ Reject</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 8: Agents -->
+    <section id="agents" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">8</div>
+        <h2 class="screen-title">Agents</h2>
+        <span class="priority-badge p1">P1 - Important</span>
+      </div>
+      <p class="screen-description">All available agents with their tools, status, and recent activity.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard/agents</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item active">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Agent Registry</h1>
+              <span style="color: var(--text-muted); font-size: 14px;">17 agents available</span>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">All Agents</div>
+              <div class="tab">Code</div>
+              <div class="tab">Design</div>
+              <div class="tab">Analysis</div>
+              <div class="tab">Operations</div>
+            </div>
+            
+            <!-- Code Agents -->
+            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px;">Code Agents</h3>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-code">💻</div>
+              <div>
+                <div class="agent-name">Code Generation Agent</div>
+                <div class="agent-status">Implements features, fixes bugs, refactors code</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Write</span>
+                  <span class="tool-tag">Edit</span>
+                  <span class="tool-tag">Bash</span>
+                  <span class="tool-tag">Grep</span>
+                  <span class="tool-tag">Glob</span>
+                </div>
+              </div>
+              <span class="status-badge status-progress">🔄 Active</span>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-security">🔒</div>
+              <div>
+                <div class="agent-name">Security Agent</div>
+                <div class="agent-status">Audits dependencies, finds vulnerabilities, implements fixes</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">npm audit</span>
+                  <span class="tool-tag">Grep</span>
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Edit</span>
+                </div>
+              </div>
+              <span class="status-badge status-pending">⏳ Idle</span>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon" style="background: #DBEAFE;">⚡</div>
+              <div>
+                <div class="agent-name">Performance Agent</div>
+                <div class="agent-status">Optimizes bundle size, lazy loading, caching</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">Lighthouse</span>
+                  <span class="tool-tag">WebFetch</span>
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Edit</span>
+                </div>
+              </div>
+              <span class="status-badge status-pending">⏳ Idle</span>
+            </div>
+            
+            <!-- Design Agents -->
+            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 24px 0 16px;">Design Agents</h3>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-design">🎨</div>
+              <div>
+                <div class="agent-name">Website Design Agent</div>
+                <div class="agent-status">Creates landing pages, UI components, responsive layouts</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">WebSearch</span>
+                  <span class="tool-tag">WebFetch</span>
+                  <span class="tool-tag">Write</span>
+                  <span class="tool-tag">Screenshot</span>
+                  <span class="tool-tag">Figma MCP</span>
+                </div>
+              </div>
+              <span class="status-badge status-progress">🔄 Active</span>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon" style="background: #FCE7F3;">🖼️</div>
+              <div>
+                <div class="agent-name">Asset Generation Agent</div>
+                <div class="agent-status">Creates icons, illustrations, social images</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">DALL-E</span>
+                  <span class="tool-tag">SVG Gen</span>
+                  <span class="tool-tag">Write</span>
+                </div>
+              </div>
+              <span class="status-badge status-pending">⏳ Idle</span>
+            </div>
+            
+            <!-- Analysis Agents -->
+            <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 24px 0 16px;">Analysis Agents</h3>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-analytics">📊</div>
+              <div>
+                <div class="agent-name">Analytics Agent</div>
+                <div class="agent-status">Implements tracking, analyzes metrics, suggests experiments</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">PostHog MCP</span>
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Edit</span>
+                </div>
+              </div>
+              <span class="status-badge status-pending">⏳ Idle</span>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-seo">🔍</div>
+              <div>
+                <div class="agent-name">SEO Agent</div>
+                <div class="agent-status">Audits meta tags, generates sitemaps, optimizes content</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">WebFetch</span>
+                  <span class="tool-tag">Grep</span>
+                  <span class="tool-tag">Edit</span>
+                </div>
+              </div>
+              <span class="status-badge status-pending">⏳ Idle</span>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 9: Scans -->
+    <section id="scans" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">9</div>
+        <h2 class="screen-title">Scan Results</h2>
+        <span class="priority-badge p1">P1 - Important</span>
+      </div>
+      <p class="screen-description">View scan results by project and scan type with detailed metrics.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard/scans</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item active">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Scan Results</h1>
+              <button class="btn btn-primary btn-sm">🔄 Run All Scans</button>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">virtualcofounder.ai</div>
+              <div class="tab">acme-dashboard</div>
+              <div class="tab">acme-store</div>
+            </div>
+            
+            <div class="scan-grid">
+              <div class="scan-card">
+                <div class="scan-header">
+                  <span class="scan-type">🔒 Security</span>
+                  <span class="scan-status scan-ok">All Clear</span>
+                </div>
+                <div class="scan-body">
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Dependencies</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">0 vulnerabilities</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Secrets</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">None exposed</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Last Scan</span>
+                    <span class="scan-metric-value">2h ago</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="scan-card">
+                <div class="scan-header">
+                  <span class="scan-type">⚡ Performance</span>
+                  <span class="scan-status scan-warning">Needs Work</span>
+                </div>
+                <div class="scan-body">
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Lighthouse Score</span>
+                    <span class="scan-metric-value" style="color: var(--accent-amber);">78</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">LCP</span>
+                    <span class="scan-metric-value">2.8s</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">CLS</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">0.05</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="scan-card">
+                <div class="scan-header">
+                  <span class="scan-type">🔍 SEO</span>
+                  <span class="scan-status scan-warning">2 Issues</span>
+                </div>
+                <div class="scan-body">
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Meta Tags</span>
+                    <span class="scan-metric-value" style="color: var(--accent-amber);">Missing on 3 pages</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Sitemap</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">Valid</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Robots.txt</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">Configured</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="scan-card">
+                <div class="scan-header">
+                  <span class="scan-type">📊 Analytics</span>
+                  <span class="scan-status scan-ok">Connected</span>
+                </div>
+                <div class="scan-body">
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Provider</span>
+                    <span class="scan-metric-value">PostHog</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Events/day</span>
+                    <span class="scan-metric-value">1,247</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Coverage</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">94%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="scan-card">
+                <div class="scan-header">
+                  <span class="scan-type">🌐 Domain</span>
+                  <span class="scan-status scan-ok">Healthy</span>
+                </div>
+                <div class="scan-body">
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">SSL</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">Valid (89 days)</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">DNS</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">Configured</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Uptime</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">99.9%</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="scan-card">
+                <div class="scan-header">
+                  <span class="scan-type">🚀 Deployment</span>
+                  <span class="scan-status scan-ok">Healthy</span>
+                </div>
+                <div class="scan-body">
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Platform</span>
+                    <span class="scan-metric-value">Vercel</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Last Deploy</span>
+                    <span class="scan-metric-value">4h ago</span>
+                  </div>
+                  <div class="scan-metric">
+                    <span class="scan-metric-label">Build Status</span>
+                    <span class="scan-metric-value" style="color: var(--accent-green);">Success</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 10: Gallery -->
+    <section id="gallery" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">10</div>
+        <h2 class="screen-title">Agent Outputs Gallery</h2>
+        <span class="priority-badge p2">P2 - Nice to Have</span>
+      </div>
+      <p class="screen-description">Browse non-code outputs (designs, documents, analyses) with unique preview URLs.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/dashboard/gallery</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item active">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <div class="page-header" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+              <h1 class="page-title" style="margin-right: auto;">Output Gallery</h1>
+              
+              <!-- Search Box -->
+              <div style="position: relative;">
+                <input type="text" placeholder="Search outputs..." style="padding: 10px 16px 10px 40px; border: 1px solid var(--border-light); border-radius: 8px; width: 240px; font-size: 14px; background: white;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+              </div>
+              
+              <!-- Project Filter -->
+              <select style="padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; background: white; cursor: pointer;">
+                <option>All Projects</option>
+                <option>virtualcofounder.ai</option>
+                <option>warmstart.it</option>
+                <option>socialsandbox.com</option>
+              </select>
+              
+              <!-- Type Filter -->
+              <select style="padding: 10px 16px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; background: white; cursor: pointer;">
+                <option>All Types</option>
+                <option>🎨 Designs</option>
+                <option>📝 Documents</option>
+                <option>📊 Analysis</option>
+                <option>🖼️ Assets</option>
+              </select>
+            </div>
+            
+            <!-- Quick Filters -->
+            <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+              <div class="tab active" style="cursor: pointer;">All (6)</div>
+              <div class="tab" style="cursor: pointer;">🎨 Designs (2)</div>
+              <div class="tab" style="cursor: pointer;">📝 Docs (2)</div>
+              <div class="tab" style="cursor: pointer;">📊 Analysis (1)</div>
+              <div class="tab" style="cursor: pointer;">🖼️ Assets (1)</div>
+            </div>
+            
+            <div class="gallery-grid">
+              <div class="gallery-item">
+                <div class="gallery-preview" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
+                  🎨
+                </div>
+                <div class="gallery-info">
+                  <div class="gallery-title">Landing Page Variant A</div>
+                  <div class="gallery-meta">Design Agent • 5 mins ago</div>
+                  <div style="margin-top: 8px;">
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple);">preview.vc.ai/lp-variant-a →</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="gallery-item">
+                <div class="gallery-preview" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
+                  📊
+                </div>
+                <div class="gallery-info">
+                  <div class="gallery-title">Competitor Analysis</div>
+                  <div class="gallery-meta">Research Agent • 2h ago</div>
+                  <div style="margin-top: 8px;">
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple);">docs.vc.ai/competitor-q1 →</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="gallery-item">
+                <div class="gallery-preview" style="background: linear-gradient(135deg, #10B981, #059669);">
+                  📝
+                </div>
+                <div class="gallery-info">
+                  <div class="gallery-title">Content Strategy Doc</div>
+                  <div class="gallery-meta">Content Agent • Yesterday</div>
+                  <div style="margin-top: 8px;">
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple);">docs.vc.ai/content-strat →</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="gallery-item">
+                <div class="gallery-preview" style="background: linear-gradient(135deg, #3B82F6, #2563EB);">
+                  🎨
+                </div>
+                <div class="gallery-info">
+                  <div class="gallery-title">Email Template Suite</div>
+                  <div class="gallery-meta">Design Agent • 2 days ago</div>
+                  <div style="margin-top: 8px;">
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple);">preview.vc.ai/email-suite →</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="gallery-item">
+                <div class="gallery-preview" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
+                  🔒
+                </div>
+                <div class="gallery-info">
+                  <div class="gallery-title">Security Audit Report</div>
+                  <div class="gallery-meta">Security Agent • 3 days ago</div>
+                  <div style="margin-top: 8px;">
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple);">docs.vc.ai/sec-audit-jan →</a>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="gallery-item">
+                <div class="gallery-preview" style="background: linear-gradient(135deg, #EC4899, #DB2777);">
+                  🖼️
+                </div>
+                <div class="gallery-info">
+                  <div class="gallery-title">Social Media Assets</div>
+                  <div class="gallery-meta">Asset Agent • 5 days ago</div>
+                  <div style="margin-top: 8px;">
+                    <a href="#" style="font-size: 12px; color: var(--accent-purple);">assets.vc.ai/social-jan →</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 11: Project Progress / Launch Readiness -->
+    <section id="progress" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">11</div>
+        <h2 class="screen-title">Project Progress - Launch Readiness</h2>
+        <span class="priority-badge p0">P0 - Critical</span>
+      </div>
+      <p class="screen-description">Track project progress from idea to paying customers. Launch readiness score informs work priority.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/projects/warmstart/progress</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            <a href="#queue" class="nav-item"><span class="nav-icon">📋</span> Queue</a>
+            <a href="#chat" class="nav-item"><span class="nav-icon">💬</span> Chat</a>
+            <a href="#priorities" class="nav-item"><span class="nav-icon">🎯</span> Priorities</a>
+            <a href="#progress" class="nav-item active"><span class="nav-icon">🚀</span> Progress</a>
+            <a href="#projects" class="nav-item"><span class="nav-icon">📁</span> Projects</a>
+            <a href="#agents" class="nav-item"><span class="nav-icon">🤖</span> Agents</a>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <!-- Header with Score -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                  <select style="padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-light); font-size: 14px; font-weight: 600; background: var(--bg-card);">
+                    <option>warmstart.it</option>
+                    <option>virtualcofounder.ai</option>
+                  </select>
+                  <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">🎯 BETA STAGE</span>
+                </div>
+                <p style="color: var(--text-muted);">Launch Readiness Tracker</p>
+              </div>
+              
+              <!-- Launch Score Circle -->
+              <div style="text-align: center;">
+                <div style="width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(var(--accent-purple) 0deg, var(--accent-purple) 234deg, var(--border-light) 234deg); display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 110px; height: 110px; border-radius: 50%; background: var(--bg-card); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="font-size: 36px; font-weight: 700; color: var(--accent-purple);">65</span>
+                    <span style="font-size: 14px; color: var(--text-muted);">/ 100</span>
+                  </div>
+                </div>
+                <p style="margin-top: 8px; font-size: 13px; color: var(--text-muted);">11 points to Launch</p>
+              </div>
+            </div>
+            
+            <!-- Stage Timeline Card -->
+            <div class="card" style="padding: 32px; margin-bottom: 24px;">
+              <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 32px;">Journey to Paying Customers</h3>
+              
+              <div style="display: flex; align-items: center; position: relative;">
+                <!-- Timeline connector line -->
+                <div style="position: absolute; top: 28px; left: 40px; right: 40px; height: 4px; background: var(--border-light); z-index: 0;"></div>
+                
+                <!-- Idea -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), #34D399); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border: 4px solid var(--bg-cream);">💡</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Idea</div>
+                  <div style="color: var(--accent-green); font-size: 12px;">Complete</div>
+                </div>
+                
+                <!-- MVP -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), #34D399); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border: 4px solid var(--bg-cream);">🔧</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-primary);">MVP</div>
+                  <div style="color: var(--accent-green); font-size: 12px;">Complete</div>
+                </div>
+                
+                <!-- Alpha -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-green), #34D399); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); border: 4px solid var(--bg-cream);">🧪</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Alpha</div>
+                  <div style="color: var(--accent-green); font-size: 12px;">Complete</div>
+                </div>
+                
+                <!-- Beta (Current) -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1;">
+                  <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-purple), var(--accent-violet)); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); border: 4px solid var(--bg-cream); animation: pulse 2s infinite;">🎯</div>
+                  <div style="font-weight: 700; font-size: 14px; color: var(--accent-purple);">Beta</div>
+                  <div style="color: var(--accent-purple); font-size: 12px; font-weight: 600;">IN PROGRESS</div>
+                </div>
+                
+                <!-- Launch -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1; opacity: 0.5;">
+                  <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-card); border: 2px dashed var(--border-light); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🚀</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-secondary);">Launch</div>
+                  <div style="color: var(--text-muted); font-size: 12px;">76+ pts</div>
+                </div>
+                
+                <!-- Growth -->
+                <div style="flex: 1; text-align: center; position: relative; z-index: 1; opacity: 0.4;">
+                  <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-card); border: 2px dashed var(--border-light); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">📈</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-secondary);">Growth</div>
+                  <div style="color: var(--text-muted); font-size: 12px;">91+ pts</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Score Breakdown -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+              <!-- Scanner Results -->
+              <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <span>🔍</span> Scanner Results
+                  </h3>
+                  <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;">32/40 pts</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 16px;">🌐</span>
+                    <span style="width: 80px; font-size: 14px; color: var(--text-secondary);">Domain</span>
+                    <div style="flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
+                      <div style="width: 100%; height: 100%; background: var(--accent-green); border-radius: 4px;"></div>
+                    </div>
+                    <span style="color: var(--accent-green); font-weight: 600; font-size: 14px; min-width: 50px; text-align: right;">15/15</span>
+                  </div>
+                  
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 16px;">🔎</span>
+                    <span style="width: 80px; font-size: 14px; color: var(--text-secondary);">SEO</span>
+                    <div style="flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
+                      <div style="width: 70%; height: 100%; background: var(--accent-amber); border-radius: 4px;"></div>
+                    </div>
+                    <span style="color: var(--accent-amber); font-weight: 600; font-size: 14px; min-width: 50px; text-align: right;">7/10</span>
+                  </div>
+                  
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 16px;">📊</span>
+                    <span style="width: 80px; font-size: 14px; color: var(--text-secondary);">Analytics</span>
+                    <div style="flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
+                      <div style="width: 100%; height: 100%; background: var(--accent-green); border-radius: 4px;"></div>
+                    </div>
+                    <span style="color: var(--accent-green); font-weight: 600; font-size: 14px; min-width: 50px; text-align: right;">10/10</span>
+                  </div>
+                  
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 16px;">🔒</span>
+                    <span style="width: 80px; font-size: 14px; color: var(--text-secondary);">Security</span>
+                    <div style="flex: 1; height: 8px; background: var(--border-light); border-radius: 4px; overflow: hidden;">
+                      <div style="width: 0%; height: 100%; background: var(--accent-red); border-radius: 4px;"></div>
+                    </div>
+                    <span style="color: var(--accent-red); font-weight: 600; font-size: 14px; min-width: 50px; text-align: right;">0/5</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Launch Checklist -->
+              <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h3 style="font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <span>✅</span> Launch Checklist
+                  </h3>
+                  <span style="background: #FEF3C7; color: #92400E; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;">33/60 pts</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; align-items: center; padding: 10px 12px; background: #D1FAE5; border-radius: 8px;">
+                    <span style="color: var(--accent-green); margin-right: 12px; font-weight: 600;">✓</span>
+                    <span style="flex: 1; font-size: 14px;">Repository exists</span>
+                    <span style="color: var(--accent-green); font-weight: 600; font-size: 13px;">+5</span>
+                  </div>
+                  <div style="display: flex; align-items: center; padding: 10px 12px; background: #D1FAE5; border-radius: 8px;">
+                    <span style="color: var(--accent-green); margin-right: 12px; font-weight: 600;">✓</span>
+                    <span style="flex: 1; font-size: 14px;">Auth configured</span>
+                    <span style="color: var(--accent-green); font-weight: 600; font-size: 13px;">+10</span>
+                  </div>
+                  <div style="display: flex; align-items: center; padding: 10px 12px; background: #D1FAE5; border-radius: 8px;">
+                    <span style="color: var(--accent-green); margin-right: 12px; font-weight: 600;">✓</span>
+                    <span style="flex: 1; font-size: 14px;">CI/CD active</span>
+                    <span style="color: var(--accent-green); font-weight: 600; font-size: 13px;">+8</span>
+                  </div>
+                  <div style="display: flex; align-items: center; padding: 10px 12px; background: #FEF3C7; border-radius: 8px; border: 1px dashed var(--accent-amber);">
+                    <span style="color: var(--accent-amber); margin-right: 12px;">⏳</span>
+                    <span style="flex: 1; font-size: 14px; color: var(--text-secondary);">Payment integration</span>
+                    <span style="color: var(--accent-amber); font-weight: 600; font-size: 13px;">+10</span>
+                  </div>
+                  <div style="display: flex; align-items: center; padding: 10px 12px; background: #FEE2E2; border-radius: 8px; border: 1px dashed var(--accent-red);">
+                    <span style="color: var(--accent-red); margin-right: 12px;">✕</span>
+                    <span style="flex: 1; font-size: 14px; color: var(--text-muted);">Paying customers</span>
+                    <span style="color: var(--accent-red); font-weight: 600; font-size: 13px;">+10</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- AI Recommended Actions -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(124, 58, 237, 0.04));">
+              <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span> AI Recommended Next Actions
+              </h3>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light);">
+                  <span style="font-size: 24px;">🔒</span>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 2px;">Set up security scanning</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">+5 pts • Critical for launch</div>
+                  </div>
+                  <button class="btn btn-primary" style="font-size: 13px; padding: 8px 16px;">Start</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-light);">
+                  <span style="font-size: 24px;">💳</span>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 2px;">Integrate Stripe payments</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">+10 pts • Unlocks Launch stage</div>
+                  </div>
+                  <button class="btn btn-secondary" style="font-size: 13px; padding: 8px 16px;">Plan</button>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 12: Settings -->
+    <section id="settings" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">12</div>
+        <h2 class="screen-title">Settings</h2>
+        <span class="priority-badge p2">P2 - Nice to Have</span>
+      </div>
+      <p class="screen-description">Configure WIP limits, cost controls, integrations, and agent behavior.</p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <span class="topbar-dot dot-red"></span>
+          <span class="topbar-dot dot-yellow"></span>
+          <span class="topbar-dot dot-green"></span>
+          <span class="topbar-url">virtualcofounder.ai/settings</span>
+        </div>
+        <div class="app-layout">
+          <nav class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <span class="logo-icon">⚡</span>
+                Virtual Cofounder
+              </div>
+            </div>
+            <a href="#dashboard" class="nav-item">
+              <span class="nav-icon">📊</span> Dashboard
+            </a>
+            <a href="#queue" class="nav-item">
+              <span class="nav-icon">📋</span> Queue
+            </a>
+            <a href="#chat" class="nav-item">
+              <span class="nav-icon">💬</span> Chat
+            </a>
+            <a href="#priorities" class="nav-item">
+              <span class="nav-icon">🎯</span> Priorities
+            </a>
+            <a href="#progress" class="nav-item">
+              <span class="nav-icon">🚀</span> Progress
+            </a>
+            <a href="#projects" class="nav-item">
+              <span class="nav-icon">📁</span> Projects
+            </a>
+            <a href="#agents" class="nav-item">
+              <span class="nav-icon">🤖</span> Agents
+            </a>
+            <div class="nav-section">
+              <div class="nav-section-title">Outputs</div>
+              <a href="#scans" class="nav-item">
+                <span class="nav-icon">🔍</span> Scans
+              </a>
+              <a href="#gallery" class="nav-item">
+                <span class="nav-icon">🎨</span> Gallery
+              </a>
+            </div>
+            <div class="nav-section">
+              <a href="#settings" class="nav-item active">
+                <span class="nav-icon">⚙️</span> Settings
+              </a>
+            </div>
+          </nav>
+          
+          <main class="main-content">
+            <h1 class="page-title" style="margin-bottom: 32px;">Settings</h1>
+            
+            <div class="setting-group">
+              <div class="setting-title">Execution Limits</div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Max WIP (Work In Progress)</h4>
+                  <p>Maximum concurrent tasks running at once</p>
+                </div>
+                <input type="number" value="3" class="number-input">
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Max Iterations Per Cycle</h4>
+                  <p>How many tasks to complete before stopping for review</p>
+                </div>
+                <input type="number" value="5" class="number-input">
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Daily Spend Limit</h4>
+                  <p>Maximum API spend per day (USD)</p>
+                </div>
+                <input type="number" value="50" class="number-input" style="width: 80px;">
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Parallel Subagents</h4>
+                  <p>Allow multiple specialist agents to run simultaneously</p>
+                </div>
+                <div class="toggle on"></div>
+              </div>
+            </div>
+            
+            <div class="setting-group">
+              <div class="setting-title">Orchestrator Behavior</div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Auto-approve Low Risk</h4>
+                  <p>Automatically approve P3 tasks with >90% confidence</p>
+                </div>
+                <div class="toggle"></div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Morning Check-in Time</h4>
+                  <p>When to send daily priority summary</p>
+                </div>
+                <input type="text" value="8:00 AM" class="number-input" style="width: 100px;">
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Evening Recap Time</h4>
+                  <p>When to send end-of-day summary</p>
+                </div>
+                <input type="text" value="6:00 PM" class="number-input" style="width: 100px;">
+              </div>
+            </div>
+            
+            <div class="setting-group">
+              <div class="setting-title">Integrations</div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Slack</h4>
+                  <p>Connected to #virtual-cofounder</p>
+                </div>
+                <span class="status-badge status-approved">Connected</span>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Linear</h4>
+                  <p>Team: Virtual Cofounder</p>
+                </div>
+                <span class="status-badge status-approved">Connected</span>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>GitHub</h4>
+                  <p>Org: miguel</p>
+                </div>
+                <span class="status-badge status-approved">Connected</span>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- User Flows Section -->
+    <section id="flows" class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">→</div>
+        <h2 class="screen-title">User Flows</h2>
+      </div>
+      <p class="screen-description">How users navigate through the product for common tasks.</p>
+      
+      <!-- Flow 1: Daily Workflow -->
+      <div class="flow-section">
+        <div class="flow-title">Daily Workflow</div>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-step-icon">📱</div>
+            <div class="flow-step-label">Slack AM<br>Check-in</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">📋</div>
+            <div class="flow-step-label">Review<br>Queue</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">✓</div>
+            <div class="flow-step-label">Approve/<br>Adjust</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🤖</div>
+            <div class="flow-step-label">Agents<br>Work</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🔔</div>
+            <div class="flow-step-label">Slack PM<br>Recap</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Flow 2: Setting Priority -->
+      <div class="flow-section">
+        <div class="flow-title">Change Priority Flow</div>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-step-icon">💬</div>
+            <div class="flow-step-label">Message<br>via Slack</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🧠</div>
+            <div class="flow-step-label">Orchestrator<br>Parses</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🔄</div>
+            <div class="flow-step-label">Queue<br>Reorders</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">✓</div>
+            <div class="flow-step-label">Confirmation<br>Sent</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Flow 3: Review Work -->
+      <div class="flow-section">
+        <div class="flow-title">Review Completed Work</div>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-step-icon">🔔</div>
+            <div class="flow-step-label">Notification</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">👀</div>
+            <div class="flow-step-label">Preview<br>PR/Output</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="padding: 8px; background: #D1FAE5; border-radius: 6px; font-size: 12px; font-weight: 600; color: #065F46;">✓ Approve</div>
+            <div style="padding: 8px; background: #FEF3C7; border-radius: 6px; font-size: 12px; font-weight: 600; color: #92400E;">💬 Feedback</div>
+            <div style="padding: 8px; background: #FEE2E2; border-radius: 6px; font-size: 12px; font-weight: 600; color: #991B1B;">✕ Reject</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🚀</div>
+            <div class="flow-step-label">Merge/<br>Iterate</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Flow 4: Design Output -->
+      <div class="flow-section">
+        <div class="flow-title">Non-Code Output Flow (Design)</div>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-step-icon">📝</div>
+            <div class="flow-step-label">Request<br>Design</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🎨</div>
+            <div class="flow-step-label">Design Agent<br>Creates</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🔗</div>
+            <div class="flow-step-label">Unique URL<br>Generated</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">🖼️</div>
+            <div class="flow-step-label">Preview in<br>Gallery</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-step-icon">✓</div>
+            <div class="flow-step-label">Approve for<br>Deploy</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Screen List Summary -->
+      <div class="card" style="margin-top: 40px;">
+        <h3 style="font-weight: 700; margin-bottom: 20px;">📱 All Screens Summary</h3>
+        <table style="width: 100%; font-size: 14px;">
+          <thead>
+            <tr style="text-align: left; border-bottom: 2px solid var(--border-light);">
+              <th style="padding: 12px 0;">#</th>
+              <th style="padding: 12px 0;">Screen</th>
+              <th style="padding: 12px 0;">Route</th>
+              <th style="padding: 12px 0;">Priority</th>
+              <th style="padding: 12px 0;">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">1</td>
+              <td><strong>Dashboard</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard</td>
+              <td><span class="priority-tag tag-p0" style="font-size: 10px; padding: 4px 8px;">P0</span></td>
+              <td>Daily summary & quick actions</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">2</td>
+              <td><strong>Execution Queue</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/queue</td>
+              <td><span class="priority-tag tag-p0" style="font-size: 10px; padding: 4px 8px;">P0</span></td>
+              <td>View/manage work items</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">3</td>
+              <td><strong>Chat History</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/history</td>
+              <td><span class="priority-tag tag-p0" style="font-size: 10px; padding: 4px 8px;">P0</span></td>
+              <td>Orchestrator conversations</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">4</td>
+              <td><strong>Priorities</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/priorities</td>
+              <td><span class="priority-tag tag-p0" style="font-size: 10px; padding: 4px 8px;">P0</span></td>
+              <td>Stack ranked work items</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">5</td>
+              <td><strong>Projects</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/projects</td>
+              <td><span class="priority-tag tag-p1" style="font-size: 10px; padding: 4px 8px;">P1</span></td>
+              <td>All monitored projects</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">6</td>
+              <td><strong>Project Detail</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/projects/[id]</td>
+              <td><span class="priority-tag tag-p1" style="font-size: 10px; padding: 4px 8px;">P1</span></td>
+              <td>Single project deep dive</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">7</td>
+              <td><strong>Story Detail</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/stories/[id]</td>
+              <td><span class="priority-tag tag-p1" style="font-size: 10px; padding: 4px 8px;">P1</span></td>
+              <td>Full story with timeline</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">8</td>
+              <td><strong>Agents</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/agents</td>
+              <td><span class="priority-tag tag-p1" style="font-size: 10px; padding: 4px 8px;">P1</span></td>
+              <td>Agent registry & status</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">9</td>
+              <td><strong>Scans</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/scans</td>
+              <td><span class="priority-tag tag-p1" style="font-size: 10px; padding: 4px 8px;">P1</span></td>
+              <td>Scan results by project</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px 0;">10</td>
+              <td><strong>Gallery</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/gallery</td>
+              <td><span class="priority-tag tag-p2" style="font-size: 10px; padding: 4px 8px;">P2</span></td>
+              <td>Non-code output browser</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 0;">11</td>
+              <td><strong>Settings</strong></td>
+              <td style="color: var(--text-muted); font-family: monospace;">/dashboard/settings</td>
+              <td><span class="priority-tag tag-p1" style="font-size: 10px; padding: 4px 8px;">P1</span></td>
+              <td>Config & integrations</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  
+  <!-- Interactive Navigation Script -->
+  <script>
+    // Smooth scroll for all anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+          // Update active nav link
+          document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+          this.classList.add('active');
+        }
+      });
+    });
+
+    // Highlight active section on scroll
+    const sections = document.querySelectorAll('.screen-section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + id) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(section => {
+      observer.observe(section);
+    });
+
+    // Make mockup cards clickable (simulate app navigation)
+    document.querySelectorAll('.sidebar-item, .mockup-card').forEach(item => {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', function() {
+        const text = this.textContent.toLowerCase();
+        let targetId = null;
+        
+        if (text.includes('dashboard') && !text.includes('scans')) targetId = 'dashboard';
+        else if (text.includes('queue')) targetId = 'queue';
+        else if (text.includes('chat')) targetId = 'chat';
+        else if (text.includes('priorities') || text.includes('stack')) targetId = 'priorities';
+        else if (text.includes('projects') && !text.includes('detail')) targetId = 'projects';
+        else if (text.includes('project detail')) targetId = 'project-detail';
+        else if (text.includes('story')) targetId = 'story-detail';
+        else if (text.includes('agents')) targetId = 'agents';
+        else if (text.includes('scans')) targetId = 'scans';
+        else if (text.includes('gallery') || text.includes('outputs')) targetId = 'gallery';
+        else if (text.includes('settings')) targetId = 'settings';
+        
+        if (targetId) {
+          const target = document.getElementById(targetId);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
+
+    // Add hover effect to sidebar items
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+      item.addEventListener('mouseenter', function() {
+        this.style.background = 'rgba(139, 92, 246, 0.2)';
+      });
+      item.addEventListener('mouseleave', function() {
+        if (!this.classList.contains('active')) {
+          this.style.background = '';
+        }
+      });
+    });
+
+    console.log('🎨 Virtual Cofounder UI/UX Mockups - Interactive Mode');
+    console.log('📋 Navigate using top nav bar or click sidebar items in mockups');
+  </script>
+</body>
+</html>

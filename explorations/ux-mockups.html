@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Cofounder - UI/UX Mockups</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-tertiary: #1a1a1a;
+      --bg-card: #141414;
+      --border: #262626;
+      --border-light: #333333;
+      --text-primary: #fafafa;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --accent-purple: #a855f7;
+      --accent-blue: #3b82f6;
+      --accent-green: #22c55e;
+      --accent-orange: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-pink: #ec4899;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 48px;
+    }
+    
+    .screen-section {
+      margin-bottom: 64px;
+    }
+    
+    .screen-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .screen-number {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-purple);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .screen-title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .screen-priority {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .priority-p0 { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .priority-p1 { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+    .priority-p2 { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    
+    /* MOCKUP FRAME */
+    .mockup-frame {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    
+    .mockup-topbar {
+      background: var(--bg-tertiary);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .topbar-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .dot-red { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green { background: #28c840; }
+    
+    .topbar-url {
+      flex: 1;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    /* APP LAYOUT */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 600px;
+    }
+    
+    .sidebar {
+      background: var(--bg-tertiary);
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+    }
+    
+    .sidebar-logo {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    
+    .logo-text {
+      font-weight: 700;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .nav-item {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .nav-item:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-primary);
+    }
+    
+    .nav-item.active {
+      background: rgba(168, 85, 247, 0.1);
+      color: var(--accent-purple);
+      border-right: 3px solid var(--accent-purple);
+    }
+    
+    .nav-icon {
+      width: 20px;
+      text-align: center;
+    }
+    
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent-purple);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    .main-content {
+      padding: 24px;
+      background: var(--bg-primary);
+      overflow-y: auto;
+    }
+    
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    
+    .page-title {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: var(--accent-purple);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    
+    /* CARDS */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    
+    .card-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    /* EXECUTION QUEUE */
+    .queue-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 40px 1fr 100px 150px;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .queue-rank {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    
+    .queue-rank.p0 { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .queue-rank.p1 { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+    .queue-rank.p2 { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    
+    .queue-info h4 {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .queue-meta {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .queue-status {
+      text-align: center;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .status-pending { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+    .status-approved { background: rgba(34, 197, 94, 0.2); color: #86efac; }
+    .status-in-progress { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    
+    .queue-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .action-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .action-approve { background: var(--accent-green); color: white; }
+    .action-reject { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); }
+    
+    /* CHAT HISTORY */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .chat-message {
+      display: flex;
+      gap: 12px;
+      max-width: 85%;
+    }
+    
+    .chat-message.assistant {
+      align-self: flex-start;
+    }
+    
+    .chat-message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    
+    .avatar-bot {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+    }
+    
+    .avatar-user {
+      background: var(--accent-blue);
+    }
+    
+    .chat-bubble {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 16px;
+    }
+    
+    .chat-message.user .chat-bubble {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+    }
+    
+    .chat-sender {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    
+    .chat-text {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .chat-tool-use {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent-green);
+    }
+    
+    .chat-thinking {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 13px;
+      padding: 8px 12px;
+      background: rgba(168, 85, 247, 0.1);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    
+    /* STACK RANKED LIST */
+    .stack-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .stack-item {
+      display: grid;
+      grid-template-columns: 50px 1fr 80px 80px 80px 100px;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      gap: 12px;
+    }
+    
+    .stack-item:hover {
+      border-color: var(--accent-purple);
+    }
+    
+    .stack-rank {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+    
+    .stack-rank.top { color: var(--accent-purple); }
+    
+    .stack-title {
+      font-weight: 500;
+    }
+    
+    .stack-project {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .score-cell {
+      text-align: center;
+    }
+    
+    .score-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .score-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    
+    .priority-tag {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .priority-p0-tag { background: #7f1d1d; color: #fca5a5; }
+    .priority-p1-tag { background: #78350f; color: #fcd34d; }
+    .priority-p2-tag { background: #1e3a5f; color: #93c5fd; }
+    .priority-p3-tag { background: #1e293b; color: #94a3b8; }
+    
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--bg-tertiary);
+      padding: 4px;
+      border-radius: 10px;
+      width: fit-content;
+    }
+    
+    .tab {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    
+    .tab.active {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    /* PROJECT SELECTOR */
+    .project-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .project-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    
+    .project-chip.active {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: white;
+    }
+    
+    /* AGENT ACTIVITY */
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 48px 1fr 100px;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    
+    .agent-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .agent-security { background: rgba(239, 68, 68, 0.2); }
+    .agent-analytics { background: rgba(59, 130, 246, 0.2); }
+    .agent-seo { background: rgba(34, 197, 94, 0.2); }
+    .agent-design { background: rgba(168, 85, 247, 0.2); }
+    .agent-code { background: rgba(245, 158, 11, 0.2); }
+    
+    .agent-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .agent-status {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .agent-tools {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    
+    .tool-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+    
+    /* SETTINGS */
+    .setting-group {
+      margin-bottom: 32px;
+    }
+    
+    .setting-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .setting-info h4 {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .setting-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .setting-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid var(--border);
+    }
+    
+    .toggle.on {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+    }
+    
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+    
+    .toggle.on::after {
+      transform: translateX(20px);
+    }
+    
+    .number-input {
+      width: 80px;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+      text-align: center;
+    }
+    
+    /* STATS ROW */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+    }
+    
+    .stat-trend {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    
+    .trend-up { color: var(--accent-green); }
+    .trend-down { color: var(--accent-red); }
+    
+    /* DESCRIPTION */
+    .screen-description {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    /* NAV SECTION */
+    .nav-section {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .nav-section-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      padding: 0 20px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Virtual Cofounder UI/UX Mockups</h1>
+    <p class="subtitle">High-fidelity designs for the agent dashboard experience</p>
+    
+    <!-- SCREEN 1: EXECUTION QUEUE -->
+    <div class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">1</div>
+        <h2 class="screen-title">Execution Queue</h2>
+        <span class="screen-priority priority-p0">P0 Critical</span>
+      </div>
+      <p class="screen-description">
+        The execution queue shows all pending work items in priority order. Users can approve, reject, 
+        or request changes directly from this view. Items are automatically sorted by P0-P3 priority.
+      </p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <div class="topbar-dot dot-red"></div>
+          <div class="topbar-dot dot-yellow"></div>
+          <div class="topbar-dot dot-green"></div>
+          <div class="topbar-url">virtualcofounder.ai/dashboard/queue</div>
+        </div>
+        <div class="app-layout">
+          <div class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <div class="logo-icon">👤</div>
+                Cofounder
+              </div>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📊</span>
+              Dashboard
+            </div>
+            <div class="nav-item active">
+              <span class="nav-icon">📋</span>
+              Queue
+              <span class="nav-badge">5</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">💬</span>
+              Chat History
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📁</span>
+              Projects
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">🤖</span>
+              Agents
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-title">Settings</div>
+              <div class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                Configuration
+              </div>
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Execution Queue</h1>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary">Approve All P0</button>
+                <button class="btn btn-primary">Run Orchestrator</button>
+              </div>
+            </div>
+            
+            <div class="stats-row">
+              <div class="stat-card">
+                <div class="stat-label">Pending</div>
+                <div class="stat-value">5</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">In Progress</div>
+                <div class="stat-value">2</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Completed Today</div>
+                <div class="stat-value">12</div>
+                <div class="stat-trend trend-up">↑ 3 from yesterday</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Success Rate</div>
+                <div class="stat-value">94%</div>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank p0">P0</div>
+              <div class="queue-info">
+                <h4>Fix exposed Stripe API key in checkout.ts</h4>
+                <div class="queue-meta">Warmstart · Security Agent · 2 hours ago</div>
+              </div>
+              <div class="queue-status">
+                <span class="status-badge status-pending">Pending</span>
+              </div>
+              <div class="queue-actions">
+                <button class="action-btn action-approve">✓ Approve</button>
+                <button class="action-btn action-reject">✗</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank p0">P0</div>
+              <div class="queue-info">
+                <h4>SSL certificate expiring in 3 days</h4>
+                <div class="queue-meta">TalkingObject · Domain Agent · 3 hours ago</div>
+              </div>
+              <div class="queue-status">
+                <span class="status-badge status-approved">Approved</span>
+              </div>
+              <div class="queue-actions">
+                <button class="action-btn action-reject" style="background: var(--accent-blue); color: white; border: none;">View PR</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank p1">P1</div>
+              <div class="queue-info">
+                <h4>Add PostHog analytics tracking</h4>
+                <div class="queue-meta">ShipShow · Analytics Agent · 5 hours ago</div>
+              </div>
+              <div class="queue-status">
+                <span class="status-badge status-in-progress">In Progress</span>
+              </div>
+              <div class="queue-actions">
+                <button class="action-btn action-reject" style="background: var(--bg-tertiary); color: var(--text-muted);">Watching...</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank p1">P1</div>
+              <div class="queue-info">
+                <h4>Missing meta description on landing page</h4>
+                <div class="queue-meta">Warmstart · SEO Agent · 6 hours ago</div>
+              </div>
+              <div class="queue-status">
+                <span class="status-badge status-pending">Pending</span>
+              </div>
+              <div class="queue-actions">
+                <button class="action-btn action-approve">✓ Approve</button>
+                <button class="action-btn action-reject">✗</button>
+              </div>
+            </div>
+            
+            <div class="queue-item">
+              <div class="queue-rank p2">P2</div>
+              <div class="queue-info">
+                <h4>Upgrade lodash to patch CVE-2024-xxxx</h4>
+                <div class="queue-meta">All Projects · Security Agent · 8 hours ago</div>
+              </div>
+              <div class="queue-status">
+                <span class="status-badge status-pending">Pending</span>
+              </div>
+              <div class="queue-actions">
+                <button class="action-btn action-approve">✓ Approve</button>
+                <button class="action-btn action-reject">✗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SCREEN 2: ORCHESTRATOR CHAT HISTORY -->
+    <div class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">2</div>
+        <h2 class="screen-title">Orchestrator Chat History</h2>
+        <span class="screen-priority priority-p0">P0 Critical</span>
+      </div>
+      <p class="screen-description">
+        Full conversation history with the Head of Product agent. Shows thinking traces, 
+        tool usage, and agent spawning in real-time. Users can see exactly how decisions were made.
+      </p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <div class="topbar-dot dot-red"></div>
+          <div class="topbar-dot dot-yellow"></div>
+          <div class="topbar-dot dot-green"></div>
+          <div class="topbar-url">virtualcofounder.ai/dashboard/history</div>
+        </div>
+        <div class="app-layout">
+          <div class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <div class="logo-icon">👤</div>
+                Cofounder
+              </div>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📊</span>
+              Dashboard
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📋</span>
+              Queue
+              <span class="nav-badge">5</span>
+            </div>
+            <div class="nav-item active">
+              <span class="nav-icon">💬</span>
+              Chat History
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📁</span>
+              Projects
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">🤖</span>
+              Agents
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Today's Orchestration</h1>
+              <div style="display: flex; gap: 12px;">
+                <select class="number-input" style="width: auto; padding-right: 30px;">
+                  <option>Jan 8, 2026 - Morning</option>
+                  <option>Jan 7, 2026 - Evening</option>
+                  <option>Jan 7, 2026 - Morning</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="chat-container">
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot">🧠</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">Head of Product · 9:00 AM</div>
+                  <div class="chat-text">Good morning! I'll analyze your projects and identify the highest priority work.</div>
+                  <div class="chat-thinking">💭 I'll start with Warmstart since it's a live product. Security should be checked first...</div>
+                </div>
+              </div>
+              
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot">🧠</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">Head of Product · 9:01 AM</div>
+                  <div class="chat-text">Spawning Security Agent to analyze Warmstart...</div>
+                  <div class="chat-tool-use">🔧 Tool: spawn_agent("security-agent", { project: "warmstart" })</div>
+                </div>
+              </div>
+              
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot" style="background: linear-gradient(135deg, #ef4444, #f97316);">🔒</div>
+                <div class="chat-bubble" style="border-left: 3px solid #ef4444;">
+                  <div class="chat-sender">Security Agent · 9:02 AM</div>
+                  <div class="chat-text">🚨 <strong>Critical finding:</strong> Exposed Stripe API key in checkout.ts line 42</div>
+                  <div class="chat-tool-use">🔧 Tool: grep("sk_live_", "/src")</div>
+                  <div class="chat-thinking">💭 Found hardcoded production Stripe key. This is P0 - needs immediate rotation and move to env vars.</div>
+                </div>
+              </div>
+              
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot">🧠</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">Head of Product · 9:03 AM</div>
+                  <div class="chat-text">Security Agent found a critical issue. Creating P0 story for immediate action.</div>
+                  <div class="chat-tool-use">🔧 Tool: create_story({ title: "Fix exposed Stripe API key", priority: "P0", project: "warmstart" })</div>
+                </div>
+              </div>
+              
+              <div class="chat-message user">
+                <div class="chat-avatar avatar-user">M</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">You · via Slack · 9:15 AM</div>
+                  <div class="chat-text">Also prioritize the analytics setup for ShipShow - launching next week</div>
+                </div>
+              </div>
+              
+              <div class="chat-message assistant">
+                <div class="chat-avatar avatar-bot">🧠</div>
+                <div class="chat-bubble">
+                  <div class="chat-sender">Head of Product · 9:15 AM</div>
+                  <div class="chat-text">Got it! Bumping ShipShow analytics to P0 given the launch timeline.</div>
+                  <div class="chat-tool-use">🔧 Tool: update_priority({ story_id: "abc123", priority: "P0" })</div>
+                  <div class="chat-thinking">💭 User explicitly requested this. Pre-launch analytics is critical. Moving from P1 to P0.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SCREEN 3: STACK RANKED LISTS -->
+    <div class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">3</div>
+        <h2 class="screen-title">Stack Ranked Lists</h2>
+        <span class="screen-priority priority-p0">P0 Critical</span>
+      </div>
+      <p class="screen-description">
+        Per-project and overall stack-ranked priority lists. Shows impact, cost, confidence scores 
+        and AI rationale for each item. Users can manually reorder or change priorities.
+      </p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <div class="topbar-dot dot-red"></div>
+          <div class="topbar-dot dot-yellow"></div>
+          <div class="topbar-dot dot-green"></div>
+          <div class="topbar-url">virtualcofounder.ai/dashboard/priorities</div>
+        </div>
+        <div class="app-layout">
+          <div class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <div class="logo-icon">👤</div>
+                Cofounder
+              </div>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📊</span>
+              Dashboard
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📋</span>
+              Queue
+              <span class="nav-badge">5</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">💬</span>
+              Chat History
+            </div>
+            <div class="nav-item active">
+              <span class="nav-icon">📁</span>
+              Projects
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">🤖</span>
+              Agents
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Priority Stack</h1>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">All Projects</div>
+              <div class="tab">Warmstart</div>
+              <div class="tab">ShipShow</div>
+              <div class="tab">TalkingObject</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 50px 1fr 80px 80px 80px 100px; gap: 12px; padding: 12px 16px; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+              <div>Rank</div>
+              <div>Story</div>
+              <div style="text-align: center;">Impact</div>
+              <div style="text-align: center;">Cost</div>
+              <div style="text-align: center;">Conf.</div>
+              <div style="text-align: center;">Priority</div>
+            </div>
+            
+            <div class="stack-list">
+              <div class="stack-item">
+                <div class="stack-rank top">#1</div>
+                <div>
+                  <div class="stack-title">Fix exposed Stripe API key</div>
+                  <div class="stack-project">Warmstart · Security</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-red);">5</div>
+                  <div class="score-label">Impact</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-green);">1</div>
+                  <div class="score-label">Cost</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value">98%</div>
+                  <div class="score-label">Conf.</div>
+                </div>
+                <div class="priority-tag priority-p0-tag">P0</div>
+              </div>
+              
+              <div class="stack-item">
+                <div class="stack-rank top">#2</div>
+                <div>
+                  <div class="stack-title">SSL certificate renewal</div>
+                  <div class="stack-project">TalkingObject · Domain</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-red);">5</div>
+                  <div class="score-label">Impact</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-green);">1</div>
+                  <div class="score-label">Cost</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value">100%</div>
+                  <div class="score-label">Conf.</div>
+                </div>
+                <div class="priority-tag priority-p0-tag">P0</div>
+              </div>
+              
+              <div class="stack-item">
+                <div class="stack-rank top">#3</div>
+                <div>
+                  <div class="stack-title">Add PostHog analytics</div>
+                  <div class="stack-project">ShipShow · Analytics</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-orange);">4</div>
+                  <div class="score-label">Impact</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-orange);">2</div>
+                  <div class="score-label">Cost</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value">95%</div>
+                  <div class="score-label">Conf.</div>
+                </div>
+                <div class="priority-tag priority-p0-tag">P0</div>
+              </div>
+              
+              <div class="stack-item">
+                <div class="stack-rank">#4</div>
+                <div>
+                  <div class="stack-title">Add meta descriptions</div>
+                  <div class="stack-project">Warmstart · SEO</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-blue);">3</div>
+                  <div class="score-label">Impact</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-green);">1</div>
+                  <div class="score-label">Cost</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value">90%</div>
+                  <div class="score-label">Conf.</div>
+                </div>
+                <div class="priority-tag priority-p1-tag">P1</div>
+              </div>
+              
+              <div class="stack-item">
+                <div class="stack-rank">#5</div>
+                <div>
+                  <div class="stack-title">Upgrade lodash dependency</div>
+                  <div class="stack-project">All Projects · Security</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-blue);">3</div>
+                  <div class="score-label">Impact</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-green);">1</div>
+                  <div class="score-label">Cost</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value">100%</div>
+                  <div class="score-label">Conf.</div>
+                </div>
+                <div class="priority-tag priority-p2-tag">P2</div>
+              </div>
+              
+              <div class="stack-item">
+                <div class="stack-rank">#6</div>
+                <div>
+                  <div class="stack-title">Improve Lighthouse score</div>
+                  <div class="stack-project">Warmstart · Performance</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-blue);">2</div>
+                  <div class="score-label">Impact</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value" style="color: var(--accent-orange);">3</div>
+                  <div class="score-label">Cost</div>
+                </div>
+                <div class="score-cell">
+                  <div class="score-value">75%</div>
+                  <div class="score-label">Conf.</div>
+                </div>
+                <div class="priority-tag priority-p3-tag">P3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SCREEN 4: AGENT ACTIVITY -->
+    <div class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">4</div>
+        <h2 class="screen-title">Agent Activity</h2>
+        <span class="screen-priority priority-p1">P1 High</span>
+      </div>
+      <p class="screen-description">
+        View all agents, their status, recent tool usage, and thinking traces. 
+        Shows which agents are active and what they're working on.
+      </p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <div class="topbar-dot dot-red"></div>
+          <div class="topbar-dot dot-yellow"></div>
+          <div class="topbar-dot dot-green"></div>
+          <div class="topbar-url">virtualcofounder.ai/dashboard/agents</div>
+        </div>
+        <div class="app-layout">
+          <div class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <div class="logo-icon">👤</div>
+                Cofounder
+              </div>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📊</span>
+              Dashboard
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📋</span>
+              Queue
+              <span class="nav-badge">5</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">💬</span>
+              Chat History
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📁</span>
+              Projects
+            </div>
+            <div class="nav-item active">
+              <span class="nav-icon">🤖</span>
+              Agents
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Agent Activity</h1>
+            </div>
+            
+            <div class="tabs">
+              <div class="tab active">All Agents</div>
+              <div class="tab">Code</div>
+              <div class="tab">Creative</div>
+              <div class="tab">Infra</div>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-security">🔒</div>
+              <div>
+                <div class="agent-name">Security Agent</div>
+                <div class="agent-status">✅ Completed · 3 findings · 2 min ago</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Grep</span>
+                  <span class="tool-tag">Bash</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">View Trace</button>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-analytics">📊</div>
+              <div>
+                <div class="agent-name">Analytics Agent</div>
+                <div class="agent-status">🔄 Running · Checking ShipShow...</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">WebFetch</span>
+                  <span class="tool-tag">Read</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">Watch Live</button>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-seo">🔎</div>
+              <div>
+                <div class="agent-name">SEO Agent</div>
+                <div class="agent-status">✅ Completed · 1 finding · 5 min ago</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">WebFetch</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">View Trace</button>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-design">🎨</div>
+              <div>
+                <div class="agent-name">Design Agent</div>
+                <div class="agent-status">⏸️ Idle · Last run 2 days ago</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Write</span>
+                  <span class="tool-tag">WebFetch</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">Spawn</button>
+            </div>
+            
+            <div class="agent-card">
+              <div class="agent-icon agent-code">💻</div>
+              <div>
+                <div class="agent-name">Code Generation Agent</div>
+                <div class="agent-status">🔄 Implementing Stripe key fix...</div>
+                <div class="agent-tools">
+                  <span class="tool-tag">Read</span>
+                  <span class="tool-tag">Write</span>
+                  <span class="tool-tag">Edit</span>
+                  <span class="tool-tag">Bash</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary" style="font-size: 12px; padding: 6px 12px;">Watch Live</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SCREEN 5: SETTINGS -->
+    <div class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">5</div>
+        <h2 class="screen-title">Configuration</h2>
+        <span class="screen-priority priority-p2">P2 Medium</span>
+      </div>
+      <p class="screen-description">
+        Configure WIP limits, parallel execution, agent toggles, and cost controls. 
+        All settings can also be changed via Slack commands.
+      </p>
+      
+      <div class="mockup-frame">
+        <div class="mockup-topbar">
+          <div class="topbar-dot dot-red"></div>
+          <div class="topbar-dot dot-yellow"></div>
+          <div class="topbar-dot dot-green"></div>
+          <div class="topbar-url">virtualcofounder.ai/dashboard/settings</div>
+        </div>
+        <div class="app-layout">
+          <div class="sidebar">
+            <div class="sidebar-logo">
+              <div class="logo-text">
+                <div class="logo-icon">👤</div>
+                Cofounder
+              </div>
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📊</span>
+              Dashboard
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📋</span>
+              Queue
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">💬</span>
+              Chat History
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">📁</span>
+              Projects
+            </div>
+            <div class="nav-item">
+              <span class="nav-icon">🤖</span>
+              Agents
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-title">Settings</div>
+              <div class="nav-item active">
+                <span class="nav-icon">⚙️</span>
+                Configuration
+              </div>
+            </div>
+          </div>
+          <div class="main-content">
+            <div class="page-header">
+              <h1 class="page-title">Configuration</h1>
+            </div>
+            
+            <div class="setting-group">
+              <div class="setting-title">Execution Settings</div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Parallel Agent Execution</h4>
+                  <p>Run multiple agents simultaneously (faster but less predictable)</p>
+                </div>
+                <div class="setting-control">
+                  <div class="toggle"></div>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Max Parallel Agents</h4>
+                  <p>Maximum agents running at once (if parallel enabled)</p>
+                </div>
+                <div class="setting-control">
+                  <input type="number" class="number-input" value="3" min="1" max="5">
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>WIP Limit</h4>
+                  <p>Maximum stories in progress at once</p>
+                </div>
+                <div class="setting-control">
+                  <input type="number" class="number-input" value="3" min="1" max="10">
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Max Stories Per Cycle</h4>
+                  <p>Maximum stories to execute overnight</p>
+                </div>
+                <div class="setting-control">
+                  <input type="number" class="number-input" value="5" min="1" max="20">
+                </div>
+              </div>
+            </div>
+            
+            <div class="setting-group">
+              <div class="setting-title">Cost Controls</div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Daily Token Budget</h4>
+                  <p>Maximum tokens to spend per day (~$15 at 500k tokens)</p>
+                </div>
+                <div class="setting-control">
+                  <input type="number" class="number-input" value="500000" style="width: 120px;">
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Max Turns Per Agent</h4>
+                  <p>Limit conversation turns for each agent</p>
+                </div>
+                <div class="setting-control">
+                  <input type="number" class="number-input" value="5" min="1" max="20">
+                </div>
+              </div>
+            </div>
+            
+            <div class="setting-group">
+              <div class="setting-title">Agent Toggles</div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Design Agent</h4>
+                  <p>Enable non-code design recommendations</p>
+                </div>
+                <div class="setting-control">
+                  <div class="toggle on"></div>
+                </div>
+              </div>
+              
+              <div class="setting-item">
+                <div class="setting-info">
+                  <h4>Research Agent</h4>
+                  <p>Enable market research and competitor analysis</p>
+                </div>
+                <div class="setting-control">
+                  <div class="toggle"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SCREENS LIST -->
+    <div class="screen-section">
+      <div class="screen-header">
+        <div class="screen-number">📋</div>
+        <h2 class="screen-title">All Screens Needed</h2>
+      </div>
+      
+      <div class="card">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th style="text-align: left; padding: 12px; color: var(--text-muted);">Screen</th>
+              <th style="text-align: center; padding: 12px; color: var(--text-muted);">Priority</th>
+              <th style="text-align: left; padding: 12px; color: var(--text-muted);">Status</th>
+              <th style="text-align: left; padding: 12px; color: var(--text-muted);">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Dashboard Home</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p0-tag">P0</span></td>
+              <td style="padding: 12px; color: var(--accent-orange);">🟡 Partial</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Project overview, health, recent activity</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Execution Queue</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p0-tag">P0</span></td>
+              <td style="padding: 12px; color: var(--accent-green);">✅ Mocked</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Stack-ranked stories, approve/reject</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Orchestrator Chat</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p0-tag">P0</span></td>
+              <td style="padding: 12px; color: var(--accent-green);">✅ Mocked</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Thinking traces, agent conversations</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Stack Ranked Lists</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p0-tag">P0</span></td>
+              <td style="padding: 12px; color: var(--accent-green);">✅ Mocked</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Per-project + overall priority lists</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Project Detail</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p1-tag">P1</span></td>
+              <td style="padding: 12px; color: var(--accent-red);">❌ Not Started</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Per-project findings, stories, scans</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Agent Activity</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p1-tag">P1</span></td>
+              <td style="padding: 12px; color: var(--accent-green);">✅ Mocked</td>
+              <td style="padding: 12px; color: var(--text-secondary);">All agents, runs, tool usage</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Story Detail</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p1-tag">P1</span></td>
+              <td style="padding: 12px; color: var(--accent-red);">❌ Not Started</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Single story with trace, preview URL</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Settings</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p2-tag">P2</span></td>
+              <td style="padding: 12px; color: var(--accent-green);">✅ Mocked</td>
+              <td style="padding: 12px; color: var(--text-secondary);">WIP limits, parallel config, toggles</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-light);">
+              <td style="padding: 12px; font-weight: 500;">Scan Results</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p2-tag">P2</span></td>
+              <td style="padding: 12px; color: var(--accent-red);">❌ Not Started</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Raw scan data, history</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px; font-weight: 500;">Agent Outputs Gallery</td>
+              <td style="padding: 12px; text-align: center;"><span class="priority-tag priority-p2-tag">P2</span></td>
+              <td style="padding: 12px; color: var(--accent-red);">❌ Not Started</td>
+              <td style="padding: 12px; color: var(--text-secondary);">Preview URLs for non-code work</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+  </div>
+</body>
+</html>

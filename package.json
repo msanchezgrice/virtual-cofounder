@@ -17,6 +17,11 @@
     "test:scanner:domain": "tsx scripts/test-scanner-domain.ts",
     "test:scanner:seo": "tsx scripts/test-scanner-seo.ts",
     "test:scanner:analytics": "tsx scripts/test-scanner-analytics.ts",
+    "test:scanner:vercel": "tsx scripts/test-scanner-vercel.ts",
+    "test:scanner:screenshot": "tsx scripts/test-scanner-screenshot.ts",
+    "test:scanner:performance": "tsx scripts/test-scanner-performance.ts",
+    "test:scanner:security:npm": "tsx scripts/test-scanner-security-npm.ts",
+    "test:scanner:security:secrets": "tsx scripts/test-scanner-security-secrets.ts",
     "worker:scan": "tsx workers/scan-worker.ts",
     "worker:execute": "tsx workers/execution-worker.ts",
     "worker:orchestrator": "tsx workers/orchestrator-worker.ts",
@@ -32,9 +37,12 @@
     "test:e2e:pr-notification": "tsx scripts/test-e2e-pr-notification.ts",
     "test:e2e:execution": "tsx scripts/test-e2e-execution.ts",
     "test:e2e:linear": "tsx scripts/test-e2e-linear.ts",
-    "validate:story": "tsx scripts/validate-story.ts"
+    "validate:story": "tsx scripts/validate-story.ts",
+    "validate:phase-7": "tsx scripts/validate-phase-7.ts",
+    "test:phase-7": "tsx tests/phase-7.test.ts"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.1",
     "@anthropic-ai/sdk": "^0.20.0",
     "@linear/sdk": "^68.1.0",
     "@octokit/auth-app": "^8.1.2",
@@ -48,10 +56,12 @@
     "bullmq": "^5.0.0",
     "dotenv": "^17.2.3",
     "next": "14.1.0",
+    "playwright": "^1.57.0",
+    "playwright-core": "^1.57.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "simple-git": "^3.30.0",
-    "zod": "^3.22.0"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.41.0",
