@@ -30,22 +30,21 @@ export async function POST(
 
     const projectId = params.id;
 
-    // Get project with workspace
+    // Get project and workspace
     const project = await db.project.findUnique({
-      where: { id: projectId },
-      include: {
-        workspace: {
-          select: { id: true, userId: true }
-        }
-      }
+      where: { id: projectId }
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Verify user owns this project
-    if (project.workspace.userId !== userId) {
+    // Get workspace to verify ownership
+    const workspace = await db.workspace.findUnique({
+      where: { id: project.workspaceId }
+    });
+
+    if (!workspace || workspace.ownerUserId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
