@@ -317,3 +317,62 @@ export async function refreshProjectPriorities(
 
   return stories.length;
 }
+
+/**
+ * Keywords that indicate a story advances launch readiness
+ */
+const LAUNCH_ADVANCING_KEYWORDS = [
+  // Core launch requirements
+  'deploy', 'deployment', 'production', 'release',
+  'domain', 'dns', 'ssl', 'certificate', 'https',
+  'authentication', 'auth', 'login', 'signup', 'signin',
+  
+  // Quality gates
+  'security', 'vulnerability', 'xss', 'csrf', 'injection',
+  'performance', 'speed', 'optimization', 'lighthouse',
+  'seo', 'meta', 'sitemap', 'robots',
+  'monitoring', 'logging', 'error tracking', 'sentry',
+  
+  // Growth requirements
+  'analytics', 'tracking', 'posthog', 'google analytics',
+  'payment', 'stripe', 'billing', 'subscription', 'pricing',
+  'onboarding', 'welcome', 'tutorial',
+];
+
+/**
+ * Determine if a story advances the launch stage
+ * Based on title/description keyword matching
+ */
+export function computeAdvancesLaunchStage(
+  title: string,
+  description?: string | null
+): boolean {
+  const text = `${title} ${description || ''}`.toLowerCase();
+  
+  return LAUNCH_ADVANCING_KEYWORDS.some(keyword => text.includes(keyword));
+}
+
+/**
+ * Update advancesLaunchStage flag for all stories in a project
+ */
+export async function updateLaunchStageFlags(projectId: string): Promise<number> {
+  const stories = await prisma.story.findMany({
+    where: { projectId },
+    select: { id: true, title: true, rationale: true },
+  });
+
+  let updated = 0;
+
+  for (const story of stories) {
+    const advances = computeAdvancesLaunchStage(story.title, story.rationale);
+    
+    await prisma.story.update({
+      where: { id: story.id },
+      data: { advancesLaunchStage: advances },
+    });
+    
+    updated++;
+  }
+
+  return updated;
+}
