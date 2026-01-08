@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
@@ -23,29 +22,15 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const projectId = params.id;
 
-    // Get project and workspace
+    // Get project
     const project = await db.project.findUnique({
       where: { id: projectId }
     });
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Get workspace to verify ownership
-    const workspace = await db.workspace.findUnique({
-      where: { id: project.workspaceId }
-    });
-
-    if (!workspace || workspace.ownerUserId !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Queue all scan types for this project
