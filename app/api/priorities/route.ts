@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { classifyPrioritySignal } from '@/lib/priority/classifier';
 
+export const dynamic = 'force-dynamic';
+
 // Single-user mode workspace ID
 const SINGLE_USER_WORKSPACE_ID = '00000000-0000-0000-0000-000000000002';
 

@@ -6,6 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { sendMessage } from '@/lib/slack';
 import { addLinearComment } from '@/lib/linear';

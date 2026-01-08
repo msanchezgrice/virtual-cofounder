@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sendSlackNotification } from '@/lib/slack';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     // Send a test PR notification to Slack

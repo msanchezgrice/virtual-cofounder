@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import { Queue } from 'bullmq';
 import Redis from 'ioredis';
 
+export const dynamic = 'force-dynamic';
+
 const db = new PrismaClient();
 
 // Redis connection for BullMQ

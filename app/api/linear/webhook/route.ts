@@ -9,6 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { db as prisma } from '@/lib/db';
 import crypto from 'crypto';
 import { featureFlags } from '@/lib/config/feature-flags';

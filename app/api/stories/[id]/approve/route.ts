@@ -7,6 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { enqueueStoryForExecution } from '@/lib/queue/execution';
 import { sendMessage } from '@/lib/slack';

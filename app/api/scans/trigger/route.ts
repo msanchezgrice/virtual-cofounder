@@ -3,6 +3,8 @@ import { Queue } from 'bullmq';
 import { db } from '@/lib/db';
 import Redis from 'ioredis';
 
+export const dynamic = 'force-dynamic';
+
 // Lazy initialization of Redis connection and queue
 let connection: Redis | null = null;
 let scanQueue: Queue | null = null;

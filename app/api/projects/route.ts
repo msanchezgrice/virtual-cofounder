@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 const SINGLE_USER_WORKSPACE_ID = '00000000-0000-0000-0000-000000000002';
 
 export async function GET() {
