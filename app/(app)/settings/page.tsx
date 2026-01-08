@@ -75,19 +75,19 @@ export default function SettingsPage() {
       key: 'PARALLEL_EXECUTION_ENABLED',
       label: 'Parallel Execution',
       description: 'Run multiple agent subprocesses concurrently',
-      enabled: featureFlags.PARALLEL_EXECUTION_ENABLED || false,
+      enabled: featureFlags.PARALLEL_EXECUTION_ENABLED,
     },
     {
-      key: 'enableProjectProgress',
-      label: 'Project Progress',
+      key: 'LAUNCH_READINESS',
+      label: 'Launch Readiness',
       description: 'Show launch readiness tracking dashboard',
-      enabled: featureFlags.enableProjectProgress,
+      enabled: featureFlags.LAUNCH_READINESS,
     },
     {
-      key: 'enableStateManagerAgent',
+      key: 'STATE_AGENT_ENABLED',
       label: 'State Manager Agent',
       description: 'Use AI to aggregate and analyze project state',
-      enabled: featureFlags.enableStateManagerAgent,
+      enabled: featureFlags.STATE_AGENT_ENABLED,
     },
   ];
 
