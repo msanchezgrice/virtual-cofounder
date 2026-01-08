@@ -5,7 +5,6 @@
  * All inbound messages are logged to SlackInbound table and processed for priority signals.
  */
 import { NextResponse } from 'next/server';
-
 import { storeUserPriority } from '@/lib/priority-parser';
 import { db } from '@/lib/db';
 import { getSlackClient } from '@/lib/slack';
