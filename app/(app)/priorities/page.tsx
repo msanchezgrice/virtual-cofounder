@@ -90,29 +90,43 @@ function StoryRow({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-      <div className="flex items-start gap-4">
+    <div className="card" style={{ marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
         {/* Rank */}
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600">
+        <div style={{ 
+          flexShrink: 0, 
+          width: '40px', 
+          height: '40px', 
+          borderRadius: '50%', 
+          background: rank <= 3 ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-violet))' : 'var(--bg-warm)',
+          color: rank <= 3 ? 'white' : 'var(--text-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 700,
+          fontSize: '16px'
+        }}>
           {rank}
         </div>
 
         {/* Main content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <PriorityBadge priority={story.priorityLevel} size="sm" />
-            <span className="text-xs text-gray-500">{story.projectName}</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{story.projectName}</span>
           </div>
-          <h3 className="font-medium text-gray-900 truncate">{story.title}</h3>
-          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-            <span>Score: {story.compositeScore}</span>
-            <span>Status: {story.status}</span>
+          <h3 style={{ fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {story.title}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <span>Score: <strong>{story.compositeScore}</strong></span>
+            <span className={`status-badge status-${story.status}`}>{story.status}</span>
             {story.linearTaskId && (
               <a 
                 href={`https://linear.app/issue/${story.linearTaskId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
+                style={{ color: 'var(--accent-purple)', textDecoration: 'none' }}
               >
                 View in Linear →
               </a>
@@ -121,10 +135,10 @@ function StoryRow({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded"
+            className="btn btn-secondary btn-sm"
           >
             {expanded ? 'Hide' : 'Details'}
           </button>
@@ -132,9 +146,10 @@ function StoryRow({
             <button
               onClick={handleApprove}
               disabled={approving}
-              className="px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              className="btn btn-primary btn-sm"
+              style={{ background: 'var(--accent-green)' }}
             >
-              {approving ? 'Approving...' : 'Approve'}
+              {approving ? '⏳' : '✓ Approve'}
             </button>
           )}
         </div>
@@ -142,8 +157,8 @@ function StoryRow({
 
       {/* Expanded details */}
       {expanded && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <h4 className="text-xs font-medium text-gray-500 mb-2">Priority Factors</h4>
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
+          <h4 style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '8px' }}>Priority Factors</h4>
           <FactorsBreakdown factors={story.factors} />
         </div>
       )}
@@ -271,7 +286,7 @@ export default function PrioritiesPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="app-page">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4" />
           <div className="h-64 bg-gray-200 rounded" />
@@ -281,19 +296,20 @@ export default function PrioritiesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="app-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Priorities</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="page-title">🎯 Priorities</h1>
+          <p className="page-subtitle">
             Stack-ranked stories by priority score
           </p>
         </div>
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+          className="btn btn-secondary"
+          style={{ minWidth: '200px' }}
         >
           <option value="">All Projects</option>
           {projects.map((p) => (

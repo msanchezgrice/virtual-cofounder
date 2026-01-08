@@ -123,7 +123,7 @@ export default function ProjectsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="app-page">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4" />
           <div className="h-32 bg-gray-200 rounded" />
@@ -134,12 +134,15 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="app-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-        <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
-          + Add Project
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">📁 Projects</h1>
+          <p className="page-subtitle">Manage all your projects</p>
+        </div>
+        <button className="btn btn-primary">
+          ➕ Add Project
         </button>
       </div>
 

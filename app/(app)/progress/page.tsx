@@ -117,37 +117,23 @@ function ProjectSelector({
 }
 
 function StageTimeline({ stages }: { stages: StageData[] }) {
+  const stageIcons = ['💡', '🔧', '🧪', '🎯', '🚀', '📈'];
+  
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-6">Launch Timeline</h2>
-      <div className="flex items-center justify-between">
+    <div className="card" style={{ padding: '32px' }}>
+      <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px' }}>Journey to Paying Customers</h2>
+      <div className="stage-timeline">
         {stages.map((stage, index) => (
-          <div key={stage.id} className="flex items-center">
-            <div className="flex flex-col items-center">
-              <div 
-                className={`
-                  w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
-                  ${stage.complete 
-                    ? 'bg-green-500 text-white' 
-                    : stage.current 
-                      ? 'bg-blue-500 text-white ring-4 ring-blue-100' 
-                      : 'bg-gray-200 text-gray-500'
-                  }
-                `}
-              >
-                {stage.complete ? '✓' : index + 1}
-              </div>
-              <span className={`mt-2 text-xs font-medium ${stage.current ? 'text-blue-600' : 'text-gray-500'}`}>
-                {stage.name}
-              </span>
+          <div key={stage.id} className="stage">
+            <div 
+              className={`stage-icon ${stage.complete ? 'completed' : stage.current ? 'current' : 'upcoming'}`}
+            >
+              {stageIcons[index] || '⭐'}
             </div>
-            {index < stages.length - 1 && (
-              <div 
-                className={`w-16 h-0.5 mx-2 ${
-                  stage.complete ? 'bg-green-500' : 'bg-gray-200'
-                }`} 
-              />
-            )}
+            <div className="stage-name">{stage.name}</div>
+            <div className={`stage-status ${stage.current ? 'active' : ''}`}>
+              {stage.complete ? 'Complete' : stage.current ? 'IN PROGRESS' : `${76 + index * 5}+ pts`}
+            </div>
           </div>
         ))}
       </div>
@@ -156,37 +142,26 @@ function StageTimeline({ stages }: { stages: StageData[] }) {
 }
 
 function LaunchScore({ score }: { score: number }) {
-  const getScoreColor = (s: number) => {
-    if (s >= 80) return 'text-green-600';
-    if (s >= 60) return 'text-yellow-600';
-    if (s >= 40) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
+  const scoreDeg = (score / 100) * 360;
+  
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Launch Readiness Score</h2>
-      <div className="flex items-center gap-6">
-        <div className={`text-5xl font-bold ${getScoreColor(score)}`}>
-          {score}
-        </div>
-        <div className="flex-1">
-          <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full transition-all ${
-                score >= 80 ? 'bg-green-500' : 
-                score >= 60 ? 'bg-yellow-500' : 
-                score >= 40 ? 'bg-orange-500' : 'bg-red-500'
-              }`}
-              style={{ width: `${score}%` }}
-            />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">
-            {score >= 80 ? 'Ready for launch!' : 
-             score >= 60 ? 'Getting close - a few more items to complete' :
-             score >= 40 ? 'Making progress - keep building' :
-             'Early stage - focus on core features'}
-          </p>
+    <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div>
+        <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Launch Readiness Score</h2>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          {score >= 76 ? 'Ready for launch!' : 
+           score >= 60 ? `${76 - score} points to Launch` :
+           score >= 40 ? 'Making progress - keep building' :
+           'Early stage - focus on core features'}
+        </p>
+      </div>
+      <div 
+        className="score-circle"
+        style={{ '--score-deg': `${scoreDeg}deg` } as React.CSSProperties}
+      >
+        <div className="score-inner">
+          <span className="score-value">{score}</span>
+          <span className="score-max">/ 100</span>
         </div>
       </div>
     </div>
@@ -196,44 +171,31 @@ function LaunchScore({ score }: { score: number }) {
 function LaunchChecklist({ items }: { items: ChecklistItem[] }) {
   const completedCount = items.filter(i => i.complete).length;
   
-  // Group by category
-  const categories = {
-    core: items.filter(i => i.category === 'core'),
-    quality: items.filter(i => i.category === 'quality'),
-    growth: items.filter(i => i.category === 'growth'),
-  };
-  
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Launch Checklist</h2>
-        <span className="text-sm text-gray-500">
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title">✅ Launch Checklist</span>
+        <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
           {completedCount}/{items.length} complete
         </span>
       </div>
-      <div className="space-y-4">
-        {Object.entries(categories).map(([category, categoryItems]) => (
-          categoryItems.length > 0 && (
-            <div key={category}>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                {category}
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {categoryItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-xs ${
-                      item.complete ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                      {item.complete ? '✓' : '○'}
-                    </span>
-                    <span className={`text-sm ${item.complete ? 'text-gray-700' : 'text-gray-500'}`}>
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
+      <div className="checklist">
+        {items.map((item) => (
+          <div key={item.id} className="checklist-item">
+            <div className={`checklist-icon ${item.complete ? 'done' : 'pending'}`}>
+              {item.complete ? '✓' : '⏳'}
             </div>
-          )
+            <div className="checklist-text">
+              <div className="checklist-label">{item.label}</div>
+              <div className="checklist-desc">{item.category}</div>
+            </div>
+            <span style={{ 
+              color: item.complete ? 'var(--accent-green)' : 'var(--text-muted)', 
+              fontWeight: 600 
+            }}>
+              {item.complete ? '+5' : ''}
+            </span>
+          </div>
         ))}
       </div>
     </div>
@@ -282,21 +244,34 @@ function Recommendations({ items }: { items: string[] }) {
   if (items.length === 0) return null;
   
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        <span className="mr-2">🤖</span>
-        AI Recommendations
-      </h2>
-      <ul className="space-y-3">
+    <div className="card" style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))' }}>
+      <div className="card-header">
+        <span className="card-title">⚡ AI Recommended Next Actions</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {items.map((item, index) => (
-          <li key={index} className="flex items-start gap-3">
-            <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
-              {index + 1}
+          <div 
+            key={index} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              padding: '12px', 
+              background: 'var(--bg-card)', 
+              borderRadius: '8px' 
+            }}
+          >
+            <span style={{ fontSize: '20px' }}>
+              {index === 0 ? '🔒' : index === 1 ? '💳' : index === 2 ? '📊' : '🚀'}
             </span>
-            <span className="text-sm text-gray-700">{item}</span>
-          </li>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 500 }}>{item}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>+5 pts • {index === 0 ? 'Critical for launch' : 'Recommended'}</div>
+            </div>
+            <button className="btn btn-primary btn-sm">Start</button>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -386,11 +361,11 @@ export default function ProgressPage() {
   }, [selectedProjectId]);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="app-page">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Progress</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="page-title">🚀 Progress</h1>
+          <p className="page-subtitle">
             Track your journey from idea to paying users
           </p>
         </div>
