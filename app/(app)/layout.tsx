@@ -36,6 +36,9 @@ export default function AppLayout({
               <Link href="/agents" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
                 Agents
               </Link>
+              <Link href="/gallery" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+                Gallery
+              </Link>
             </div>
           </div>
           <div className="flex items-center gap-4">

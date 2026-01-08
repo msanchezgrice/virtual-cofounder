@@ -1,22 +1,27 @@
 /**
  * Agent SDK Runner
  * 
- * Wrapper around @anthropic-ai/claude-agent-sdk for running agents.
- * This provides the actual SDK integration for multi-turn agent execution.
+ * Uses @anthropic-ai/claude-agent-sdk for running agents with built-in tools.
+ * This provides multi-turn agent execution with Read, Write, Edit, Bash, etc.
  * 
  * Feature flag: AGENT_SDK_ENABLED
  */
 
 import { featureFlags } from '@/lib/config/feature-flags';
-import { AgentDefinition, getAgentDefinition } from './index';
+import { AgentDefinition as AppAgentDefinition, getAgentDefinition, agentRegistry } from './index';
 import { prisma } from '@/lib/db';
 import Anthropic from '@anthropic-ai/sdk';
+import {
+  query,
+  type Options as SDKOptions,
+  type SDKMessage,
+  type AgentDefinition as SDKAgentDefinition,
+} from '@anthropic-ai/claude-agent-sdk';
 
-// SDK types (from @anthropic-ai/claude-agent-sdk)
-// Note: Import actual types when SDK typings are available
-interface AgentSession {
+// Session types for our database
+interface AgentSessionData {
   id: string;
-  agent: AgentDefinition;
+  agent: AppAgentDefinition;
   messages: Array<{ role: string; content: string }>;
   toolCalls: Array<{ tool: string; input: unknown; output: unknown; duration: number }>;
   tokensUsed: number;
@@ -26,7 +31,7 @@ interface AgentSession {
 interface RunResult {
   success: boolean;
   output: string;
-  session: AgentSession;
+  session: AgentSessionData;
   findings?: AgentFinding[];
 }
 
@@ -48,8 +53,49 @@ const TOKEN_COSTS = {
   'claude-sonnet-4-5-20250929': { input: 0.003, output: 0.015 },
 };
 
+// Map our model names to SDK model identifiers
+const MODEL_MAP: Record<string, 'opus' | 'sonnet' | 'haiku'> = {
+  'claude-opus-4-5-20251101': 'opus',
+  'claude-sonnet-4-5-20250929': 'sonnet',
+};
+
+// Map our tool names to SDK tool names
+const TOOL_MAP: Record<string, string> = {
+  'Read': 'Read',
+  'Write': 'Write',
+  'Edit': 'Edit',
+  'Bash': 'Bash',
+  'Glob': 'Glob',
+  'Grep': 'Grep',
+  'WebSearch': 'WebSearch',
+  'WebFetch': 'WebFetch',
+  'AskUser': 'AskUser',
+  'SQL': 'Bash', // SQL runs through bash
+};
+
 /**
- * Run an agent using the Agent SDK
+ * Convert our agent definitions to SDK format
+ */
+function convertToSDKAgents(): Record<string, SDKAgentDefinition> {
+  const sdkAgents: Record<string, SDKAgentDefinition> = {};
+  
+  for (const [role, agent] of Object.entries(agentRegistry)) {
+    if (agent.canSpawnSubagents) {
+      // Only convert agents that can be subagents
+      sdkAgents[role] = {
+        description: `${agent.name}: ${agent.role}`,
+        prompt: agent.prompt,
+        model: MODEL_MAP[agent.model] || 'sonnet',
+        tools: agent.tools.map(t => TOOL_MAP[t] || t).filter(Boolean),
+      };
+    }
+  }
+  
+  return sdkAgents;
+}
+
+/**
+ * Run an agent using the actual Claude Agent SDK
  */
 export async function runAgentWithSDK(
   role: string,
@@ -59,6 +105,7 @@ export async function runAgentWithSDK(
     storyId?: string;
     orchestratorRunId?: string;
     maxTurns?: number;
+    workingDirectory?: string;
   } = {}
 ): Promise<RunResult> {
   const agent = getAgentDefinition(role);
@@ -86,16 +133,39 @@ export async function runAgentWithSDK(
   });
 
   try {
-    // Run agent with SDK
-    // Note: This is the actual SDK integration point
-    // When SDK is stable, replace with:
-    // const result = await AgentSDK.run({ agent, context, maxTurns: options.maxTurns ?? agent.maxTurns });
-    
-    const result = await runAgentLoop(agent, context, {
-      ...options,
-      sessionId: session.id,
+    // Build SDK options
+    const sdkOptions: SDKOptions = {
+      // Allow all tools for this agent
+      tools: agent.tools.map(t => TOOL_MAP[t] || t).filter(Boolean) as string[],
+      allowedTools: agent.tools.map(t => TOOL_MAP[t] || t).filter(Boolean) as string[],
+      
+      // Set working directory if provided
+      cwd: options.workingDirectory || process.cwd(),
+      
+      // Max turns
       maxTurns: options.maxTurns ?? agent.maxTurns,
-    });
+      
+      // Define all available subagents
+      agents: agent.canSpawnSubagents ? convertToSDKAgents() : undefined,
+      
+      // Don't persist SDK sessions (we handle our own)
+      persistSession: false,
+      
+      // Include partial messages for streaming
+      includePartialMessages: true,
+      
+      // Environment variables
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+      },
+    };
+
+    // Build the full prompt with system instructions and context
+    const fullPrompt = `${agent.prompt}\n\n---\n\nContext:\n${context}`;
+
+    // Run the agent using the SDK
+    const result = await runAgentWithRealSDK(fullPrompt, sdkOptions, session.id);
 
     // Update session with results
     await prisma.agentSession.update({
@@ -105,7 +175,7 @@ export async function runAgentWithSDK(
         thinkingTrace: result.thinkingTrace as object[],
         toolCalls: result.toolCalls as object[],
         tokensUsed: result.tokensUsed,
-        estimatedCost: estimateCost(agent.model, result.tokensUsed),
+        estimatedCost: result.costUSD,
         turnsUsed: result.turnsUsed,
         completedAt: new Date(),
       },
@@ -140,17 +210,12 @@ export async function runAgentWithSDK(
 }
 
 /**
- * Multi-turn agent loop using standard Anthropic SDK
- * This implements the agentic loop pattern until the official SDK is stable
+ * Run agent using the actual Claude Agent SDK
  */
-async function runAgentLoop(
-  agent: AgentDefinition,
-  context: string,
-  options: {
-    sessionId: string;
-    maxTurns: number;
-    projectId?: string;
-  }
+async function runAgentWithRealSDK(
+  prompt: string,
+  options: SDKOptions,
+  sessionId: string
 ): Promise<{
   output: string;
   messages: Array<{ role: string; content: string }>;
@@ -158,85 +223,138 @@ async function runAgentLoop(
   toolCalls: Array<{ tool: string; input: unknown; output: unknown; duration: number }>;
   tokensUsed: number;
   turnsUsed: number;
+  costUSD: number;
   findings?: AgentFinding[];
 }> {
-  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    { role: 'user', content: context },
-  ];
+  const messages: Array<{ role: string; content: string }> = [];
   const thinkingTrace: Array<{ turn: number; thinking: string; action: string }> = [];
   const toolCalls: Array<{ tool: string; input: unknown; output: unknown; duration: number }> = [];
   let tokensUsed = 0;
   let turnsUsed = 0;
+  let costUSD = 0;
+  let finalOutput = '';
 
-  for (let turn = 0; turn < options.maxTurns; turn++) {
-    turnsUsed++;
-
-    // Call Claude
-    const response = await anthropic.messages.create({
-      model: agent.model,
-      max_tokens: 4096,
-      system: agent.prompt,
-      messages,
+  try {
+    // Create the query
+    const agentQuery = query({
+      prompt,
+      options,
     });
 
-    // Track tokens
-    tokensUsed += response.usage.input_tokens + response.usage.output_tokens;
-
-    // Extract response text
-    const textContent = response.content.find(c => c.type === 'text');
-    const responseText = textContent?.type === 'text' ? textContent.text : '';
-
-    messages.push({ role: 'assistant', content: responseText });
-
-    // Record thinking
-    thinkingTrace.push({
-      turn: turn + 1,
-      thinking: responseText.slice(0, 500),
-      action: response.stop_reason ?? 'continue',
-    });
-
-    // Check if agent is done (no tool use, just response)
-    if (response.stop_reason === 'end_turn') {
-      // Try to parse findings from response
-      const findings = parseFindingsFromResponse(responseText);
-      
-      return {
-        output: responseText,
-        messages: messages.map(m => ({ role: m.role, content: m.content })),
+    // Process all messages from the stream
+    for await (const message of agentQuery) {
+      processSDKMessage(message, {
+        messages,
         thinkingTrace,
         toolCalls,
-        tokensUsed,
         turnsUsed,
-        findings,
-      };
+        onOutput: (text) => { finalOutput = text; },
+        onTokens: (tokens, cost) => { tokensUsed += tokens; costUSD += cost; },
+        onTurn: () => { turnsUsed++; },
+      });
     }
 
-    // Note: Tool execution would happen here when tools are implemented
-    // For now, we just complete after the first turn for analysis agents
-    if (agent.type === 'ops') {
-      const findings = parseFindingsFromResponse(responseText);
-      return {
-        output: responseText,
-        messages: messages.map(m => ({ role: m.role, content: m.content })),
-        thinkingTrace,
-        toolCalls,
-        tokensUsed,
-        turnsUsed,
-        findings,
-      };
-    }
+  } catch (error) {
+    console.error('[SDK Runner] Error running agent:', error);
+    throw error;
   }
 
-  // Max turns reached
-  const lastMessage = messages[messages.length - 1];
+  // Parse findings from the final output
+  const findings = parseFindingsFromResponse(finalOutput);
+
   return {
-    output: lastMessage?.content ?? '',
-    messages: messages.map(m => ({ role: m.role, content: m.content })),
+    output: finalOutput,
+    messages,
     thinkingTrace,
     toolCalls,
     tokensUsed,
     turnsUsed,
+    costUSD,
+    findings,
   };
+}
+
+/**
+ * Process SDK message and update tracking data
+ */
+function processSDKMessage(
+  message: SDKMessage,
+  context: {
+    messages: Array<{ role: string; content: string }>;
+    thinkingTrace: Array<{ turn: number; thinking: string; action: string }>;
+    toolCalls: Array<{ tool: string; input: unknown; output: unknown; duration: number }>;
+    turnsUsed: number;
+    onOutput: (text: string) => void;
+    onTokens: (tokens: number, cost: number) => void;
+    onTurn: () => void;
+  }
+) {
+  switch (message.type) {
+    case 'user':
+      // User message - extract content
+      const userMsg = message as { type: 'user'; message?: { content?: unknown } };
+      context.messages.push({ role: 'user', content: String(userMsg.message?.content || '') });
+      break;
+
+    case 'assistant':
+      // Assistant message - extract text content
+      const assistantMsg = message as { type: 'assistant'; message?: { content?: Array<{ type: string; text?: string }> } };
+      const msgContent = assistantMsg.message?.content;
+      if (Array.isArray(msgContent)) {
+        const textParts = msgContent.filter((c) => c.type === 'text');
+        const text = textParts.map((t) => t.text || '').join('');
+        context.messages.push({ role: 'assistant', content: text });
+        context.onOutput(text);
+      }
+      break;
+
+    case 'result':
+      // Final result with usage stats
+      const resultMsg = message as { 
+        type: 'result'; 
+        subtype?: string;
+        usage?: { inputTokens?: number; outputTokens?: number };
+        total_cost_usd?: number;
+        result?: string;
+      };
+      if (resultMsg.usage) {
+        const usage = resultMsg.usage;
+        const tokens = (usage.inputTokens || 0) + (usage.outputTokens || 0);
+        context.onTokens(tokens, resultMsg.total_cost_usd || 0);
+      }
+      // Only SDKResultSuccess has result
+      if (resultMsg.subtype === 'success' && resultMsg.result) {
+        context.onOutput(String(resultMsg.result));
+      }
+      break;
+
+    case 'tool_progress':
+      // Tool progress - track tool calls
+      const toolMsg = message as { 
+        type: 'tool_progress'; 
+        tool_name?: string;
+        tool_input?: unknown;
+        tool_output?: unknown;
+      };
+      if (toolMsg.tool_name) {
+        context.toolCalls.push({
+          tool: toolMsg.tool_name,
+          input: toolMsg.tool_input,
+          output: toolMsg.tool_output,
+          duration: 0,
+        });
+        context.thinkingTrace.push({
+          turn: context.turnsUsed + 1,
+          thinking: `Using tool: ${toolMsg.tool_name}`,
+          action: 'tool_use',
+        });
+      }
+      break;
+
+    default:
+      // Handle other message types (partial messages, system, etc.)
+      break;
+  }
 }
 
 /**
@@ -244,7 +362,7 @@ async function runAgentLoop(
  * Used when AGENT_SDK_ENABLED is false
  */
 async function runAgentLegacy(
-  agent: AgentDefinition,
+  agent: AppAgentDefinition,
   context: string,
   options: {
     projectId?: string;
@@ -303,7 +421,7 @@ function parseFindingsFromResponse(text: string): AgentFinding[] | undefined {
 /**
  * Estimate cost based on tokens and model
  */
-function estimateCost(model: AgentDefinition['model'], tokens: number): number {
+function estimateCost(model: AppAgentDefinition['model'], tokens: number): number {
   const costs = TOKEN_COSTS[model];
   // Rough split: 70% input, 30% output
   const inputTokens = tokens * 0.7;
@@ -322,6 +440,7 @@ export async function spawnSubagent(
     projectId?: string;
     storyId?: string;
     orchestratorRunId?: string;
+    workingDirectory?: string;
   } = {}
 ): Promise<RunResult> {
   // Get parent session to link
@@ -339,4 +458,56 @@ export async function spawnSubagent(
     orchestratorRunId: parentSession.orchestratorRunId ?? options.orchestratorRunId,
     projectId: parentSession.projectId ?? options.projectId,
   });
+}
+
+/**
+ * Run a one-shot prompt using the SDK (for simple queries)
+ */
+export async function runPrompt(
+  prompt: string,
+  options: {
+    tools?: string[];
+    maxTurns?: number;
+    workingDirectory?: string;
+  } = {}
+): Promise<string> {
+  if (!featureFlags.AGENT_SDK_ENABLED) {
+    // Fallback to standard API
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const textContent = response.content.find(c => c.type === 'text');
+    return textContent?.type === 'text' ? textContent.text : '';
+  }
+
+  const sdkOptions: SDKOptions = {
+    tools: options.tools || ['Read', 'Grep', 'Glob'],
+    allowedTools: options.tools || ['Read', 'Grep', 'Glob'],
+    cwd: options.workingDirectory || process.cwd(),
+    maxTurns: options.maxTurns || 5,
+    persistSession: false,
+  };
+
+  let output = '';
+  const agentQuery = query({ prompt, options: sdkOptions });
+
+  for await (const message of agentQuery) {
+    if (message.type === 'result') {
+      const resultMsg = message as { type: 'result'; subtype?: string; result?: string };
+      if (resultMsg.subtype === 'success' && resultMsg.result) {
+        output = String(resultMsg.result);
+      }
+    } else if (message.type === 'assistant') {
+      const assistantMsg = message as { type: 'assistant'; message?: { content?: Array<{ type: string; text?: string }> } };
+      const assistantContent = assistantMsg.message?.content;
+      if (Array.isArray(assistantContent)) {
+        const textParts = assistantContent.filter((c) => c.type === 'text');
+        output = textParts.map((t) => t.text || '').join('');
+      }
+    }
+  }
+
+  return output;
 }
