@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { agents } from '@/lib/agents';
 
 export async function GET() {
   try {
     // Fetch all stories with their findings
-    const stories = await db.story.findMany({
+    const stories = await prisma.story.findMany({
       include: {
         project: {
           select: {

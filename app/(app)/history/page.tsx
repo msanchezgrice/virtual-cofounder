@@ -170,7 +170,7 @@ export default function HistoryPage() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="app-page">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4" />
           <div className="h-64 bg-gray-200 rounded" />
@@ -180,15 +180,18 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="app-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Activity History</h1>
-        <div className="flex gap-2">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">📜 Activity History</h1>
+          <p className="page-subtitle">Track all system activity and events</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
           <select
             value={activityFilter}
             onChange={(e) => setActivityFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            className="btn btn-secondary"
           >
             <option value="all">All Activity</option>
             <option value="scan">Scans</option>
@@ -199,7 +202,7 @@ export default function HistoryPage() {
           <select
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            className="btn btn-secondary"
           >
             <option value="all">All Projects</option>
             {projects.map((p) => (
