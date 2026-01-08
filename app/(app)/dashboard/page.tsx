@@ -138,7 +138,10 @@ export default function DashboardPage() {
       try {
         const res = await fetch('/api/scans');
         const data = await res.json();
-        setScanData(data);
+        
+        // Process raw scans into dashboard format
+        const processedData = processScansForDashboard(data.scans || []);
+        setScanData(processedData);
       } catch (error) {
         console.error('Failed to fetch scans:', error);
       } finally {
@@ -147,6 +150,106 @@ export default function DashboardPage() {
     }
     fetchScans();
   }, []);
+  
+  // Process raw scans data into dashboard format
+  function processScansForDashboard(scans: any[]): ScanData {
+    // Group scans by project
+    const projectMap = new Map<string, any>();
+    
+    for (const scan of scans) {
+      if (!projectMap.has(scan.projectId)) {
+        projectMap.set(scan.projectId, {
+          id: scan.projectId,
+          name: scan.projectName,
+          domain: null,
+          healthScore: 70, // Default health score
+          severity: 'low' as const,
+          issues: [] as string[],
+          lastScanTime: scan.scannedAt,
+          stories: [],
+          scans: { domain: null, seo: null, analytics: null },
+        });
+      }
+      
+      const project = projectMap.get(scan.projectId)!;
+      
+      // Update last scan time
+      if (new Date(scan.scannedAt) > new Date(project.lastScanTime || 0)) {
+        project.lastScanTime = scan.scannedAt;
+      }
+      
+      // Store scan results
+      if (scan.scanType === 'domain') {
+        project.scans.domain = { status: scan.status, data: scan.domainData, scannedAt: scan.scannedAt };
+        project.domain = scan.domainData?.protocol ? `${scan.domainData.protocol}://...` : null;
+      } else if (scan.scanType === 'seo') {
+        project.scans.seo = { status: scan.status, data: scan.seoDetail, scannedAt: scan.scannedAt };
+      } else if (scan.scanType === 'analytics') {
+        project.scans.analytics = { status: scan.status, data: scan.analyticsData, scannedAt: scan.scannedAt };
+      }
+      
+      // Track issues
+      if (scan.status === 'error' || scan.status === 'failed') {
+        project.issues.push(`${scan.scanType} scan failed`);
+      }
+      if (scan.securityIssues?.findings?.length > 0) {
+        project.issues.push(`${scan.securityIssues.findings.length} security findings`);
+      }
+    }
+    
+    // Calculate health scores and severities
+    const projects: ProjectWithScans[] = Array.from(projectMap.values()).map(project => {
+      let healthScore = 100;
+      
+      // Deduct points for issues
+      healthScore -= project.issues.length * 10;
+      
+      // Deduct for missing scans
+      if (!project.scans.domain) healthScore -= 10;
+      if (!project.scans.seo) healthScore -= 5;
+      if (!project.scans.analytics) healthScore -= 5;
+      
+      // Check domain scan
+      if (project.scans.domain?.data) {
+        if (!project.scans.domain.data.sslValid) healthScore -= 20;
+      }
+      
+      // Check analytics
+      if (project.scans.analytics?.data) {
+        const analytics = project.scans.analytics.data;
+        const hasAnyAnalytics = analytics.posthog || analytics.googleAnalytics || analytics.fathom || analytics.plausible;
+        if (!hasAnyAnalytics) healthScore -= 10;
+      }
+      
+      healthScore = Math.max(0, Math.min(100, healthScore));
+      
+      // Determine severity
+      let severity: 'critical' | 'high' | 'medium' | 'low' = 'low';
+      if (healthScore < 40) severity = 'critical';
+      else if (healthScore < 60) severity = 'high';
+      else if (healthScore < 80) severity = 'medium';
+      
+      return { ...project, healthScore, severity };
+    });
+    
+    // Calculate stats
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const stats = {
+      total: projects.length,
+      critical: projects.filter(p => p.severity === 'critical').length,
+      high: projects.filter(p => p.severity === 'high').length,
+      medium: projects.filter(p => p.severity === 'medium').length,
+      healthy: projects.filter(p => p.severity === 'low').length,
+      scannedToday: projects.filter(p => p.lastScanTime && new Date(p.lastScanTime) >= today).length,
+    };
+    
+    // High priority projects
+    const highPriority = projects.filter(p => p.severity === 'critical' || p.severity === 'high');
+    
+    return { stats, projects, highPriority };
+  }
 
   const handleTrigger = async (endpoint: string, name: string) => {
     setTriggering(name);
@@ -172,7 +275,8 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/scans');
       const data = await res.json();
-      setScanData(data);
+      const processedData = processScansForDashboard(data.scans || []);
+      setScanData(processedData);
     } catch (error) {
       console.error('Failed to fetch scans:', error);
     }
@@ -744,11 +848,14 @@ function AgentsView() {
 
 // Overview and Portfolio views remain the same
 function OverviewView({ scanData }: { scanData: ScanData }) {
-  const { stats, highPriority } = scanData;
+  const stats = scanData.stats || { total: 0, critical: 0, high: 0, medium: 0, healthy: 0, scannedToday: 0 };
+  const highPriority = scanData.highPriority || [];
 
-  const avgHealth = Math.round(
-    scanData.projects.reduce((sum, p) => sum + p.healthScore, 0) / scanData.projects.length
-  );
+  const avgHealth = scanData.projects?.length 
+    ? Math.round(
+        scanData.projects.reduce((sum, p) => sum + p.healthScore, 0) / scanData.projects.length
+      )
+    : 0;
 
   const formatTimeAgo = (dateStr: string | null) => {
     if (!dateStr) return 'Never';

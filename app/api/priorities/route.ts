@@ -10,17 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { classifyPrioritySignal } from '@/lib/priority/classifier';
 
+// Single-user mode workspace ID
+const SINGLE_USER_WORKSPACE_ID = '00000000-0000-0000-0000-000000000002';
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const workspaceId = searchParams.get('workspaceId');
+  const workspaceId = searchParams.get('workspaceId') || SINGLE_USER_WORKSPACE_ID;
   const projectId = searchParams.get('projectId');
-
-  if (!workspaceId) {
-    return NextResponse.json(
-      { error: 'workspaceId is required' },
-      { status: 400 }
-    );
-  }
 
   try {
     // Get active priority signals (not expired)
@@ -93,14 +89,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { workspaceId, projectId, storyId, priorityLevel, source = 'dashboard' } = body;
-
-    if (!workspaceId) {
-      return NextResponse.json(
-        { error: 'workspaceId is required' },
-        { status: 400 }
-      );
-    }
+    const { projectId, storyId, priorityLevel, source = 'dashboard' } = body;
+    const workspaceId = body.workspaceId || SINGLE_USER_WORKSPACE_ID;
 
     // If storyId is provided, update story priority directly
     if (storyId) {
