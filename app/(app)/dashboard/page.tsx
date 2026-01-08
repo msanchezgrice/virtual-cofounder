@@ -236,7 +236,7 @@ export default function DashboardPage() {
         padding: '20px',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '16px', fontWeight: 600 }}>🔥 Today's Focus</span>
+          <span style={{ fontSize: '16px', fontWeight: 600 }}>🔥 Today&apos;s Focus</span>
           <Link
             href="/priorities"
             style={{
