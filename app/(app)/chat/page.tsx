@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useAgentChat, type ChatMessage } from '@/lib/hooks/useAgentChat';
 
-// Quick command chips
-const QUICK_COMMANDS = [
+// Quick command chips (default, can be overridden by agent)
+const DEFAULT_QUICK_COMMANDS = [
   { label: '✅ approved', value: 'approved' },
   { label: 'P0:', value: 'P0: ' },
   { label: 'status', value: 'status' },
@@ -56,10 +57,10 @@ function PriorityBadge({ level }: { level: string }) {
   );
 }
 
-// Priority card component (for assistant messages with priorities)
+// Priority card component
 function PriorityCard({ priorities }: { priorities: Array<{ level?: string; priority?: string; title?: string; content?: string }> }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
       {priorities.map((p, i) => (
         <div
           key={i}
@@ -67,16 +68,74 @@ function PriorityCard({ priorities }: { priorities: Array<{ level?: string; prio
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '8px 12px',
+            padding: '10px 14px',
             backgroundColor: (p.level || p.priority) === 'P0' ? 'rgba(239,68,68,0.1)' : 
                             (p.level || p.priority) === 'P1' ? 'rgba(245,158,11,0.1)' :
                             'rgba(59,130,246,0.1)',
-            borderRadius: '6px',
+            borderRadius: '8px',
+            border: '1px solid',
+            borderColor: (p.level || p.priority) === 'P0' ? 'rgba(239,68,68,0.2)' : 
+                         (p.level || p.priority) === 'P1' ? 'rgba(245,158,11,0.2)' :
+                         'rgba(59,130,246,0.2)',
           }}
         >
           <PriorityBadge level={p.level || p.priority || 'P2'} />
-          <span style={{ fontSize: '13px' }}>{p.title || p.content}</span>
+          <span style={{ fontSize: '13px', fontWeight: 500 }}>{p.title || p.content}</span>
         </div>
+      ))}
+    </div>
+  );
+}
+
+// Smart action buttons suggested by the agent
+interface SuggestedAction {
+  label: string;
+  value: string;
+  style?: 'primary' | 'secondary' | 'success' | 'danger';
+}
+
+function ActionButtons({ 
+  actions, 
+  onAction,
+  disabled 
+}: { 
+  actions: SuggestedAction[]; 
+  onAction: (value: string) => void;
+  disabled?: boolean;
+}) {
+  const getButtonStyle = (style?: string) => {
+    switch (style) {
+      case 'primary':
+        return { background: '#8B5CF6', color: 'white', border: 'none' };
+      case 'success':
+        return { background: '#10B981', color: 'white', border: 'none' };
+      case 'danger':
+        return { background: '#EF4444', color: 'white', border: 'none' };
+      default:
+        return { background: 'white', color: '#1C1917', border: '1px solid #E7E5E4' };
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+      {actions.map((action, i) => (
+        <button
+          key={i}
+          onClick={() => onAction(action.value)}
+          disabled={disabled}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 500,
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+            transition: 'all 0.2s',
+            ...getButtonStyle(action.style),
+          }}
+        >
+          {action.label}
+        </button>
       ))}
     </div>
   );
@@ -86,7 +145,6 @@ function PriorityCard({ priorities }: { priorities: Array<{ level?: string; prio
 function UserMessage({ message }: { message: ChatMessage }) {
   return (
     <div style={{ display: 'flex', gap: '12px', flexDirection: 'row-reverse' }}>
-      {/* User avatar */}
       <div
         style={{
           width: '36px',
@@ -104,13 +162,12 @@ function UserMessage({ message }: { message: ChatMessage }) {
       >
         M
       </div>
-      {/* Message bubble */}
       <div style={{ maxWidth: '70%' }}>
         <div
           style={{
             background: '#8B5CF6',
             color: 'white',
-            borderRadius: '12px',
+            borderRadius: '16px 16px 4px 16px',
             padding: '12px 16px',
           }}
         >
@@ -134,13 +191,22 @@ function UserMessage({ message }: { message: ChatMessage }) {
   );
 }
 
-// Assistant message component
-function AssistantMessage({ message }: { message: ChatMessage }) {
+// Assistant message with markdown rendering
+function AssistantMessage({ 
+  message, 
+  onAction,
+  isLatest 
+}: { 
+  message: ChatMessage; 
+  onAction: (value: string) => void;
+  isLatest: boolean;
+}) {
   const hasPriorities = message.metadata?.priorities?.length > 0;
+  const suggestedActions: SuggestedAction[] = message.metadata?.suggestedActions || [];
+  const showActions = isLatest && suggestedActions.length > 0 && !message.isStreaming;
   
   return (
     <div style={{ display: 'flex', gap: '12px' }}>
-      {/* Bot avatar */}
       <div
         style={{
           width: '36px',
@@ -156,49 +222,132 @@ function AssistantMessage({ message }: { message: ChatMessage }) {
       >
         🤖
       </div>
-      {/* Message bubble */}
-      <div style={{ maxWidth: '70%' }}>
+      <div style={{ maxWidth: '75%', minWidth: '200px' }}>
         <div
           style={{
             background: 'white',
             border: '1px solid #E7E5E4',
-            borderRadius: '12px',
-            padding: '12px 16px',
+            borderRadius: '4px 16px 16px 16px',
+            padding: '14px 18px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
           }}
         >
           {message.isStreaming && !message.content ? (
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', padding: '4px 0' }}>
               <span className="typing-dot" style={{ animationDelay: '0s' }}>●</span>
               <span className="typing-dot" style={{ animationDelay: '0.2s' }}>●</span>
               <span className="typing-dot" style={{ animationDelay: '0.4s' }}>●</span>
             </div>
           ) : (
             <>
-              <p style={{ fontSize: '14px', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                {message.content}
+              <div className="markdown-content">
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => (
+                      <p style={{ margin: '0 0 12px 0', lineHeight: 1.6 }}>{children}</p>
+                    ),
+                    strong: ({ children }) => (
+                      <strong style={{ fontWeight: 600, color: '#1C1917' }}>{children}</strong>
+                    ),
+                    em: ({ children }) => (
+                      <em style={{ fontStyle: 'italic' }}>{children}</em>
+                    ),
+                    ul: ({ children }) => (
+                      <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol style={{ margin: '8px 0', paddingLeft: '20px' }}>{children}</ol>
+                    ),
+                    li: ({ children }) => (
+                      <li style={{ marginBottom: '4px', lineHeight: 1.5 }}>{children}</li>
+                    ),
+                    code: ({ children }) => (
+                      <code style={{ 
+                        background: '#F5F5F4', 
+                        padding: '2px 6px', 
+                        borderRadius: '4px',
+                        fontSize: '13px',
+                        fontFamily: 'monospace',
+                      }}>{children}</code>
+                    ),
+                    pre: ({ children }) => (
+                      <pre style={{ 
+                        background: '#1C1917', 
+                        color: '#E7E5E4',
+                        padding: '12px 16px', 
+                        borderRadius: '8px',
+                        overflow: 'auto',
+                        fontSize: '13px',
+                        margin: '12px 0',
+                      }}>{children}</pre>
+                    ),
+                    h1: ({ children }) => (
+                      <h3 style={{ fontSize: '16px', fontWeight: 600, margin: '16px 0 8px 0' }}>{children}</h3>
+                    ),
+                    h2: ({ children }) => (
+                      <h4 style={{ fontSize: '15px', fontWeight: 600, margin: '14px 0 6px 0' }}>{children}</h4>
+                    ),
+                    h3: ({ children }) => (
+                      <h5 style={{ fontSize: '14px', fontWeight: 600, margin: '12px 0 4px 0' }}>{children}</h5>
+                    ),
+                    a: ({ href, children }) => (
+                      <a 
+                        href={href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ color: '#8B5CF6', textDecoration: 'underline' }}
+                      >{children}</a>
+                    ),
+                    blockquote: ({ children }) => (
+                      <blockquote style={{ 
+                        borderLeft: '3px solid #8B5CF6',
+                        paddingLeft: '12px',
+                        margin: '12px 0',
+                        color: '#57534E',
+                      }}>{children}</blockquote>
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
                 {message.isStreaming && <span className="cursor-blink">▊</span>}
-              </p>
+              </div>
               {hasPriorities && (
                 <PriorityCard priorities={message.metadata.priorities} />
+              )}
+              {showActions && (
+                <ActionButtons 
+                  actions={suggestedActions} 
+                  onAction={onAction}
+                  disabled={false}
+                />
               )}
             </>
           )}
         </div>
-        <span
+        <div
           style={{
             fontSize: '11px',
             color: '#A8A29E',
-            marginTop: '4px',
-            display: 'block',
+            marginTop: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          {formatTime(message.createdAt)}
+          <span>{formatTime(message.createdAt)}</span>
           {message.toolsUsed && message.toolsUsed.length > 0 && (
-            <span style={{ marginLeft: '8px', color: '#8B5CF6' }}>
-              🔧 {message.toolsUsed.join(', ')}
+            <span style={{ color: '#8B5CF6', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>🔧</span>
+              <span>{message.toolsUsed.filter((v, i, a) => a.indexOf(v) === i).join(', ')}</span>
             </span>
           )}
-        </span>
+          {message.metadata?.agentSpawned && (
+            <span style={{ color: '#10B981' }}>
+              🤖 Spawned: {message.metadata.agentSpawned}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -211,10 +360,12 @@ function SystemMessage({ content, timestamp }: { content: string; timestamp: str
       style={{
         textAlign: 'center',
         padding: '8px 16px',
-        background: '#F9F3ED',
-        borderRadius: '8px',
+        background: 'rgba(139, 92, 246, 0.08)',
+        borderRadius: '20px',
         fontSize: '12px',
-        color: '#A8A29E',
+        color: '#78716C',
+        margin: '8px auto',
+        maxWidth: 'fit-content',
       }}
     >
       {content} • {formatDate(timestamp)}
@@ -225,6 +376,7 @@ function SystemMessage({ content, timestamp }: { content: string; timestamp: str
 // Main chat page component
 export default function ChatPage() {
   const [input, setInput] = useState('');
+  const [suggestedCommands, setSuggestedCommands] = useState(DEFAULT_QUICK_COMMANDS);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -239,6 +391,12 @@ export default function ChatPage() {
     loadHistory,
   } = useAgentChat({
     onError: (err) => console.error('[Chat] Error:', err),
+    onMessageComplete: (msg) => {
+      // Update suggested commands from latest message
+      if (msg.metadata?.suggestedCommands) {
+        setSuggestedCommands(msg.metadata.suggestedCommands);
+      }
+    },
   });
   
   // Load history on mount
@@ -258,7 +416,7 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ beforeTimestamp: new Date().toISOString() }),
-      }).catch(() => {}); // Silent fail
+      }).catch(() => {});
     }
   }, [messages.length]);
   
@@ -271,11 +429,26 @@ export default function ChatPage() {
     }
   }, [input, isLoading, sendMessage]);
   
+  // Handle action button click
+  const handleAction = useCallback((value: string) => {
+    if (!isLoading) {
+      sendMessage(value);
+    }
+  }, [isLoading, sendMessage]);
+  
   // Handle quick command
   const handleQuickCommand = useCallback((value: string) => {
-    setInput(value);
-    inputRef.current?.focus();
-  }, []);
+    if (value.endsWith(' ')) {
+      setInput(value);
+      inputRef.current?.focus();
+    } else {
+      sendMessage(value);
+    }
+  }, [sendMessage]);
+  
+  // Get last assistant message for showing actions
+  const lastAssistantIndex = [...messages].reverse().findIndex(m => m.role === 'assistant');
+  const lastAssistantMsgIndex = lastAssistantIndex >= 0 ? messages.length - 1 - lastAssistantIndex : -1;
   
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
@@ -292,10 +465,19 @@ export default function ChatPage() {
         .cursor-blink {
           animation: blink 1s infinite;
           color: #8B5CF6;
+          margin-left: 2px;
         }
         @keyframes blink {
           0%, 50% { opacity: 1; }
           51%, 100% { opacity: 0; }
+        }
+        .markdown-content {
+          font-size: 14px;
+          color: #1C1917;
+          line-height: 1.6;
+        }
+        .markdown-content > *:last-child {
+          margin-bottom: 0 !important;
         }
       `}</style>
       
@@ -311,8 +493,11 @@ export default function ChatPage() {
         }}
       >
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>Virtual Cofounder</h2>
-          <span style={{ fontSize: '12px', color: '#10B981' }}>● Online</span>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: '#1C1917' }}>Virtual Cofounder</h2>
+          <span style={{ fontSize: '12px', color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ width: '6px', height: '6px', background: '#10B981', borderRadius: '50%' }} />
+            Online
+          </span>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {isStreaming && (
@@ -356,6 +541,7 @@ export default function ChatPage() {
               border: 'none',
               cursor: 'pointer',
               padding: '4px',
+              fontSize: '16px',
             }}
           >
             ✕
@@ -383,19 +569,28 @@ export default function ChatPage() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#A8A29E',
-              gap: '12px',
+              color: '#78716C',
+              gap: '16px',
+              textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: '48px' }}>💬</div>
-            <p style={{ fontSize: '16px', margin: 0 }}>Start a conversation</p>
-            <p style={{ fontSize: '14px', margin: 0 }}>
-              Set priorities, ask for status updates, or get help with your projects.
-            </p>
+            <div style={{ 
+              fontSize: '56px', 
+              background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+              borderRadius: '20px',
+              padding: '16px',
+            }}>🤖</div>
+            <div>
+              <p style={{ fontSize: '18px', margin: 0, fontWeight: 600, color: '#1C1917' }}>
+                Start a conversation
+              </p>
+              <p style={{ fontSize: '14px', margin: '8px 0 0 0', maxWidth: '300px' }}>
+                Set priorities, ask for status updates, spawn agents, or get help with your projects.
+              </p>
+            </div>
           </div>
         ) : (
           <>
-            {/* System message at start */}
             {messages.length > 0 && (
               <SystemMessage 
                 content="Conversation started" 
@@ -403,8 +598,7 @@ export default function ChatPage() {
               />
             )}
             
-            {/* Messages */}
-            {messages.map((msg) => (
+            {messages.map((msg, index) => (
               msg.role === 'user' ? (
                 <UserMessage key={msg.id} message={msg} />
               ) : msg.role === 'system' ? (
@@ -414,7 +608,12 @@ export default function ChatPage() {
                   timestamp={msg.createdAt} 
                 />
               ) : (
-                <AssistantMessage key={msg.id} message={msg} />
+                <AssistantMessage 
+                  key={msg.id} 
+                  message={msg} 
+                  onAction={handleAction}
+                  isLatest={index === lastAssistantMsgIndex}
+                />
               )
             ))}
             
@@ -441,25 +640,29 @@ export default function ChatPage() {
             disabled={isLoading}
             style={{
               flex: 1,
-              padding: '12px 16px',
+              padding: '14px 18px',
               border: '1px solid #E7E5E4',
-              borderRadius: '8px',
+              borderRadius: '12px',
               fontSize: '14px',
               outline: 'none',
+              transition: 'border-color 0.2s',
             }}
+            onFocus={(e) => e.target.style.borderColor = '#8B5CF6'}
+            onBlur={(e) => e.target.style.borderColor = '#E7E5E4'}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
             style={{
-              padding: '12px 24px',
-              background: isLoading ? '#D6D3D1' : '#8B5CF6',
+              padding: '14px 28px',
+              background: isLoading || !input.trim() ? '#D6D3D1' : '#8B5CF6',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               fontSize: '14px',
               fontWeight: 600,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
+              cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
             }}
           >
             {isLoading ? '...' : 'Send'}
@@ -467,20 +670,23 @@ export default function ChatPage() {
         </form>
         
         {/* Quick Commands */}
-        <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-          {QUICK_COMMANDS.map((cmd) => (
+        <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {suggestedCommands.map((cmd) => (
             <button
               key={cmd.label}
               type="button"
               onClick={() => handleQuickCommand(cmd.value)}
+              disabled={isLoading}
               style={{
-                fontSize: '11px',
-                color: '#A8A29E',
-                padding: '4px 8px',
-                background: '#F9F3ED',
-                borderRadius: '4px',
+                fontSize: '12px',
+                color: '#57534E',
+                padding: '6px 12px',
+                background: '#F5F5F4',
+                borderRadius: '6px',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                opacity: isLoading ? 0.5 : 1,
               }}
             >
               {cmd.label}

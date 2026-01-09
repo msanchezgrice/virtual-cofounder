@@ -7,12 +7,24 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+export interface SuggestedAction {
+  label: string;
+  value: string;
+  style?: 'primary' | 'secondary' | 'success' | 'danger';
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   contentType?: string;
-  metadata?: any;
+  metadata?: {
+    priorities?: Array<{ level?: string; priority?: string; title?: string; content?: string }>;
+    suggestedActions?: SuggestedAction[];
+    agentSpawned?: string;
+    toolsUsed?: string[];
+    [key: string]: any;
+  };
   isStreaming?: boolean;
   isProcessing?: boolean;
   toolsUsed?: string[];
@@ -161,6 +173,32 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             case 'agent_spawn':
               // Track spawned agents
               console.log('[useAgentChat] Agent spawned:', eventData.agent);
+              setMessages(prev => prev.map(m => 
+                m.id === assistantMessage.id 
+                  ? { 
+                      ...m, 
+                      metadata: { 
+                        ...m.metadata, 
+                        agentSpawned: eventData.agent 
+                      } 
+                    }
+                  : m
+              ));
+              break;
+              
+            case 'actions':
+              // Update suggested actions
+              setMessages(prev => prev.map(m => 
+                m.id === assistantMessage.id 
+                  ? { 
+                      ...m, 
+                      metadata: { 
+                        ...m.metadata, 
+                        suggestedActions: eventData.actions 
+                      } 
+                    }
+                  : m
+              ));
               break;
               
             case 'done':

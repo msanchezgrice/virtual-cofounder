@@ -69,6 +69,84 @@ function convertToSDKAgents(): Record<string, any> {
 }
 
 /**
+ * Extract suggested actions from the agent's response
+ * Detects patterns like "Should I..." or "Would you like me to..."
+ */
+interface SuggestedAction {
+  label: string;
+  value: string;
+  style?: 'primary' | 'secondary' | 'success' | 'danger';
+}
+
+function extractSuggestedActions(content: string): SuggestedAction[] {
+  const actions: SuggestedAction[] = [];
+  
+  // Common Yes/No question patterns
+  const yesNoPatterns = [
+    /should i\s+(.+?)\??$/im,
+    /would you like me to\s+(.+?)\??$/im,
+    /do you want me to\s+(.+?)\??$/im,
+    /want me to\s+(.+?)\??$/im,
+    /shall i\s+(.+?)\??$/im,
+    /ready to\s+(.+?)\??$/im,
+  ];
+  
+  for (const pattern of yesNoPatterns) {
+    if (pattern.test(content)) {
+      const match = content.match(pattern);
+      const action = match?.[1]?.trim() || '';
+      
+      actions.push(
+        { label: '✅ Yes, go ahead', value: `Yes, ${action}`, style: 'success' },
+        { label: '❌ No, not now', value: 'No, let\'s hold off on that', style: 'secondary' }
+      );
+      break;
+    }
+  }
+  
+  // Detect spawn agent offers
+  const spawnPatterns = [
+    /spawn a?\s*\*?\*?(\w+)\s*agent\*?\*?/i,
+    /run (?:a|the)\s*\*?\*?(\w+)\s*agent\*?\*?/i,
+    /kick off (?:a|the)?\s*\*?\*?(\w+)\s*(?:agent|audit|analysis)\*?\*?/i,
+  ];
+  
+  for (const pattern of spawnPatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      const agentName = match[1].toLowerCase();
+      if (actions.length === 0) {
+        actions.push(
+          { label: `🤖 Spawn ${agentName} agent`, value: `spawn ${agentName}`, style: 'primary' },
+          { label: '💬 Walk through together', value: 'Let\'s walk through this together instead', style: 'secondary' }
+        );
+      }
+      break;
+    }
+  }
+  
+  // Detect multiple choice options (- Option 1\n- Option 2)
+  const bulletPoints = content.match(/^- (.+)$/gm);
+  if (bulletPoints && bulletPoints.length >= 2 && bulletPoints.length <= 5) {
+    const hasQuestionBefore = /\?\s*\n/.test(content.slice(0, content.indexOf(bulletPoints[0])));
+    if (hasQuestionBefore && actions.length === 0) {
+      bulletPoints.slice(0, 4).forEach((bullet, i) => {
+        const option = bullet.replace(/^- /, '').trim();
+        if (option.length < 100) {
+          actions.push({
+            label: option.slice(0, 40) + (option.length > 40 ? '...' : ''),
+            value: option,
+            style: i === 0 ? 'primary' : 'secondary',
+          });
+        }
+      });
+    }
+  }
+  
+  return actions;
+}
+
+/**
  * Get recent conversation for context
  */
 async function getConversationHistory(conversationId: string, limit = 10) {
@@ -413,6 +491,13 @@ export async function GET(
               if (resultMsg.result && typeof resultMsg.result === 'string') {
                 fullContent = resultMsg.result;
               }
+              
+              // Extract suggested actions from the content
+              const suggestedActions = extractSuggestedActions(fullContent);
+              if (suggestedActions.length > 0) {
+                send({ type: 'actions', actions: suggestedActions });
+              }
+              
               send({ 
                 type: 'done', 
                 usage: resultMsg.usage,
@@ -423,13 +508,19 @@ export async function GET(
           }
         }
         
+        // Extract suggested actions from final content
+        const suggestedActions = extractSuggestedActions(fullContent);
+        
         // Save final content to DB
         await prisma.chatMessage.update({
           where: { id: messageId },
           data: { 
             content: fullContent, 
             isProcessing: false,
-            metadata: toolsUsed.length > 0 ? { toolsUsed } : undefined,
+            metadata: {
+              ...(toolsUsed.length > 0 ? { toolsUsed } : {}),
+              ...(suggestedActions.length > 0 ? { suggestedActions } : {}),
+            },
           },
         });
         
