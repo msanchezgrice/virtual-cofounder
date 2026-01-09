@@ -373,13 +373,56 @@ function SystemMessage({ content, timestamp }: { content: string; timestamp: str
   );
 }
 
+// Project interface
+interface Project {
+  id: string;
+  name: string;
+  domain: string | null;
+}
+
 // Main chat page component
 export default function ChatPage() {
   const [input, setInput] = useState('');
   const [suggestedCommands, setSuggestedCommands] = useState(DEFAULT_QUICK_COMMANDS);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
+  // Load projects on mount
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await fetch('/api/projects');
+        const data = await res.json();
+        setProjects(data.projects || []);
+
+        // Try to restore last selected project from localStorage
+        const savedProjectId = localStorage.getItem('chat_selected_project');
+        if (savedProjectId && data.projects?.some((p: Project) => p.id === savedProjectId)) {
+          setSelectedProjectId(savedProjectId);
+        } else if (data.projects?.length > 0) {
+          // Default to first project if none saved or saved project doesn't exist
+          setSelectedProjectId(data.projects[0].id);
+          localStorage.setItem('chat_selected_project', data.projects[0].id);
+        }
+      } catch (err) {
+        console.error('[Chat] Failed to load projects:', err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  // Save selected project to localStorage when it changes
+  useEffect(() => {
+    if (selectedProjectId) {
+      localStorage.setItem('chat_selected_project', selectedProjectId);
+    }
+  }, [selectedProjectId]);
+
   const {
     messages,
     isLoading,
@@ -390,6 +433,7 @@ export default function ChatPage() {
     clearError,
     loadHistory,
   } = useAgentChat({
+    projectId: selectedProjectId || undefined,
     onError: (err) => console.error('[Chat] Error:', err),
     onMessageComplete: (msg) => {
       // Update suggested commands from latest message
@@ -490,15 +534,65 @@ export default function ChatPage() {
           justifyContent: 'space-between',
           alignItems: 'center',
           background: 'white',
+          gap: '16px',
         }}
       >
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: '#1C1917' }}>Virtual Cofounder</h2>
           <span style={{ fontSize: '12px', color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ width: '6px', height: '6px', background: '#10B981', borderRadius: '50%' }} />
             Online
           </span>
         </div>
+
+        {/* Project Selector */}
+        <div style={{ minWidth: '200px' }}>
+          {loadingProjects ? (
+            <div style={{
+              padding: '8px 12px',
+              background: '#F5F5F4',
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: '#78716C',
+            }}>
+              Loading projects...
+            </div>
+          ) : projects.length === 0 ? (
+            <div style={{
+              padding: '8px 12px',
+              background: '#FEE2E2',
+              borderRadius: '8px',
+              fontSize: '13px',
+              color: '#991B1B',
+            }}>
+              ⚠️ No projects
+            </div>
+          ) : (
+            <select
+              value={selectedProjectId || ''}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #E7E5E4',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 500,
+                background: 'white',
+                color: '#1C1917',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  📁 {project.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {isStreaming && (
             <button
@@ -561,7 +655,48 @@ export default function ChatPage() {
           background: '#FDF8F3',
         }}
       >
-        {messages.length === 0 ? (
+        {projects.length === 0 && !loadingProjects ? (
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#78716C',
+              gap: '16px',
+              textAlign: 'center',
+              padding: '48px',
+            }}
+          >
+            <div style={{ fontSize: '56px' }}>📁</div>
+            <div>
+              <p style={{ fontSize: '18px', margin: 0, fontWeight: 600, color: '#1C1917' }}>
+                No projects yet
+              </p>
+              <p style={{ fontSize: '14px', margin: '8px 0 0 0', maxWidth: '400px', color: '#78716C' }}>
+                Create a project first to start chatting with your Virtual Cofounder.
+                Chat requires a project context to create stories and execute work.
+              </p>
+              <a
+                href="/projects"
+                style={{
+                  display: 'inline-block',
+                  marginTop: '16px',
+                  padding: '10px 20px',
+                  background: '#8B5CF6',
+                  color: 'white',
+                  textDecoration: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}
+              >
+                Go to Projects
+              </a>
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
           <div
             style={{
               flex: 1,
@@ -574,8 +709,8 @@ export default function ChatPage() {
               textAlign: 'center',
             }}
           >
-            <div style={{ 
-              fontSize: '56px', 
+            <div style={{
+              fontSize: '56px',
               background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
               borderRadius: '20px',
               padding: '16px',
@@ -585,7 +720,8 @@ export default function ChatPage() {
                 Start a conversation
               </p>
               <p style={{ fontSize: '14px', margin: '8px 0 0 0', maxWidth: '300px' }}>
-                Set priorities, ask for status updates, spawn agents, or get help with your projects.
+                Set priorities, ask for status updates, create stories, or get help with{' '}
+                {projects.find(p => p.id === selectedProjectId)?.name || 'your project'}.
               </p>
             </div>
           </div>
@@ -636,8 +772,14 @@ export default function ChatPage() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message or command..."
-            disabled={isLoading}
+            placeholder={
+              projects.length === 0
+                ? "Please create a project first..."
+                : !selectedProjectId
+                ? "Select a project to start chatting..."
+                : "Type a message or command..."
+            }
+            disabled={isLoading || projects.length === 0 || !selectedProjectId}
             style={{
               flex: 1,
               padding: '14px 18px',
@@ -646,22 +788,23 @@ export default function ChatPage() {
               fontSize: '14px',
               outline: 'none',
               transition: 'border-color 0.2s',
+              opacity: projects.length === 0 || !selectedProjectId ? 0.5 : 1,
             }}
             onFocus={(e) => e.target.style.borderColor = '#8B5CF6'}
             onBlur={(e) => e.target.style.borderColor = '#E7E5E4'}
           />
           <button
             type="submit"
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || projects.length === 0 || !selectedProjectId}
             style={{
               padding: '14px 28px',
-              background: isLoading || !input.trim() ? '#D6D3D1' : '#8B5CF6',
+              background: isLoading || !input.trim() || projects.length === 0 || !selectedProjectId ? '#D6D3D1' : '#8B5CF6',
               color: 'white',
               border: 'none',
               borderRadius: '12px',
               fontSize: '14px',
               fontWeight: 600,
-              cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
+              cursor: isLoading || !input.trim() || projects.length === 0 || !selectedProjectId ? 'not-allowed' : 'pointer',
               transition: 'background 0.2s',
             }}
           >
@@ -676,7 +819,7 @@ export default function ChatPage() {
               key={cmd.label}
               type="button"
               onClick={() => handleQuickCommand(cmd.value)}
-              disabled={isLoading}
+              disabled={isLoading || projects.length === 0 || !selectedProjectId}
               style={{
                 fontSize: '12px',
                 color: '#57534E',
@@ -684,9 +827,9 @@ export default function ChatPage() {
                 background: '#F5F5F4',
                 borderRadius: '6px',
                 border: 'none',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
+                cursor: isLoading || projects.length === 0 || !selectedProjectId ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
-                opacity: isLoading ? 0.5 : 1,
+                opacity: isLoading || projects.length === 0 || !selectedProjectId ? 0.5 : 1,
               }}
             >
               {cmd.label}
