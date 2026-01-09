@@ -264,21 +264,23 @@ function getRelevantAgents(scanContext: ScanContext): string[] {
 function buildHoPPrompt(scanContexts: ScanContext[]): string {
   let prompt = `You are the Head of Product for a portfolio of web products.
 
-Your job is to:
-1. Review scan results for ALL projects
-2. Use the Task tool to SPAWN specialist agents to investigate issues
-3. Aggregate findings from all agents
-4. Create a prioritized list of work items
+CRITICAL: You MUST use the Task tool to spawn specialist agents. This is how you analyze projects.
 
-Available specialist agents you can spawn:
-- security: Check for vulnerabilities, exposed secrets, npm audit
-- analytics: Verify tracking setup, suggest event instrumentation
-- domain: Check SSL, DNS, uptime
-- seo: Analyze meta tags, sitemaps, search visibility
-- deployment: Check build status, deployment health
-- performance: Analyze Core Web Vitals, bundle sizes
+Your workflow:
+1. Review scan results for each project
+2. Use Task tool to spawn relevant specialist agents for each project
+3. Wait for each agent's findings
+4. Compile all findings and create prioritized work items
 
-For EACH project, decide which agents to spawn based on its state.
+HOW TO SPAWN AGENTS - Use the Task tool like this:
+- To run security analysis: Task with agentName="security", prompt="Analyze security for [project]..."
+- To run analytics check: Task with agentName="analytics", prompt="Check tracking for [project]..."
+- To run domain check: Task with agentName="domain", prompt="Check DNS/SSL for [project]..."
+- To run SEO analysis: Task with agentName="seo", prompt="Analyze SEO for [project]..."
+- To run deployment check: Task with agentName="deployment", prompt="Check deploy health for [project]..."
+- To run performance check: Task with agentName="performance", prompt="Analyze performance for [project]..."
+
+For EACH project, spawn at least 2-3 relevant agents based on its state.
 Prioritize using: Impact (40%), Urgency (30%), Effort (20%), Confidence (10%).
 
 User priorities always override: P0 = Critical, P1 = High, P2 = Medium, P3 = Low.
