@@ -490,11 +490,9 @@ async function runOrchestratorSDK(
           break;
 
         case 'tool_progress':
-        case 'tool_use':
-        case 'tool_result':
           // Track when HoP spawns a subagent via Task
           const toolMsg = message as { 
-            type: 'tool_progress' | 'tool_use' | 'tool_result'; 
+            type: 'tool_progress'; 
             tool_name?: string;
             name?: string;
             tool_input?: { agentName?: string; prompt?: string };
