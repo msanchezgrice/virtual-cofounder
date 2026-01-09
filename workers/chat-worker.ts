@@ -479,6 +479,9 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
     let lastPublishedLength = 0;
     
     for await (const message of agentQuery) {
+      // DEBUG: Log all message types to diagnose why tool_progress isn't firing
+      console.log(`[Chat Worker] Received message type: ${message.type}`);
+
       switch (message.type) {
         case 'assistant': {
           const msg = message as any;
@@ -526,6 +529,8 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
           const toolName = toolMsg.tool_name || toolMsg.name;
           const toolInput = toolMsg.tool_input || toolMsg.input;
 
+          console.log(`[Chat Worker] tool_progress event - toolName: ${toolName}, hasInput: ${!!toolInput}`);
+
           if (toolName) {
             if (!toolsUsed.includes(toolName)) {
               toolsUsed.push(toolName);
@@ -534,8 +539,10 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
 
             // Check for subagent spawning - CREATE STORY AND ENQUEUE IMMEDIATELY
             const spawnedAgent = toolInput?.subagent_type || toolInput?.agentName;
+            console.log(`[Chat Worker] Checking for agent spawn - toolName: ${toolName}, spawnedAgent: ${spawnedAgent}`);
+
             if ((toolName === 'Task' || toolName === 'task') && spawnedAgent) {
-              console.log(`[Chat Worker] Agent spawned: ${spawnedAgent}`);
+              console.log(`[Chat Worker] ✅ Agent spawned: ${spawnedAgent}`);
 
               // Publish spawn event first
               await publishToStream(messageId, {
