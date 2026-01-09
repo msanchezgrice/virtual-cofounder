@@ -90,13 +90,18 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
           priority: story.priority,
           policy: story.policy,
           status: 'pending',
+          // New priority system fields
+          priorityLevel: story.priorityLevel || 'P2',
+          priorityScore: story.priorityScore || 50,
+          advancesLaunchStage: story.advancesLaunchStage || false,
         },
       });
 
       // Create Linear task with labels, project, and workflow state
       try {
         const teamId = await getDefaultTeamId();
-        const linearPriority = mapPriorityToLinear(story.priority);
+        // Use new priority system (priorityLevel) for Linear mapping
+        const linearPriority = mapPriorityToLinear(story.priorityLevel || story.priority);
 
         // Get or create Linear project for this dashboard project
         const linearProjectId = project?.name
@@ -109,8 +114,8 @@ async function processProject(job: Job<OrchestratorJob>): Promise<void> {
         // Create labels for filtering
         const labelIds: string[] = [];
 
-        // Priority label
-        const priorityLabel = await getOrCreateLabel(teamId, `priority:${story.priority.toLowerCase()}`);
+        // Priority label (use new priorityLevel system)
+        const priorityLabel = await getOrCreateLabel(teamId, `priority:${(story.priorityLevel || story.priority).toLowerCase()}`);
         labelIds.push(priorityLabel);
 
         // Policy label

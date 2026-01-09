@@ -312,7 +312,7 @@ function AssistantMessage({
                 </ReactMarkdown>
                 {message.isStreaming && <span className="cursor-blink">▊</span>}
               </div>
-              {hasPriorities && (
+              {hasPriorities && message.metadata?.priorities && (
                 <PriorityCard priorities={message.metadata.priorities} />
               )}
               {showActions && (

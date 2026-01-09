@@ -512,15 +512,19 @@ export async function GET(
         const suggestedActions = extractSuggestedActions(fullContent);
         
         // Save final content to DB
+        const hasMetadata = toolsUsed.length > 0 || suggestedActions.length > 0;
+        
         await prisma.chatMessage.update({
           where: { id: messageId },
           data: { 
             content: fullContent, 
             isProcessing: false,
-            metadata: {
-              ...(toolsUsed.length > 0 ? { toolsUsed } : {}),
-              ...(suggestedActions.length > 0 ? { suggestedActions } : {}),
-            },
+            ...(hasMetadata ? {
+              metadata: JSON.parse(JSON.stringify({
+                ...(toolsUsed.length > 0 ? { toolsUsed } : {}),
+                ...(suggestedActions.length > 0 ? { suggestedActions } : {}),
+              })),
+            } : {}),
           },
         });
         
