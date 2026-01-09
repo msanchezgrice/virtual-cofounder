@@ -6,9 +6,9 @@ declare global {
 }
 
 /**
- * Get the database URL optimized for the current environment
- * - Vercel serverless functions: Use direct connection (port 5432) to avoid pooler timeouts
- * - Workers: Can use pooler (port 6543) for better connection management
+ * Get the database URL optimized for serverless
+ * Always use direct connection (port 5432) instead of pooler (port 6543)
+ * The pooler causes timeout issues in serverless functions
  */
 function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL;
@@ -17,20 +17,20 @@ function getDatabaseUrl(): string {
     throw new Error('DATABASE_URL is not set');
   }
 
-  // For Vercel serverless functions, use direct connection to avoid pooler timeouts
-  // The VERCEL environment variable is set by Vercel during deployment
-  if (process.env.VERCEL) {
-    // Convert pooler URL (port 6543) to direct connection (port 5432)
-    // Also remove pgbouncer params that cause issues with direct connections
+  // Always convert pooler URL (port 6543) to direct connection (port 5432)
+  // for serverless functions to avoid connection timeout issues
+  // The pooler (pgbouncer) doesn't work well with Prisma in serverless
+  if (url.includes(':6543')) {
     const directUrl = url
       .replace(':6543', ':5432')
       .replace('?pgbouncer=true', '')
       .replace('&pgbouncer=true', '')
       .replace('&connection_limit=1', '')
-      .replace('?connection_limit=1', '');
+      .replace('?connection_limit=1', '')
+      .replace(/[?&]$/, ''); // Clean up trailing ? or &
     
-    // Clean up any leftover ? or & at the end
-    return directUrl.replace(/[?&]$/, '');
+    console.log('[DB] Using direct connection (port 5432) for serverless');
+    return directUrl;
   }
 
   return url;

@@ -92,13 +92,31 @@ const PLACEHOLDER_DATA: ProgressData = {
 function ProjectSelector({ 
   projects, 
   selectedId, 
-  onSelect 
+  onSelect,
+  loading = false,
+  error = false
 }: { 
   projects: Project[]; 
   selectedId: string; 
   onSelect: (id: string) => void;
+  loading?: boolean;
+  error?: boolean;
 }) {
-  if (projects.length === 0) return null;
+  if (loading) {
+    return (
+      <div className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500">
+        Loading projects...
+      </div>
+    );
+  }
+
+  if (error || projects.length === 0) {
+    return (
+      <div className="px-3 py-2 border border-yellow-300 rounded-lg text-sm bg-yellow-50 text-yellow-700">
+        {error ? 'Failed to load projects' : 'No projects found'}
+      </div>
+    );
+  }
 
   return (
     <select
@@ -305,28 +323,39 @@ export default function ProgressPage() {
   const [data, setData] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState(false);
 
   // Fetch projects list
   useEffect(() => {
     async function fetchProjects() {
+      setProjectsLoading(true);
+      setProjectsError(false);
       try {
         const res = await fetch('/api/projects');
-        if (res.ok) {
-          const data = await res.json();
-          // API returns {projects: [...]} not just an array
-          const projectList = Array.isArray(data) ? data : (data.projects || []);
-          setProjects(projectList);
-          // Auto-select first project if available
-          if (projectList.length > 0 && !selectedProjectId) {
-            setSelectedProjectId(projectList[0].id);
-          }
+        const data = await res.json();
+        // API returns {projects: [...]} not just an array
+        const projectList = Array.isArray(data) ? data : (data.projects || []);
+        setProjects(projectList);
+        
+        // Check if there was an error flag in the response
+        if (data.error) {
+          setProjectsError(true);
+        }
+        
+        // Auto-select first project if available
+        if (projectList.length > 0 && !selectedProjectId) {
+          setSelectedProjectId(projectList[0].id);
         }
       } catch {
         console.error('Failed to fetch projects');
+        setProjectsError(true);
+      } finally {
+        setProjectsLoading(false);
       }
     }
     fetchProjects();
-  }, [selectedProjectId]);
+  }, []); // Remove selectedProjectId dependency to avoid refetching
 
   // Fetch progress data when project changes
   useEffect(() => {
@@ -373,6 +402,8 @@ export default function ProgressPage() {
           projects={projects}
           selectedId={selectedProjectId}
           onSelect={setSelectedProjectId}
+          loading={projectsLoading}
+          error={projectsError}
         />
       </div>
 
