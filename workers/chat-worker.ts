@@ -477,7 +477,9 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
     let fullContent = '';
     let toolsUsed: string[] = [];
     let lastPublishedLength = 0;
-    
+
+    console.log(`[Chat Worker] Starting SDK stream for message ${messageId}`);
+
     for await (const message of agentQuery) {
       // DEBUG: Log all message types to diagnose why tool_progress isn't firing
       console.log(`[Chat Worker] Received message type: ${message.type}`);
@@ -715,7 +717,9 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
           break;
       }
     }
-    
+
+    console.log(`[Chat Worker] SDK stream finished for message ${messageId}, fullContent length: ${fullContent.length}`);
+
     // Extract suggested actions from final content
     const suggestedActions = extractSuggestedActions(fullContent);
     
