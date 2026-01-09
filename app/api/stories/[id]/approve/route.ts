@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 import { db } from '@/lib/db';
 import { enqueueStoryForExecution } from '@/lib/queue/execution';
 import { sendMessage } from '@/lib/slack';
-import { addLinearComment } from '@/lib/linear';
+import { addLinearComment, updateLinearTaskStatus, getTeamWorkflowStates } from '@/lib/linear';
 import { featureFlags } from '@/lib/config/feature-flags';
 
 interface RouteParams {
@@ -78,8 +78,24 @@ export async function POST(
       `Agent will begin work shortly...`
     );
 
-    // Add Linear comment if task is linked
-    if (story.linearTaskId) {
+    // Sync to Linear if task is linked
+    if (story.linearTaskId && story.project.linearTeamId) {
+      try {
+        // Update status to Todo (ready for execution)
+        const states = await getTeamWorkflowStates(story.project.linearTeamId);
+        const todoState = states.find(s => s.type === 'unstarted' && s.name.toLowerCase().includes('todo'));
+        if (todoState) {
+          await updateLinearTaskStatus(story.linearTaskId, todoState.id);
+        }
+        // Add comment
+        await addLinearComment(
+          story.linearTaskId,
+          `✅ Story approved via ${source}. Agent execution queued.`
+        );
+      } catch (linearError) {
+        console.error('[ApproveStory] Failed to sync Linear:', linearError);
+      }
+    } else if (story.linearTaskId) {
       await addLinearComment(
         story.linearTaskId,
         `✅ Story approved via ${source}. Agent execution queued.`

@@ -12,7 +12,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { featureFlags } from '@/lib/config/feature-flags';
 import { processPrioritySignal } from '@/lib/priority/classifier';
 import { enqueueStoryForExecution } from '@/lib/queue/execution';
-import { updateLinearTaskPriority, mapPriorityToLinear } from '@/lib/linear';
+import { updateLinearTaskPriority, mapPriorityToLinear, updateLinearTaskStatus, getTeamWorkflowStates } from '@/lib/linear';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -634,6 +634,20 @@ async function approveStory(storyId: string, userId?: string, channelId?: string
     });
 
     console.log(`[Slack Events] Story ${storyId} approved`);
+
+    // Sync status to Linear
+    if (story.linearTaskId && story.project.linearTeamId) {
+      try {
+        const states = await getTeamWorkflowStates(story.project.linearTeamId);
+        const inProgressState = states.find(s => s.type === 'started' && s.name.toLowerCase().includes('progress'));
+        if (inProgressState) {
+          await updateLinearTaskStatus(story.linearTaskId, inProgressState.id);
+          console.log(`[Slack Events] Synced Linear status to In Progress for ${story.linearTaskId}`);
+        }
+      } catch (linearError) {
+        console.error('[Slack Events] Failed to sync Linear status:', linearError);
+      }
+    }
 
     // Send confirmation to user
     if (userId && channelId) {
