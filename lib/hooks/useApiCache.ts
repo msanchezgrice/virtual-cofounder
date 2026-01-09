@@ -108,11 +108,11 @@ export function invalidateCache(urlPattern?: string): void {
 
   // Also clear memory cache
   if (urlPattern) {
-    for (const key of memoryCache.keys()) {
+    Array.from(memoryCache.keys()).forEach(key => {
       if (key.includes(urlPattern)) {
         memoryCache.delete(key);
       }
-    }
+    });
   } else {
     memoryCache.clear();
   }
