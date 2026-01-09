@@ -15,6 +15,9 @@ const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 // Default workspace for MVP
 const DEFAULT_WORKSPACE_ID = 'cm3wev4rp0000pa2o0vyqz4qa';
 
+// Slack channel from environment (or default)
+const SLACK_CHANNEL = process.env.SLACK_CHANNEL_ID || process.env.SLACK_CHANNEL || '#cofounder-updates';
+
 /**
  * Sync a chat message to Slack
  * Called after a message is saved to the chat_messages table
@@ -24,7 +27,6 @@ export async function syncMessageToSlack(messageId: string): Promise<boolean> {
     // Get the message
     const message = await prisma.chatMessage.findUnique({
       where: { id: messageId },
-      include: { workspace: true },
     });
     
     if (!message || message.slackMessageTs) {
@@ -32,10 +34,10 @@ export async function syncMessageToSlack(messageId: string): Promise<boolean> {
       return false;
     }
     
-    // Get Slack channel from workspace settings
-    const slackChannelId = message.workspace.slackChannelId;
-    if (!slackChannelId) {
-      console.log('[Chat-Slack Sync] No Slack channel configured');
+    // Get Slack channel from environment
+    const slackChannelId = SLACK_CHANNEL;
+    if (!slackChannelId || !process.env.SLACK_BOT_TOKEN) {
+      console.log('[Chat-Slack Sync] Slack not configured');
       return false;
     }
     

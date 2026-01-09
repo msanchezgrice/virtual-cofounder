@@ -247,7 +247,7 @@ export async function GET(
               content: response, 
               isProcessing: false,
               contentType: 'priority_card',
-              metadata: { priorities: [command.data] },
+              metadata: command.data ? { priorities: [command.data] } : undefined,
             },
           });
           

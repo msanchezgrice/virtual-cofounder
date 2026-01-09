@@ -468,8 +468,14 @@ async function runOrchestratorSDK(
     });
 
     let finalOutput = '';
+    let messageCount = 0;
+
+    console.log('[Orchestrator] Starting SDK message stream...');
 
     for await (const message of agentQuery) {
+      messageCount++;
+      console.log(`[Orchestrator] Message ${messageCount}: type=${message.type}`);
+      
       // Handle different message types
       switch (message.type) {
         case 'assistant':
@@ -479,18 +485,26 @@ async function runOrchestratorSDK(
           if (Array.isArray(content)) {
             const textParts = content.filter((c) => c.type === 'text');
             finalOutput = textParts.map((t) => t.text || '').join('');
+            console.log(`[Orchestrator] Assistant output length: ${finalOutput.length} chars`);
           }
           break;
 
         case 'tool_progress':
+        case 'tool_use':
+        case 'tool_result':
           // Track when HoP spawns a subagent via Task
           const toolMsg = message as { 
-            type: 'tool_progress'; 
+            type: 'tool_progress' | 'tool_use' | 'tool_result'; 
             tool_name?: string;
+            name?: string;
             tool_input?: { agentName?: string; prompt?: string };
+            input?: { agentName?: string; prompt?: string };
           };
-          if (toolMsg.tool_name === 'Task' && toolMsg.tool_input?.agentName) {
-            const agentName = toolMsg.tool_input.agentName;
+          const toolName = toolMsg.tool_name || toolMsg.name;
+          const toolInput = toolMsg.tool_input || toolMsg.input;
+          console.log(`[Orchestrator] Tool event: ${message.type}, tool=${toolName}`);
+          if ((toolName === 'Task' || toolName === 'task') && toolInput?.agentName) {
+            const agentName = toolInput.agentName;
             agentsSpawned.push(agentName);
             conversation.push(`[HoP] Spawned ${agentName} agent`);
             console.log(`[Orchestrator] HoP spawned: ${agentName}`);
@@ -499,7 +513,7 @@ async function runOrchestratorSDK(
             const agentDef = agentRegistry[agentName];
             if (agentDef) {
               // Find the project ID from the prompt context
-              const projectIdMatch = toolMsg.tool_input.prompt?.match(/ID:\s*([a-f0-9-]+)/i);
+              const projectIdMatch = toolInput.prompt?.match(/ID:\s*([a-f0-9-]+)/i);
               const projectId = projectIdMatch?.[1] || scanContexts[0]?.project.id;
               
               prisma.agentSession.create({
@@ -539,10 +553,16 @@ async function runOrchestratorSDK(
           if (resultMsg.subtype === 'success' && resultMsg.result) {
             finalOutput = String(resultMsg.result);
           }
+          console.log(`[Orchestrator] Result: subtype=${resultMsg.subtype}, tokens=${totalTokens}, cost=$${estimatedCost.toFixed(4)}`);
+          break;
+          
+        default:
+          console.log(`[Orchestrator] Unhandled message type: ${message.type}`, JSON.stringify(message).substring(0, 200));
           break;
       }
     }
 
+    console.log(`[Orchestrator] Stream complete. Messages: ${messageCount}, Agents spawned: ${agentsSpawned.length}`);
     conversation.push(`[HoP] Completed analysis`);
 
     // Parse findings from HoP's final output
