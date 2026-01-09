@@ -38,3 +38,6 @@ next-env.d.ts
 /prisma/migrations/*
 !/prisma/migrations/.gitkeep
 .env.vercel
+.env.prod-check
+.env.check
+.env.vercel

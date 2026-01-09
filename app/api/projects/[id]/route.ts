@@ -5,10 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const projectId = params.id;
+    // In Next.js 15, params is a Promise that needs to be awaited
+    const { id: projectId } = await context.params;
 
     const project = await db.project.findUnique({
       where: { id: projectId },
@@ -89,9 +90,10 @@ export async function GET(
     });
   } catch (error) {
     console.error('Failed to fetch project:', error);
+    // Return 200 with error for graceful UI handling
     return NextResponse.json(
-      { error: 'Failed to fetch project' },
-      { status: 500 }
+      { project: null, error: 'Database connection failed - please try again' },
+      { status: 200 }
     );
   }
 }
