@@ -421,6 +421,30 @@ async function runOrchestratorSDK(
             agentsSpawned.push(agentName);
             conversation.push(`[HoP] Spawned ${agentName} agent`);
             console.log(`[Orchestrator] HoP spawned: ${agentName}`);
+            
+            // Create agent session record for the spawned subagent
+            const agentDef = agentRegistry[agentName];
+            if (agentDef) {
+              // Find the project ID from the prompt context
+              const projectIdMatch = toolMsg.tool_input.prompt?.match(/ID:\s*([a-f0-9-]+)/i);
+              const projectId = projectIdMatch?.[1] || scanContexts[0]?.project.id;
+              
+              prisma.agentSession.create({
+                data: {
+                  orchestratorRunId: options.orchestratorRunId,
+                  projectId,
+                  agentName: agentDef.name,
+                  agentType: 'specialist',
+                  status: 'running',
+                  thinkingTrace: [{ turn: 1, thinking: `Spawned by Head of Product agent`, action: 'spawn' }],
+                  toolCalls: [],
+                },
+              }).then(session => {
+                console.log(`[Orchestrator] Created session ${session.id} for ${agentName}`);
+              }).catch(err => {
+                console.error(`[Orchestrator] Failed to create session for ${agentName}:`, err);
+              });
+            }
           }
           break;
 

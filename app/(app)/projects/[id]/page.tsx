@@ -47,7 +47,7 @@ interface Story {
 
 interface HistoryEvent {
   id: string;
-  type: 'pr_merged' | 'story_created' | 'scan_completed' | 'priority_updated' | 'story_approved' | 'story_rejected';
+  type: 'pr_merged' | 'story_created' | 'scan_completed' | 'priority_updated' | 'story_approved' | 'story_rejected' | 'agent_spawned' | 'agent_completed';
   title: string;
   description: string | null;
   status: string | null;
@@ -57,6 +57,9 @@ interface HistoryEvent {
     storyId?: string;
     scanTypes?: string[];
     scanScores?: { type: string; score: number; maxScore: number }[];
+    agentName?: string;
+    agentType?: string;
+    tokensUsed?: number;
   };
 }
 
@@ -369,6 +372,8 @@ function HistoryTab({
       case 'priority_updated': return { icon: '💬', bg: 'bg-gray-400' };
       case 'story_approved': return { icon: '✓', bg: 'bg-green-500' };
       case 'story_rejected': return { icon: '✕', bg: 'bg-red-500' };
+      case 'agent_spawned': return { icon: '🤖', bg: 'bg-indigo-500' };
+      case 'agent_completed': return { icon: '✨', bg: 'bg-emerald-500' };
       default: return { icon: '•', bg: 'bg-gray-400' };
     }
   };
@@ -608,15 +613,295 @@ function ScansTab({ scans, lastScanTime }: { scans: ProjectDetail['scans']; last
   );
 }
 
+interface AgentSession {
+  id: string;
+  agentName: string;
+  agentType: string;
+  role: string;
+  icon: string;
+  gradient: string;
+  status: string;
+  startedAt: string;
+  completedAt: string | null;
+  tokensUsed: number;
+  turnsUsed: number;
+  thinkingTrace: Array<{ turn: number; thinking: string; action: string }>;
+  toolCalls: Array<{ tool: string; input: unknown; output: unknown; duration: number }>;
+}
+
+interface AgentFinding {
+  id: string;
+  issue: string;
+  action: string;
+  severity: string;
+  effort: string;
+  impact: string;
+  confidence: number;
+  createdAt: string;
+}
+
+interface OrchestratorRun {
+  id: string;
+  runId: string;
+  status: string;
+  findingsCount: number;
+  storiesCount: number;
+  agentsSpawned: string[];
+  totalTokens: number;
+  estimatedCost: number;
+  startedAt: string;
+  completedAt: string | null;
+}
+
+interface AgentsData {
+  sessions: AgentSession[];
+  findings: Record<string, AgentFinding[]>;
+  orchestratorRuns: OrchestratorRun[];
+  stats: {
+    totalSessions: number;
+    runningSessions: number;
+    completedSessions: number;
+    failedSessions: number;
+    totalFindings: number;
+    totalTokensUsed: number;
+  };
+}
+
 function AgentsTab({ projectId }: { projectId: string }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold mb-4">Agent Activity</h2>
-      <div className="text-center py-12 text-gray-500">
-        <div className="text-4xl mb-4">🤖</div>
-        <p>No agents currently running on this project</p>
-        <p className="text-sm text-gray-400 mt-2">Agents will appear here when processing stories</p>
+  const [data, setData] = useState<AgentsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await fetch(`/api/projects/${projectId}/agents`);
+        const agentsData = await res.json();
+        setData(agentsData);
+      } catch (error) {
+        console.error('Failed to fetch agents:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAgents();
+
+    // Poll for updates every 10 seconds
+    const interval = setInterval(fetchAgents, 10000);
+    return () => clearInterval(interval);
+  }, [projectId]);
+
+  const formatDuration = (start: string, end: string | null) => {
+    const startTime = new Date(start).getTime();
+    const endTime = end ? new Date(end).getTime() : Date.now();
+    const durationMs = endTime - startTime;
+    
+    if (durationMs < 1000) return `${durationMs}ms`;
+    if (durationMs < 60000) return `${Math.round(durationMs / 1000)}s`;
+    return `${Math.round(durationMs / 60000)}m`;
+  };
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'running': return 'bg-blue-100 text-blue-800 animate-pulse';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getSeverityStyle = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="text-center py-12 text-gray-500">
+          <div className="animate-spin text-4xl mb-4">⚙️</div>
+          <p>Loading agent activity...</p>
+        </div>
       </div>
+    );
+  }
+
+  if (!data || (data.stats.totalSessions === 0 && Object.keys(data.findings).length === 0)) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold mb-4">Agent Activity</h2>
+        <div className="text-center py-12 text-gray-500">
+          <div className="text-4xl mb-4">🤖</div>
+          <p>No agent activity yet for this project</p>
+          <p className="text-sm text-gray-400 mt-2">Run the orchestrator to analyze this project with AI agents</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600">{data.stats.runningSessions}</div>
+          <div className="text-xs text-gray-500">Running</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-green-600">{data.stats.completedSessions}</div>
+          <div className="text-xs text-gray-500">Completed</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-purple-600">{data.stats.totalFindings}</div>
+          <div className="text-xs text-gray-500">Findings</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-gray-600">{(data.stats.totalTokensUsed / 1000).toFixed(1)}k</div>
+          <div className="text-xs text-gray-500">Tokens Used</div>
+        </div>
+      </div>
+
+      {/* Active Sessions */}
+      {data.sessions.filter(s => s.status === 'running').length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <span className="animate-pulse">🔴</span> Active Agents
+          </h3>
+          <div className="space-y-3">
+            {data.sessions.filter(s => s.status === 'running').map(session => (
+              <div key={session.id} className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${session.gradient} flex items-center justify-center text-xl`}>
+                    {session.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{session.agentName}</div>
+                    <div className="text-sm text-gray-500">Running for {formatDuration(session.startedAt, null)}</div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusStyle(session.status)}`}>
+                    {session.status}
+                  </span>
+                </div>
+                {session.thinkingTrace.length > 0 && (
+                  <div className="mt-3 text-sm text-gray-600 bg-white rounded p-2">
+                    <span className="font-medium">Latest:</span> {session.thinkingTrace[session.thinkingTrace.length - 1]?.thinking}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Sessions */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold mb-4">Recent Agent Sessions</h3>
+        {data.sessions.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">No sessions yet</p>
+        ) : (
+          <div className="space-y-2">
+            {data.sessions.slice(0, 10).map(session => (
+              <div 
+                key={session.id} 
+                className="border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <button
+                  onClick={() => setExpandedSession(expandedSession === session.id ? null : session.id)}
+                  className="w-full p-4 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${session.gradient} flex items-center justify-center text-lg`}>
+                      {session.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{session.agentName}</div>
+                      <div className="text-xs text-gray-500">
+                        {formatTime(session.startedAt)} • {formatDuration(session.startedAt, session.completedAt)} • {session.tokensUsed.toLocaleString()} tokens
+                      </div>
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusStyle(session.status)}`}>
+                      {session.status}
+                    </span>
+                    <span className="text-gray-400">{expandedSession === session.id ? '▼' : '▶'}</span>
+                  </div>
+                </button>
+                
+                {expandedSession === session.id && (
+                  <div className="px-4 pb-4 border-t border-gray-100 mt-2 pt-3">
+                    {session.thinkingTrace.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-xs font-medium text-gray-500 mb-2">Thinking Trace</div>
+                        <div className="space-y-1 text-sm">
+                          {session.thinkingTrace.map((trace, idx) => (
+                            <div key={idx} className="bg-gray-50 rounded p-2">
+                              <span className="text-gray-400 mr-2">Turn {trace.turn}:</span>
+                              {trace.thinking}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {session.toolCalls.length > 0 && (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 mb-2">Tool Calls</div>
+                        <div className="flex flex-wrap gap-1">
+                          {session.toolCalls.map((call, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                              {call.tool}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Findings by Agent */}
+      {Object.keys(data.findings).length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold mb-4">Findings by Agent</h3>
+          <div className="space-y-4">
+            {Object.entries(data.findings).map(([agent, agentFindings]) => (
+              <div key={agent} className="border border-gray-200 rounded-lg p-4">
+                <div className="font-medium mb-3 capitalize">{agent} Agent ({agentFindings.length} findings)</div>
+                <div className="space-y-2">
+                  {agentFindings.slice(0, 3).map(finding => (
+                    <div key={finding.id} className="bg-gray-50 rounded p-3 text-sm">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <span className="font-medium">{finding.issue}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs ${getSeverityStyle(finding.severity)}`}>
+                          {finding.severity}
+                        </span>
+                      </div>
+                      <div className="text-gray-600">{finding.action}</div>
+                    </div>
+                  ))}
+                  {agentFindings.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{agentFindings.length - 3} more findings
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

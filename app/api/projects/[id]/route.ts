@@ -51,6 +51,23 @@ export async function GET(
       },
     });
 
+    // Fetch agent sessions for this project
+    const agentSessions = await db.agentSession.findMany({
+      where: { projectId },
+      orderBy: { startedAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        agentName: true,
+        agentType: true,
+        status: true,
+        startedAt: true,
+        completedAt: true,
+        tokensUsed: true,
+        turnsUsed: true,
+      },
+    });
+
     if (!project) {
       return NextResponse.json(
         { error: 'Project not found' },
@@ -121,8 +138,8 @@ export async function GET(
     // Generate description from available data
     const description = generateDescription(project);
 
-    // Generate history from stories and scans
-    const history = generateHistory(project.stories, project.scans);
+    // Generate history from stories, scans, and agent sessions
+    const history = generateHistory(project.stories, project.scans, agentSessions);
 
     return NextResponse.json({
       project: {
@@ -192,7 +209,7 @@ function generateDescription(project: {
 
 interface HistoryEvent {
   id: string;
-  type: 'pr_merged' | 'story_created' | 'scan_completed' | 'priority_updated' | 'story_approved' | 'story_rejected';
+  type: 'pr_merged' | 'story_created' | 'scan_completed' | 'priority_updated' | 'story_approved' | 'story_rejected' | 'agent_spawned' | 'agent_completed';
   title: string;
   description: string | null;
   status: string | null;
@@ -202,10 +219,13 @@ interface HistoryEvent {
     storyId?: string;
     scanTypes?: string[];
     scanScores?: { type: string; score: number; maxScore: number }[];
+    agentName?: string;
+    agentType?: string;
+    tokensUsed?: number;
   };
 }
 
-function generateHistory(stories: any[], scans: any[]): HistoryEvent[] {
+function generateHistory(stories: any[], scans: any[], agentSessions: any[] = []): HistoryEvent[] {
   const events: HistoryEvent[] = [];
 
   // Add events from stories
@@ -299,8 +319,68 @@ function generateHistory(stories: any[], scans: any[]): HistoryEvent[] {
     });
   });
 
+  // Add agent session events
+  agentSessions.forEach((session) => {
+    const agentIcon = getAgentIcon(session.agentName);
+    
+    if (session.status === 'running') {
+      events.push({
+        id: `agent-spawn-${session.id}`,
+        type: 'agent_spawned',
+        title: `${agentIcon} ${session.agentName} Started`,
+        description: `Agent spawned for ${session.agentType} analysis`,
+        status: 'running',
+        timestamp: session.startedAt.toISOString(),
+        metadata: {
+          agentName: session.agentName,
+          agentType: session.agentType,
+        }
+      });
+    } else if (session.status === 'completed') {
+      events.push({
+        id: `agent-complete-${session.id}`,
+        type: 'agent_completed',
+        title: `${agentIcon} ${session.agentName} Completed`,
+        description: `Analysis complete. Used ${session.tokensUsed?.toLocaleString() || 0} tokens in ${session.turnsUsed || 0} turns.`,
+        status: 'completed',
+        timestamp: (session.completedAt || session.startedAt).toISOString(),
+        metadata: {
+          agentName: session.agentName,
+          agentType: session.agentType,
+          tokensUsed: session.tokensUsed || 0,
+        }
+      });
+    } else if (session.status === 'failed') {
+      events.push({
+        id: `agent-fail-${session.id}`,
+        type: 'agent_completed',
+        title: `${agentIcon} ${session.agentName} Failed`,
+        description: 'Agent execution failed',
+        status: 'failed',
+        timestamp: (session.completedAt || session.startedAt).toISOString(),
+        metadata: {
+          agentName: session.agentName,
+          agentType: session.agentType,
+        }
+      });
+    }
+  });
+
   // Sort by timestamp descending
   return events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
+function getAgentIcon(agentName: string): string {
+  const name = agentName.toLowerCase();
+  if (name.includes('security')) return '🛡️';
+  if (name.includes('seo')) return '🔎';
+  if (name.includes('analytics')) return '📊';
+  if (name.includes('domain')) return '🌐';
+  if (name.includes('performance')) return '⚡';
+  if (name.includes('deployment')) return '🚀';
+  if (name.includes('code')) return '⚙️';
+  if (name.includes('head of product') || name.includes('hop')) return '🧠';
+  return '🤖';
 }
 
 function calculateHealthScore(scans: any): number {
