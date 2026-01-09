@@ -1,15 +1,14 @@
 # Nixpacks configuration for Railway deployments
 # 
-# IMPORTANT: Workers don't need the Next.js build! They use tsx directly.
-# The start command is configured per-service in Railway dashboard:
+# IMPORTANT: Start commands are set per-service in Railway dashboard:
 # - virtual-cofounder (scan): npm run worker:scan
 # - orchestrator-worker: npm run worker:orchestrator  
 # - execution-worker: npm run worker:execute
+#
+# Do NOT set a default start command here - let Railway dashboard control it.
 
 [phases.build]
 # Skip Next.js build for workers - just install deps and generate Prisma
 cmds = ["npm ci", "npx prisma generate"]
 
-# Default start command (scan worker - used by main "virtual-cofounder" service)
-[start]
-cmd = "npm run worker:scan"
+# No [start] section - each service sets its own command in Railway dashboard
