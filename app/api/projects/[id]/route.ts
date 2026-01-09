@@ -90,17 +90,17 @@ export async function GET(
       } : null,
       performance: performanceScan ? {
         status: performanceScan.status,
-        data: performanceScan.performanceData,
+        data: performanceScan.playwrightMetrics,
         scannedAt: performanceScan.scannedAt.toISOString(),
       } : null,
       screenshot: screenshotScan ? {
         status: screenshotScan.status,
-        data: screenshotScan.screenshotData,
+        data: screenshotScan.playwrightMetrics,
         scannedAt: screenshotScan.scannedAt.toISOString(),
       } : null,
       security: securityScan ? {
         status: securityScan.status,
-        data: securityScan.securityData,
+        data: securityScan.securityIssues,
         scannedAt: securityScan.scannedAt.toISOString(),
       } : null,
     };
@@ -255,7 +255,7 @@ function generateHistory(stories: any[], scans: any[]): HistoryEvent[] {
 
   // Create a scan event for each day
   scansByDay.forEach((dayScans, day) => {
-    const scanTypes = [...new Set(dayScans.map((s) => s.scanType))];
+    const scanTypes = Array.from(new Set(dayScans.map((s) => s.scanType)));
     const scanScores = dayScans
       .filter((s) => s.status === 'success')
       .map((s) => {
