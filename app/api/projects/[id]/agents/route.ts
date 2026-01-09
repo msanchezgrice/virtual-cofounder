@@ -109,7 +109,7 @@ export async function GET(
       confidence: number;
       createdAt: Date;
     };
-    const findingsByAgent = findings.reduce((acc, f) => {
+    const findingsByAgent = findings.reduce<Record<string, ProcessedFinding[]>>((acc, f) => {
       acc[f.agent] = acc[f.agent] || [];
       acc[f.agent].push({
         id: f.id,
@@ -122,7 +122,7 @@ export async function GET(
         createdAt: f.createdAt,
       });
       return acc;
-    }, {} as Record<string, ProcessedFinding[]>);
+    }, {});
 
     // Calculate stats
     const stats = {
