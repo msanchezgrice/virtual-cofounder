@@ -591,11 +591,18 @@ async function handleButtonClick(event: any): Promise<void> {
 
     console.log(`[Slack Events] Button clicked: ${actionId}, value: ${value}`);
 
-    // Parse action value
-    const [actionType, storyId] = value.split('_');
+    // Parse action value - split only on FIRST underscore to preserve UUID hyphens
+    // Value format: "approve_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+    const underscoreIndex = value.indexOf('_');
+    if (underscoreIndex === -1) {
+      console.warn('[Slack Events] Invalid action value (no underscore):', value);
+      continue;
+    }
+    const actionType = value.substring(0, underscoreIndex);
+    const storyId = value.substring(underscoreIndex + 1);
 
     if (!storyId) {
-      console.warn('[Slack Events] Invalid action value:', value);
+      console.warn('[Slack Events] Invalid action value (no story ID):', value);
       continue;
     }
 
