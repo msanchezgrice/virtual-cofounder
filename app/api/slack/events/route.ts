@@ -636,9 +636,11 @@ async function approveStory(storyId: string, userId?: string, channelId?: string
     console.log(`[Slack Events] Story ${storyId} approved`);
 
     // Sync status to Linear
-    if (story.linearTaskId && story.project.linearTeamId) {
+    const DEFAULT_LINEAR_TEAM_ID = 'd5cbb99d-df57-4b21-87c9-95fc5089a6a2'; // Virtual cofounder team
+    if (story.linearTaskId) {
       try {
-        const states = await getTeamWorkflowStates(story.project.linearTeamId);
+        const teamId = story.project.linearTeamId || DEFAULT_LINEAR_TEAM_ID;
+        const states = await getTeamWorkflowStates(teamId);
         const inProgressState = states.find(s => s.type === 'started' && s.name.toLowerCase().includes('progress'));
         if (inProgressState) {
           await updateLinearTaskStatus(story.linearTaskId, inProgressState.id);

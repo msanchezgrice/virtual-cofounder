@@ -79,13 +79,16 @@ export async function POST(
     );
 
     // Sync to Linear if task is linked
-    if (story.linearTaskId && story.project.linearTeamId) {
+    const DEFAULT_LINEAR_TEAM_ID = 'd5cbb99d-df57-4b21-87c9-95fc5089a6a2'; // Virtual cofounder team
+    if (story.linearTaskId) {
       try {
         // Update status to Todo (ready for execution)
-        const states = await getTeamWorkflowStates(story.project.linearTeamId);
+        const teamId = story.project.linearTeamId || DEFAULT_LINEAR_TEAM_ID;
+        const states = await getTeamWorkflowStates(teamId);
         const todoState = states.find(s => s.type === 'unstarted' && s.name.toLowerCase().includes('todo'));
         if (todoState) {
           await updateLinearTaskStatus(story.linearTaskId, todoState.id);
+          console.log(`[ApproveStory] Updated Linear ${story.linearTaskId} to Todo`);
         }
         // Add comment
         await addLinearComment(
@@ -95,11 +98,6 @@ export async function POST(
       } catch (linearError) {
         console.error('[ApproveStory] Failed to sync Linear:', linearError);
       }
-    } else if (story.linearTaskId) {
-      await addLinearComment(
-        story.linearTaskId,
-        `✅ Story approved via ${source}. Agent execution queued.`
-      );
     }
 
     // Create priority signal for audit
