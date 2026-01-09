@@ -19,8 +19,54 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const workspaceId = searchParams.get('workspaceId') || SINGLE_USER_WORKSPACE_ID;
   const projectId = searchParams.get('projectId');
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+  const skip = (page - 1) * limit;
 
   try {
+    // Get total count for pagination
+    const totalCount = await db.story.count({
+      where: {
+        project: {
+          workspaceId,
+          ...(projectId ? { id: projectId } : {}),
+        },
+        status: { in: ['pending', 'approved', 'in_progress'] },
+      },
+    });
+
+    // Get priority level counts (for summary, regardless of pagination)
+    const [p0Count, p1Count, p2Count, p3Count] = await Promise.all([
+      db.story.count({
+        where: {
+          project: { workspaceId, ...(projectId ? { id: projectId } : {}) },
+          status: { in: ['pending', 'approved', 'in_progress'] },
+          priorityLevel: 'P0',
+        },
+      }),
+      db.story.count({
+        where: {
+          project: { workspaceId, ...(projectId ? { id: projectId } : {}) },
+          status: { in: ['pending', 'approved', 'in_progress'] },
+          priorityLevel: 'P1',
+        },
+      }),
+      db.story.count({
+        where: {
+          project: { workspaceId, ...(projectId ? { id: projectId } : {}) },
+          status: { in: ['pending', 'approved', 'in_progress'] },
+          priorityLevel: 'P2',
+        },
+      }),
+      db.story.count({
+        where: {
+          project: { workspaceId, ...(projectId ? { id: projectId } : {}) },
+          status: { in: ['pending', 'approved', 'in_progress'] },
+          priorityLevel: 'P3',
+        },
+      }),
+    ]);
+
     // Get active priority signals (not expired)
     const signals = await db.prioritySignal.findMany({
       where: {
@@ -37,7 +83,7 @@ export async function GET(request: NextRequest) {
       take: 50,
     });
 
-    // Get stack-ranked stories
+    // Get paginated stack-ranked stories
     const stories = await db.story.findMany({
       where: {
         project: {
@@ -55,28 +101,29 @@ export async function GET(request: NextRequest) {
         { priorityScore: 'desc' },
         { createdAt: 'asc' },
       ],
-      take: 100,
+      skip,
+      take: limit,
     });
 
-    // Group by priority level
-    const byPriority = {
-      P0: stories.filter(s => s.priorityLevel === 'P0'),
-      P1: stories.filter(s => s.priorityLevel === 'P1'),
-      P2: stories.filter(s => s.priorityLevel === 'P2'),
-      P3: stories.filter(s => s.priorityLevel === 'P3'),
-    };
+    const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json({
       signals,
       stories,
-      byPriority,
       summary: {
         totalSignals: signals.length,
-        totalStories: stories.length,
-        p0Count: byPriority.P0.length,
-        p1Count: byPriority.P1.length,
-        p2Count: byPriority.P2.length,
-        p3Count: byPriority.P3.length,
+        totalStories: totalCount,
+        p0Count,
+        p1Count,
+        p2Count,
+        p3Count,
+      },
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages,
+        hasMore: page < totalPages,
       },
     });
   } catch (error) {
@@ -85,7 +132,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       signals: [],
       stories: [],
-      byPriority: { P0: [], P1: [], P2: [], P3: [] },
       summary: {
         totalSignals: 0,
         totalStories: 0,
@@ -93,6 +139,13 @@ export async function GET(request: NextRequest) {
         p1Count: 0,
         p2Count: 0,
         p3Count: 0,
+      },
+      pagination: {
+        page: 1,
+        limit,
+        total: 0,
+        totalPages: 0,
+        hasMore: false,
       },
       error: 'Database connection timeout - please refresh'
     });

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
 interface Story {
   id: string;
@@ -9,6 +10,7 @@ interface Story {
   priority: 'high' | 'medium' | 'low';
   priorityLevel: 'P0' | 'P1' | 'P2' | 'P3' | null;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'rejected' | 'approved';
+  priorityScore: number | null;
   prUrl: string | null;
   linearTaskId: string | null;
   commitSha: string | null;
@@ -20,41 +22,65 @@ interface Story {
   };
 }
 
+interface QueueResponse {
+  executing: Story | null;
+  upNext: Story[];
+  stats: {
+    total: number;
+    pending: number;
+    approved: number;
+    inProgress: number;
+    upNextTotal: number;
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  error?: string;
+}
+
 export default function ExecutionQueuePage() {
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const [workerActive, setWorkerActive] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  // Use cached API with short TTL for real-time feel but still benefit from caching
+  const { data, loading, refresh } = useApiCache<QueueResponse>(
+    `/api/queue?page=${page}&limit=50`,
+    { ttl: 30 * 1000, backgroundRefresh: true } // 30 second cache with background refresh
+  );
+
+  // Auto-refresh every 15 seconds (using cached data in between)
   useEffect(() => {
-    fetchQueue();
-    // Poll every 10 seconds for updates
-    const interval = setInterval(fetchQueue, 10000);
+    const interval = setInterval(() => {
+      setRefreshKey(k => k + 1);
+      refresh();
+    }, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refresh]);
 
-  const fetchQueue = async () => {
+  const handlePrioritize = async (storyId: string) => {
     try {
-      const res = await fetch('/api/stories?limit=100');
-      const data = await res.json();
-      // Filter for pending, approved, and in_progress stories
-      const queueStories = (data.stories || [])
-        .filter((s: Story) => s.status === 'pending' || s.status === 'in_progress' || s.status === 'approved')
-        .sort((a: Story, b: Story) => {
-          // In progress first, then by priority score, then by created date (FIFO)
-          if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
-          if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        });
-      setStories(queueStories);
+      await fetch('/api/priorities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyId,
+          priorityLevel: 'P0',
+          source: 'dashboard',
+        }),
+      });
+      invalidateCache('/api/queue');
+      refresh();
     } catch (error) {
-      console.error('Failed to fetch execution queue:', error);
-      setStories([]);
-    } finally {
-      setLoading(false);
+      console.error('Failed to prioritize story:', error);
     }
   };
 
-  const getTimeAgo = (dateStr: string) => {
+  const getTimeAgo = useCallback((dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -66,9 +92,9 @@ export default function ExecutionQueuePage() {
     if (diffMins < 60) return `${diffMins} min ago`;
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  };
+  }, []);
 
-  const getPriorityBadge = (priorityLevel: string | null) => {
+  const getPriorityBadge = useCallback((priorityLevel: string | null) => {
     const styles: Record<string, { bg: string; color: string }> = {
       'P0': { bg: '#FEE2E2', color: '#991B1B' },
       'P1': { bg: '#FEF3C7', color: '#92400E' },
@@ -88,38 +114,66 @@ export default function ExecutionQueuePage() {
         {priorityLevel || 'P2'}
       </span>
     );
-  };
+  }, []);
 
-  const handlePrioritize = async (storyId: string) => {
-    // Move story to top of queue by boosting priority
-    try {
-      await fetch('/api/priorities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          storyId,
-          priorityLevel: 'P0',
-          source: 'dashboard',
-        }),
-      });
-      fetchQueue();
-    } catch (error) {
-      console.error('Failed to prioritize story:', error);
+  // Memoize derived values
+  const { executing, upNext, stats, pagination } = useMemo(() => {
+    if (!data) {
+      return {
+        executing: null,
+        upNext: [],
+        stats: { total: 0, pending: 0, approved: 0, inProgress: 0, upNextTotal: 0 },
+        pagination: { page: 1, limit: 50, total: 0, totalPages: 0, hasMore: false },
+      };
     }
-  };
+    return {
+      executing: data.executing,
+      upNext: data.upNext || [],
+      stats: data.stats,
+      pagination: data.pagination,
+    };
+  }, [data]);
 
-  const currentlyExecuting = stories.find(s => s.status === 'in_progress');
-  const upNext = stories.filter(s => s.status !== 'in_progress');
-
-  if (loading) {
+  // Skeleton loading state
+  if (loading && !data) {
     return (
       <div className="app-page">
         <div className="page-header">
           <h1 className="page-title">Execution Queue</h1>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ width: '120px', height: '28px', background: 'var(--bg-warm)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
+            <div style={{ width: '80px', height: '28px', background: 'var(--bg-warm)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
+          </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
-          <div style={{ color: 'var(--text-muted)' }}>Loading queue...</div>
+        {/* Skeleton for executing */}
+        <div className="card" style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--bg-warm)', animation: 'pulse 1.5s infinite' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ width: '60%', height: '16px', background: 'var(--bg-warm)', borderRadius: '4px', marginBottom: '8px', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ width: '40%', height: '12px', background: 'var(--bg-warm)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+            </div>
+          </div>
         </div>
+        {/* Skeleton for up next */}
+        <div style={{ width: '120px', height: '14px', background: 'var(--bg-warm)', borderRadius: '4px', margin: '24px 0 12px', animation: 'pulse 1.5s infinite' }} />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="card" style={{ marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ width: '24px', height: '14px', background: 'var(--bg-warm)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ width: '40px', height: '18px', background: 'var(--bg-warm)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ flex: 1, height: '14px', background: 'var(--bg-warm)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ width: '80px', height: '14px', background: 'var(--bg-warm)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+              <div style={{ width: '70px', height: '24px', background: 'var(--bg-warm)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+            </div>
+          </div>
+        ))}
+        <style jsx>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -128,7 +182,17 @@ export default function ExecutionQueuePage() {
     <div className="app-page">
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">Execution Queue</h1>
+        <h1 className="page-title">
+          Execution Queue
+          <span style={{
+            marginLeft: '12px',
+            fontSize: '14px',
+            fontWeight: 400,
+            color: 'var(--text-muted)',
+          }}>
+            ({stats.total} total)
+          </span>
+        </h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{
             display: 'flex',
@@ -160,7 +224,7 @@ export default function ExecutionQueuePage() {
       </div>
 
       {/* Currently Executing */}
-      {currentlyExecuting ? (
+      {executing ? (
         <div className="card" style={{
           borderLeft: '4px solid var(--accent-green)',
           background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.05), transparent)',
@@ -180,11 +244,11 @@ export default function ExecutionQueuePage() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                {getPriorityBadge(currentlyExecuting.priorityLevel)}
-                <span style={{ fontWeight: 600 }}>{currentlyExecuting.title}</span>
+                {getPriorityBadge(executing.priorityLevel)}
+                <span style={{ fontWeight: 600 }}>{executing.title}</span>
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                {currentlyExecuting.project.name} • Started {getTimeAgo(currentlyExecuting.executedAt || currentlyExecuting.createdAt)}
+                {executing.project.name} • Started {getTimeAgo(executing.executedAt || executing.createdAt)}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -229,8 +293,16 @@ export default function ExecutionQueuePage() {
         margin: '24px 0 12px',
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
-        Up Next ({upNext.length})
+        <span>Up Next ({stats.upNextTotal})</span>
+        {pagination.totalPages > 1 && (
+          <span style={{ fontSize: '12px', textTransform: 'none', letterSpacing: 'normal' }}>
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+        )}
       </h3>
 
       {upNext.length === 0 ? (
@@ -240,34 +312,78 @@ export default function ExecutionQueuePage() {
           <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>All stories have been processed!</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {upNext.map((story, index) => (
-            <div key={story.id} className="card" style={{ marginBottom: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{
-                  fontSize: '14px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  width: '24px',
-                }}>
-                  #{index + 2}
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {upNext.map((story, index) => (
+              <div key={story.id} className="card" style={{ marginBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{
+                    fontSize: '14px',
+                    color: 'var(--text-muted)',
+                    fontWeight: 600,
+                    width: '32px',
+                    textAlign: 'right',
+                  }}>
+                    #{(page - 1) * pagination.limit + index + (executing ? 2 : 1)}
+                  </div>
+                  {getPriorityBadge(story.priorityLevel)}
+                  <span style={{ flex: 1, fontWeight: 500 }}>{story.title}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    {story.project.name}
+                  </span>
+                  {story.priorityScore && (
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+                      {story.priorityScore}pts
+                    </span>
+                  )}
+                  <button
+                    onClick={() => handlePrioritize(story.id)}
+                    className="btn btn-secondary"
+                    style={{ fontSize: '11px', padding: '4px 8px' }}
+                  >
+                    ↑ Prioritize
+                  </button>
                 </div>
-                {getPriorityBadge(story.priorityLevel)}
-                <span style={{ flex: 1, fontWeight: 500 }}>{story.title}</span>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  {story.project.name}
-                </span>
-                <button
-                  onClick={() => handlePrioritize(story.id)}
-                  className="btn btn-secondary"
-                  style={{ fontSize: '11px', padding: '4px 8px' }}
-                >
-                  ↑ Prioritize
-                </button>
               </div>
+            ))}
+          </div>
+
+          {/* Pagination controls */}
+          {pagination.totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '24px',
+            }}>
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', opacity: page === 1 ? 0.5 : 1 }}
+              >
+                ← Previous
+              </button>
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 16px',
+                color: 'var(--text-muted)',
+                fontSize: '13px',
+              }}>
+                {page} / {pagination.totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                disabled={!pagination.hasMore}
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', opacity: !pagination.hasMore ? 0.5 : 1 }}
+              >
+                Next →
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
