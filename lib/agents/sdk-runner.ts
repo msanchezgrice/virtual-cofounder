@@ -74,22 +74,30 @@ const TOOL_MAP: Record<string, string> = {
 };
 
 /**
- * Convert our agent definitions to SDK format
+ * Convert our agent definitions to SDK format for subagent spawning.
+ * 
+ * All agents except head-of-product can be spawned as subagents.
+ * The canSpawnSubagents flag indicates whether an agent can SPAWN others,
+ * not whether it CAN BE spawned.
  */
 function convertToSDKAgents(): Record<string, SDKAgentDefinition> {
   const sdkAgents: Record<string, SDKAgentDefinition> = {};
   
+  // head-of-product is the orchestrator and cannot be spawned as a subagent
+  const NON_SPAWNABLE_ROLES = ['head-of-product'];
+  
   for (const [role, agent] of Object.entries(agentRegistry)) {
-    if (agent.canSpawnSubagents) {
-      // Only convert agents that can be subagents
+    if (!NON_SPAWNABLE_ROLES.includes(role)) {
       sdkAgents[role] = {
-        description: `${agent.name}: ${agent.role}`,
+        description: `${agent.name}: ${agent.description || agent.role}`,
         prompt: agent.prompt,
         model: MODEL_MAP[agent.model] || 'sonnet',
         tools: agent.tools.map(t => TOOL_MAP[t] || t).filter(Boolean),
       };
     }
   }
+  
+  console.log(`[SDK Runner] Converted ${Object.keys(sdkAgents).length} agents to SDK format`);
   
   return sdkAgents;
 }

@@ -46,6 +46,7 @@ model Workspace {
   projectAgentConfigs ProjectAgentConfig[]
   slackMessages       SlackMessage[]
   slackInbounds       SlackInbound[]
+  chatMessages        ChatMessage[]
 
   @@map("workspaces")
 }
@@ -477,6 +478,50 @@ model AgentOutput {
   @@index([agentSessionId])
   @@index([projectId, outputType])
   @@map("agent_outputs")
+}
+
+// ============================================================================
+// CHAT MESSAGES (Virtual Cofounder Conversation)
+// ============================================================================
+
+model ChatMessage {
+  id              String    @id @default(uuid())
+  workspaceId     String    @map("workspace_id")
+  conversationId  String    @default("main") @map("conversation_id")
+  
+  // Message content
+  role            String    // 'user' | 'assistant' | 'system'
+  content         String    @db.Text
+  contentType     String    @default("text") @map("content_type") // 'text' | 'priority_card' | 'story_card' | 'status_update'
+  
+  // Rich content metadata (priorities shown, stories referenced, etc.)
+  metadata        Json?
+  
+  // Cross-platform sync with Slack
+  slackMessageTs  String?   @map("slack_message_ts")
+  slackChannelId  String?   @map("slack_channel_id")
+  source          String    @default("web") // 'web' | 'slack' | 'system'
+  
+  // Agent processing
+  agentSessionId  String?   @map("agent_session_id")
+  isProcessing    Boolean   @default(false) @map("is_processing")
+  
+  // Read tracking for unread badge
+  readAt          DateTime? @map("read_at")
+  
+  // Context
+  projectId       String?   @map("project_id")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  
+  // Relations
+  workspace       Workspace @relation(fields: [workspaceId], references: [id])
+  
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, readAt])
+  @@index([slackMessageTs])
+  @@index([workspaceId, conversationId, createdAt])
+  @@map("chat_messages")
 }
 
 // ============================================================================

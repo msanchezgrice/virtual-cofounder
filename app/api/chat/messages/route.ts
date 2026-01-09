@@ -1,0 +1,113 @@
+/**
+ * Chat API - Message History
+ * 
+ * GET /api/chat/messages
+ * Fetches conversation history with pagination and time filtering
+ */
+
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+// Default workspace for MVP (single-tenant)
+const DEFAULT_WORKSPACE_ID = 'cm3wev4rp0000pa2o0vyqz4qa';
+
+// Time window constants
+const TIME_WINDOWS: Record<string, number> = {
+  '1h': 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+};
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    
+    // Query params
+    const conversationId = searchParams.get('conversationId') || 'main';
+    const since = searchParams.get('since') || '1h'; // Default: last hour
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
+    const before = searchParams.get('before'); // Cursor for pagination
+    const projectId = searchParams.get('projectId');
+
+    // Calculate time filter
+    let sinceDate: Date | undefined;
+    if (since !== 'all' && TIME_WINDOWS[since]) {
+      sinceDate = new Date(Date.now() - TIME_WINDOWS[since]);
+    }
+
+    // Build query
+    const where: any = {
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      conversationId,
+    };
+
+    if (sinceDate) {
+      where.createdAt = { gte: sinceDate };
+    }
+
+    if (before) {
+      where.createdAt = { 
+        ...where.createdAt,
+        lt: new Date(before),
+      };
+    }
+
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
+    // Fetch messages (newest first for pagination, will reverse for display)
+    const messages = await prisma.chatMessage.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1, // Fetch one extra to check hasMore
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        contentType: true,
+        metadata: true,
+        isProcessing: true,
+        projectId: true,
+        source: true,
+        createdAt: true,
+        readAt: true,
+      },
+    });
+
+    // Check if there are more messages
+    const hasMore = messages.length > limit;
+    if (hasMore) {
+      messages.pop(); // Remove the extra one
+    }
+
+    // Reverse to chronological order
+    messages.reverse();
+
+    // Get next cursor (oldest message in this batch)
+    const nextCursor = hasMore && messages.length > 0 
+      ? messages[0].createdAt.toISOString()
+      : undefined;
+
+    return NextResponse.json({
+      messages,
+      hasMore,
+      nextCursor,
+      meta: {
+        conversationId,
+        since,
+        limit,
+        count: messages.length,
+      },
+    });
+  } catch (error) {
+    console.error('[Chat API] Error fetching messages:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch messages' },
+      { status: 500 }
+    );
+  }
+}
