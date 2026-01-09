@@ -12,6 +12,8 @@ interface Story {
   priorityScore: number;
   status: string;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
   project: {
     id: string;
     name: string;
@@ -177,9 +179,9 @@ function FocusStoryItem({ story }: { story: Story }) {
       <span style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', flexShrink: 0 }}>
         {story.project.name}
       </span>
-      {story.linearTaskId && (
+      {(story.linearIssueUrl || story.linearTaskId) && (
         <a
-          href={`https://linear.app/issue/${story.linearTaskId}`}
+          href={story.linearIssueUrl || `https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}`}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
@@ -192,9 +194,9 @@ function FocusStoryItem({ story }: { story: Story }) {
             color: 'var(--text-muted)',
             flexShrink: 0,
           }}
-          title="View in Linear"
+          title={story.linearIdentifier ? `View ${story.linearIdentifier} in Linear` : 'View in Linear'}
         >
-          📋
+          📋 {story.linearIdentifier && <span style={{ fontSize: '10px' }}>{story.linearIdentifier}</span>}
         </a>
       )}
     </div>

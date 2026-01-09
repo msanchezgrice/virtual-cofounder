@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 // Loom video URL - replace with actual demo video
@@ -12,6 +12,26 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile menu when clicking outside or pressing escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleEscape);
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [mobileMenuOpen]);
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,17 +68,60 @@ export default function LandingPage() {
             <div className="logo-icon">🚀</div>
             Virtual Cofounder
           </div>
-          <ul className="nav-links">
+          <ul className="nav-links desktop-nav">
             <li><a href="#agents">Your team</a></li>
             <li><a href="#scanning">How we help</a></li>
             <li><a href="#kanban">Your board</a></li>
             <li><a href="#how">Daily rhythm</a></li>
           </ul>
-          <button onClick={() => setIsWaitlistOpen(true)} className="btn btn-primary">
+          <button onClick={() => setIsWaitlistOpen(true)} className="btn btn-primary desktop-cta">
             Join Waitlist
+          </button>
+          {/* Mobile hamburger */}
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
+            <span className="hamburger-line"></span>
           </button>
         </div>
       </nav>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="mobile-nav-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <div className="mobile-nav-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-nav-header">
+              <div className="logo">
+                <div className="logo-icon">🚀</div>
+                Virtual Cofounder
+              </div>
+              <button 
+                className="mobile-nav-close"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                ×
+              </button>
+            </div>
+            <ul className="mobile-nav-links">
+              <li><a href="#agents" onClick={() => setMobileMenuOpen(false)}>Your team</a></li>
+              <li><a href="#scanning" onClick={() => setMobileMenuOpen(false)}>How we help</a></li>
+              <li><a href="#kanban" onClick={() => setMobileMenuOpen(false)}>Your board</a></li>
+              <li><a href="#how" onClick={() => setMobileMenuOpen(false)}>Daily rhythm</a></li>
+            </ul>
+            <button 
+              onClick={() => { setMobileMenuOpen(false); setIsWaitlistOpen(true); }} 
+              className="btn btn-primary mobile-nav-cta"
+            >
+              Join Waitlist
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="hero">

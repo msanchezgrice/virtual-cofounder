@@ -253,16 +253,99 @@ export async function getBacklogStateId(teamId: string): Promise<string | undefi
 export function mapPriorityToLinear(priority: string): number {
   switch (priority.toLowerCase()) {
     case 'urgent':
+    case 'p0':
       return 1;
     case 'high':
+    case 'p1':
       return 2;
     case 'medium':
+    case 'p2':
       return 3;
     case 'low':
+    case 'p3':
       return 4;
     default:
       return 0; // No priority
   }
+}
+
+/**
+ * Map Linear priority number to priority level string
+ */
+export function mapLinearToPriorityLevel(linearPriority: number): 'P0' | 'P1' | 'P2' | 'P3' {
+  switch (linearPriority) {
+    case 1: // Urgent
+      return 'P0';
+    case 2: // High
+      return 'P1';
+    case 3: // Medium
+      return 'P2';
+    case 4: // Low
+    default:
+      return 'P3';
+  }
+}
+
+/**
+ * Update Linear issue priority
+ */
+export async function updateLinearTaskPriority(
+  taskId: string,
+  priority: number
+): Promise<boolean> {
+  const query = `
+    mutation UpdateIssuePriority($issueId: String!, $priority: Int!) {
+      issueUpdate(
+        id: $issueId
+        input: {
+          priority: $priority
+        }
+      ) {
+        success
+        issue {
+          id
+          priority
+        }
+      }
+    }
+  `;
+
+  const data = await executeQuery<{
+    issueUpdate: {
+      success: boolean;
+      issue: { id: string; priority: number };
+    };
+  }>(query, { issueId: taskId, priority });
+
+  return data.issueUpdate.success;
+}
+
+/**
+ * Get Linear issue details by ID
+ */
+export async function getLinearIssue(issueId: string): Promise<LinearTask & { priority: number }> {
+  const query = `
+    query GetIssue($issueId: String!) {
+      issue(id: $issueId) {
+        id
+        identifier
+        title
+        url
+        priority
+        state {
+          id
+          name
+          type
+        }
+      }
+    }
+  `;
+
+  const data = await executeQuery<{
+    issue: LinearTask & { priority: number };
+  }>(query, { issueId });
+
+  return data.issue;
 }
 
 /**

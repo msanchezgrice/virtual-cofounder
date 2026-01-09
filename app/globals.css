@@ -1953,11 +1953,139 @@
   }
 }
 
-@media (max-width: 640px) {
-  .landing-page .nav-links {
+/* Landing Page Mobile Navigation */
+.landing-page .mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.landing-page .mobile-menu-btn:hover {
+  background: var(--bg-soft);
+}
+
+.landing-page .hamburger-line {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+}
+
+.landing-page .mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.landing-page .mobile-nav-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(320px, 85vw);
+  height: 100%;
+  background: var(--bg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.25s ease;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.landing-page .mobile-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.landing-page .mobile-nav-close {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.landing-page .mobile-nav-close:hover {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+.landing-page .mobile-nav-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.landing-page .mobile-nav-links li a {
+  display: block;
+  padding: 1rem;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.landing-page .mobile-nav-links li a:hover {
+  background: var(--bg-soft);
+  color: var(--accent);
+}
+
+.landing-page .mobile-nav-cta {
+  margin-top: auto;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Mobile breakpoint for landing page navigation */
+@media (max-width: 900px) {
+  .landing-page .desktop-nav,
+  .landing-page .desktop-cta {
     display: none;
   }
   
+  .landing-page .mobile-menu-btn {
+    display: flex;
+  }
+}
+
+@media (max-width: 640px) {
   .landing-page .value-grid,
   .landing-page .agent-grid {
     grid-template-columns: 1fr;
@@ -1981,5 +2109,60 @@
   
   .landing-page .cta-buttons {
     flex-direction: column;
+  }
+  
+  /* Hero text sizing for mobile */
+  .landing-page .hero h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .landing-page .hero-description {
+    font-size: 1rem;
+  }
+  
+  /* Slack buttons stack on mobile */
+  .landing-page .slack-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .landing-page .slack-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Navigation padding */
+  .landing-page nav {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Small mobile - iPhone 12 (390px) and below */
+@media (max-width: 420px) {
+  .landing-page .hero h1 {
+    font-size: 1.75rem;
+  }
+  
+  .landing-page .hero-eyebrow {
+    font-size: 0.8rem;
+  }
+  
+  .landing-page .logo {
+    font-size: 1rem;
+  }
+  
+  .landing-page .logo-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+  
+  .landing-page section {
+    padding: 3rem 1rem;
+  }
+  
+  .landing-page h2 {
+    font-size: 1.5rem;
   }
 }

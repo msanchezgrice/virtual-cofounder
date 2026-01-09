@@ -24,6 +24,8 @@ interface Story {
   priorityScore: number | null;
   prUrl: string | null;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
   commitSha: string | null;
   createdAt: string;
   executedAt: string | null;
@@ -416,9 +418,9 @@ export default function ExecutionQueuePage() {
                       {story.priorityScore}pts
                     </span>
                   )}
-                  {story.linearTaskId && (
+                  {(story.linearIssueUrl || story.linearTaskId) && (
                     <a
-                      href={`https://linear.app/issue/${story.linearTaskId}`}
+                      href={story.linearIssueUrl || `https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -434,7 +436,7 @@ export default function ExecutionQueuePage() {
                         alignItems: 'center',
                         minHeight: '28px',
                       }}
-                      title="View in Linear"
+                      title={story.linearIdentifier ? `View ${story.linearIdentifier} in Linear` : 'View in Linear'}
                     >
                       📋
                     </a>

@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import { featureFlags } from '@/lib/config/feature-flags';
 import { enqueueStoryForExecution } from '@/lib/queue/execution';
 import { processPrioritySignal } from '@/lib/priority/classifier';
+import { mapLinearToPriorityLevel } from '@/lib/linear';
 
 interface LinearWebhookPayload {
   action: string;
@@ -24,12 +25,14 @@ interface LinearWebhookPayload {
     id: string;
     title?: string;
     body?: string; // For comments
+    priority?: number; // 0=none, 1=urgent, 2=high, 3=medium, 4=low
     state?: {
       id: string;
       name: string;
       type: string;
     };
     identifier?: string;
+    url?: string;
     issue?: {
       id: string;
       identifier: string;
@@ -41,6 +44,7 @@ interface LinearWebhookPayload {
   };
   updatedFrom?: {
     stateId?: string;
+    priority?: number;
   };
 }
 

@@ -13,6 +13,8 @@ interface Story {
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'rejected';
   prUrl: string | null;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
   commitSha: string | null;
   createdAt: string;
   executedAt: string | null;
@@ -319,15 +321,15 @@ export default function StoriesPage() {
                     {formatDate(story.createdAt)}
                   </span>
 
-                  {story.linearTaskId && (
+                  {(story.linearIssueUrl || story.linearTaskId) && (
                     <a
-                      href={`https://linear.app/issue/${story.linearTaskId}`}
+                      href={story.linearIssueUrl || `https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      📋 Linear
+                      📋 {story.linearIdentifier || 'Linear'}
                     </a>
                   )}
 

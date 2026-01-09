@@ -13,6 +13,8 @@ interface Story {
   priorityLevel: 'P0' | 'P1' | 'P2' | 'P3' | null;
   priorityScore: number | null;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
   prUrl: string | null;
   createdAt: string;
   project?: {
@@ -383,9 +385,9 @@ export default function PrioritiesPage() {
                           </td>
                           <td style={{ padding: '16px 8px', textAlign: 'center' }}>
                             <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                              {story.linearTaskId && (
+                              {(story.linearIssueUrl || story.linearTaskId) && (
                                 <a
-                                  href={`https://linear.app/issue/${story.linearTaskId}`}
+                                  href={story.linearIssueUrl || `https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
@@ -401,9 +403,9 @@ export default function PrioritiesPage() {
                                     alignItems: 'center',
                                     minHeight: '32px',
                                   }}
-                                  title="View in Linear"
+                                  title={story.linearIdentifier ? `View ${story.linearIdentifier} in Linear` : 'View in Linear'}
                                 >
-                                  📋
+                                  📋 {story.linearIdentifier && <span style={{ marginLeft: '4px', fontSize: '10px' }}>{story.linearIdentifier}</span>}
                                 </a>
                               )}
                               {story.prUrl && (
@@ -503,7 +505,7 @@ export default function PrioritiesPage() {
                             {getImpactDots(story.priorityScore)} Impact
                           </span>
                           <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-                            {story.linearTaskId && (
+                            {(story.linearIssueUrl || story.linearTaskId) && (
                               <span
                                 style={{
                                   padding: '4px 8px',
@@ -511,8 +513,9 @@ export default function PrioritiesPage() {
                                   background: 'var(--bg-warm)',
                                   borderRadius: '4px',
                                 }}
+                                title={story.linearIdentifier || 'Linear'}
                               >
-                                📋
+                                📋 {story.linearIdentifier && <span style={{ fontSize: '10px' }}>{story.linearIdentifier}</span>}
                               </span>
                             )}
                             {story.prUrl && (

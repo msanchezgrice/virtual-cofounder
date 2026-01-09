@@ -41,6 +41,8 @@ interface Story {
   createdAt: string;
   prUrl: string | null;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
 }
 
 interface HistoryEvent {
@@ -537,9 +539,9 @@ function StoriesTab({ stories }: { stories: Story[] }) {
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-500">
               <span>{new Date(story.createdAt).toLocaleDateString()}</span>
-              {story.linearTaskId && (
-                <a href={`https://linear.app/issue/${story.linearTaskId}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
-                  📋 Linear
+              {(story.linearIssueUrl || story.linearTaskId) && (
+                <a href={story.linearIssueUrl || `https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                  📋 {story.linearIdentifier || 'Linear'}
                 </a>
               )}
               {story.prUrl && (
@@ -627,6 +629,8 @@ interface PriorityStory {
   priorityScore: number | null;
   status: string;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
   prUrl: string | null;
   createdAt: string;
 }
@@ -797,15 +801,15 @@ function PriorityTab({ projectId, projectName }: { projectId: string; projectNam
                       </td>
                       <td className="py-4 px-2 text-center">
                         <div className="flex gap-2 justify-center">
-                          {story.linearTaskId && (
+                          {(story.linearIssueUrl || story.linearTaskId) && (
                             <a
-                              href={`https://linear.app/issue/${story.linearTaskId}`}
+                              href={story.linearIssueUrl || `https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-2 py-1 text-xs bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                              title="View in Linear"
+                              title={story.linearIdentifier ? `View ${story.linearIdentifier} in Linear` : 'View in Linear'}
                             >
-                              📋
+                              📋 {story.linearIdentifier && <span className="text-[10px]">{story.linearIdentifier}</span>}
                             </a>
                           )}
                           {story.prUrl && (

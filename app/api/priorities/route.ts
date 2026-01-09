@@ -3,12 +3,13 @@
  * Priorities API - Get and manage priority signals
  * 
  * GET: Returns current priority signals and stack-ranked stories
- * POST: Manual priority override from dashboard
+ * POST: Manual priority override from dashboard (syncs to Linear)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { classifyPrioritySignal } from '@/lib/priority/classifier';
+import { updateLinearTaskPriority, mapPriorityToLinear } from '@/lib/linear';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,6 +102,8 @@ export async function GET(request: NextRequest) {
         priorityLevel: true,
         priorityScore: true,
         linearTaskId: true,
+        linearIssueUrl: true,
+        linearIdentifier: true,
         prUrl: true,
         createdAt: true,
         project: {
@@ -198,9 +201,24 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Sync priority to Linear if task is linked
+      let linearSynced = false;
+      if (updatedStory.linearTaskId) {
+        try {
+          const linearPriority = mapPriorityToLinear(priorityLevel || classified.priorityLevel);
+          await updateLinearTaskPriority(updatedStory.linearTaskId, linearPriority);
+          linearSynced = true;
+          console.log(`[PrioritiesAPI] Synced priority ${priorityLevel} to Linear task ${updatedStory.linearTaskId}`);
+        } catch (linearError) {
+          console.error('[PrioritiesAPI] Failed to sync priority to Linear:', linearError);
+          // Don't fail the request if Linear sync fails
+        }
+      }
+
       return NextResponse.json({
         success: true,
         story: updatedStory,
+        linearSynced,
       });
     }
 

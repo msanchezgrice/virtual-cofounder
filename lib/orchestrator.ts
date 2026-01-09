@@ -4,8 +4,8 @@
  * This orchestrator uses the Claude Agent SDK to coordinate specialist agents.
  * Key improvements over legacy:
  * - Multi-turn agent execution with tool use
+ * - AUTONOMOUS subagent spawning via SDK's Task tool
  * - Automatic thinking trace capture
- * - Subagent spawning capability
  * - Priority signal integration
  * - Cost tracking and estimation
  * 
@@ -21,9 +21,64 @@ import {
   type AgentDefinition 
 } from '@/lib/agents/index';
 import { runAgentWithSDK, spawnSubagent } from '@/lib/agents/sdk-runner';
+import {
+  query,
+  type Options as SDKOptions,
+  type SDKMessage,
+  type AgentDefinition as SDKAgentDefinition,
+} from '@anthropic-ai/claude-agent-sdk';
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic();
+
+// ============================================================================
+// SDK AGENT CONVERSION
+// ============================================================================
+
+// Map our model names to SDK model identifiers
+const MODEL_MAP: Record<string, 'opus' | 'sonnet' | 'haiku'> = {
+  'claude-opus-4-5-20251101': 'opus',
+  'claude-sonnet-4-5-20250929': 'sonnet',
+};
+
+// Map our tool names to SDK tool names
+const TOOL_MAP: Record<string, string> = {
+  'Read': 'Read',
+  'Write': 'Write',
+  'Edit': 'Edit',
+  'Bash': 'Bash',
+  'Glob': 'Glob',
+  'Grep': 'Grep',
+  'WebSearch': 'WebSearch',
+  'WebFetch': 'WebFetch',
+};
+
+/**
+ * Convert our agent definitions to SDK format for subagent spawning
+ */
+function convertToSDKAgents(): Record<string, SDKAgentDefinition> {
+  const sdkAgents: Record<string, SDKAgentDefinition> = {};
+  
+  // Only include analysis agents that HoP should spawn
+  const spawnableRoles = ['security', 'analytics', 'domain', 'seo', 'deployment', 'performance'];
+  
+  for (const [role, agent] of Object.entries(agentRegistry)) {
+    if (spawnableRoles.includes(role)) {
+      const sdkTools = agent.tools
+        .map(t => TOOL_MAP[t])
+        .filter(Boolean) as string[];
+      
+      sdkAgents[role] = {
+        description: `${agent.name}: ${agent.role} - ${agent.description || ''}`,
+        prompt: agent.prompt,
+        model: MODEL_MAP[agent.model] || 'sonnet',
+        tools: sdkTools.length > 0 ? sdkTools : ['Read', 'Grep'],
+      };
+    }
+  }
+  
+  return sdkAgents;
+}
 
 // ============================================================================
 // TYPES
@@ -200,11 +255,90 @@ function getRelevantAgents(scanContext: ScanContext): string[] {
 }
 
 // ============================================================================
-// SDK-BASED ORCHESTRATOR
+// SDK-BASED ORCHESTRATOR - AUTONOMOUS SUBAGENT SPAWNING
 // ============================================================================
 
 /**
- * Run orchestrator using Agent SDK (multi-turn with subagent spawning)
+ * Build Head of Product prompt with project context
+ */
+function buildHoPPrompt(scanContexts: ScanContext[]): string {
+  let prompt = `You are the Head of Product for a portfolio of web products.
+
+Your job is to:
+1. Review scan results for ALL projects
+2. Use the Task tool to SPAWN specialist agents to investigate issues
+3. Aggregate findings from all agents
+4. Create a prioritized list of work items
+
+Available specialist agents you can spawn:
+- security: Check for vulnerabilities, exposed secrets, npm audit
+- analytics: Verify tracking setup, suggest event instrumentation
+- domain: Check SSL, DNS, uptime
+- seo: Analyze meta tags, sitemaps, search visibility
+- deployment: Check build status, deployment health
+- performance: Analyze Core Web Vitals, bundle sizes
+
+For EACH project, decide which agents to spawn based on its state.
+Prioritize using: Impact (40%), Urgency (30%), Effort (20%), Confidence (10%).
+
+User priorities always override: P0 = Critical, P1 = High, P2 = Medium, P3 = Low.
+
+After spawning agents and reviewing their findings, output a JSON summary:
+{
+  "findings": [
+    {
+      "projectId": "...",
+      "agent": "security|analytics|etc",
+      "issue": "Description",
+      "action": "Fix recommendation",
+      "severity": "critical|high|medium|low",
+      "effort": "low|medium|high",
+      "impact": "high|medium|low",
+      "confidence": 0.95
+    }
+  ]
+}
+
+---
+
+PROJECTS TO ANALYZE:
+
+`;
+
+  for (const ctx of scanContexts) {
+    prompt += `
+## PROJECT: ${ctx.project.name}
+- ID: ${ctx.project.id}
+- Domain: ${ctx.project.domain || 'Not configured'}
+- Status: ${ctx.project.status}
+- Repository: ${ctx.project.repoUrl || 'Not connected'}
+
+SCAN DATA:
+${JSON.stringify(ctx.scans, null, 2)}
+
+${ctx.prioritySignals && ctx.prioritySignals.length > 0 ? `
+USER PRIORITY SIGNALS:
+${ctx.prioritySignals.map(s => `- ${s.priorityLevel}: "${s.rawContent}" (via ${s.source})`).join('\n')}
+` : ''}
+
+---
+`;
+  }
+
+  prompt += `
+Now analyze each project. For each one:
+1. Spawn the appropriate specialist agents using Task tool
+2. Collect their findings
+3. At the end, output your combined findings JSON.
+`;
+
+  return prompt;
+}
+
+/**
+ * Run orchestrator using Agent SDK with AUTONOMOUS subagent spawning
+ * 
+ * Head of Product agent decides which specialists to spawn via Task tool
  */
 async function runOrchestratorSDK(
   scanContexts: ScanContext[],
@@ -217,49 +351,121 @@ async function runOrchestratorSDK(
   let totalTokens = 0;
   let estimatedCost = 0;
 
-  conversation.push(`[${new Date().toISOString()}] Orchestrator started (SDK mode) - analyzing ${scanContexts.length} projects`);
+  conversation.push(`[${new Date().toISOString()}] Orchestrator started (SDK autonomous mode) - analyzing ${scanContexts.length} projects`);
 
-  // Process each project with Head of Product coordinating
-  for (const scanContext of scanContexts) {
-    const projectName = scanContext.project.name;
-    conversation.push(`\n[${projectName}] Head of Product analyzing project...`);
+  // Build HoP prompt with all project contexts
+  const hopPrompt = buildHoPPrompt(scanContexts);
+  
+  // Get all spawnable subagents
+  const subagents = convertToSDKAgents();
+  
+  console.log('[Orchestrator] Starting Head of Product agent with Task tool');
+  console.log('[Orchestrator] Available subagents:', Object.keys(subagents).join(', '));
 
-    // Determine relevant agents
-    const relevantAgentRoles = getRelevantAgents(scanContext);
-    conversation.push(`[${projectName}] Spawning agents: ${relevantAgentRoles.join(', ')}`);
+  try {
+    // Create SDK options with subagents defined
+    const sdkOptions: SDKOptions = {
+      // HoP can use Task to spawn subagents, plus basic analysis tools
+      allowedTools: ['Task', 'Read', 'Grep', 'Glob'],
+      tools: ['Task', 'Read', 'Grep', 'Glob'],
+      
+      // Define all specialist agents that HoP can spawn
+      agents: subagents,
+      
+      // Max turns for HoP conversation
+      maxTurns: 15,
+      
+      // Don't persist - we handle our own sessions
+      persistSession: false,
+      
+      // Include partial for streaming
+      includePartialMessages: true,
+      
+      // Environment
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+      },
+    };
 
-    // Run each specialist agent via SDK
-    for (const role of relevantAgentRoles) {
-      try {
-        const agentContext = buildAgentContext(role, scanContext);
-        
-        const result = await runAgentWithSDK(role, agentContext, {
-          projectId: scanContext.project.id,
-          orchestratorRunId: runId,
-        });
+    // Run Head of Product agent - it autonomously spawns subagents
+    const agentQuery = query({
+      prompt: hopPrompt,
+      options: sdkOptions,
+    });
 
-        agentsSpawned.push(role);
-        totalTokens += result.session.tokensUsed;
-        estimatedCost += estimateCostFromTokens(result.session.tokensUsed);
+    let finalOutput = '';
 
-        if (result.findings && result.findings.length > 0) {
-          const enhancedFindings = result.findings.map(f => ({
-            ...f,
-            agent: role,
-            projectId: scanContext.project.id,
-          }));
-          allFindings.push(...enhancedFindings);
-          conversation.push(`[${projectName}] ${role} found ${result.findings.length} issue(s)`);
-        }
+    for await (const message of agentQuery) {
+      // Handle different message types
+      switch (message.type) {
+        case 'assistant':
+          // Assistant message - might be thinking or final output
+          const assistantMsg = message as { type: 'assistant'; message?: { content?: Array<{ type: string; text?: string }> } };
+          const content = assistantMsg.message?.content;
+          if (Array.isArray(content)) {
+            const textParts = content.filter((c) => c.type === 'text');
+            finalOutput = textParts.map((t) => t.text || '').join('');
+          }
+          break;
 
-      } catch (error) {
-        console.error(`[${projectName}] Error running ${role}:`, error);
-        conversation.push(`[${projectName}] ${role} failed: ${(error as Error).message}`);
+        case 'tool_progress':
+          // Track when HoP spawns a subagent via Task
+          const toolMsg = message as { 
+            type: 'tool_progress'; 
+            tool_name?: string;
+            tool_input?: { agentName?: string; prompt?: string };
+          };
+          if (toolMsg.tool_name === 'Task' && toolMsg.tool_input?.agentName) {
+            const agentName = toolMsg.tool_input.agentName;
+            agentsSpawned.push(agentName);
+            conversation.push(`[HoP] Spawned ${agentName} agent`);
+            console.log(`[Orchestrator] HoP spawned: ${agentName}`);
+          }
+          break;
+
+        case 'result':
+          // Final result with usage stats
+          const resultMsg = message as { 
+            type: 'result'; 
+            subtype?: string;
+            usage?: { inputTokens?: number; outputTokens?: number };
+            total_cost_usd?: number;
+            result?: string;
+          };
+          if (resultMsg.usage) {
+            totalTokens += (resultMsg.usage.inputTokens || 0) + (resultMsg.usage.outputTokens || 0);
+          }
+          if (resultMsg.total_cost_usd) {
+            estimatedCost += resultMsg.total_cost_usd;
+          }
+          if (resultMsg.subtype === 'success' && resultMsg.result) {
+            finalOutput = String(resultMsg.result);
+          }
+          break;
       }
     }
-  }
 
-  conversation.push(`\nTotal findings: ${allFindings.length}`);
+    conversation.push(`[HoP] Completed analysis`);
+
+    // Parse findings from HoP's final output
+    const parsedFindings = parseFindingsFromOutput(finalOutput, scanContexts);
+    allFindings.push(...parsedFindings);
+
+    conversation.push(`Total findings from agents: ${allFindings.length}`);
+
+  } catch (error) {
+    console.error('[Orchestrator] Error running HoP agent:', error);
+    conversation.push(`[HoP] Error: ${(error as Error).message}`);
+    
+    // Fallback: run agents manually if SDK fails
+    conversation.push(`[Fallback] Running agents manually...`);
+    const fallbackResult = await runAgentsManually(scanContexts, runId);
+    allFindings.push(...fallbackResult.findings);
+    agentsSpawned.push(...fallbackResult.agentsSpawned);
+    totalTokens += fallbackResult.totalTokens;
+    estimatedCost += fallbackResult.estimatedCost;
+  }
 
   // Apply priority scoring to all findings
   const scoredFindings = scoreAndRankFindings(allFindings, scanContexts);
@@ -282,6 +488,85 @@ async function runOrchestratorSDK(
     totalTokens,
     estimatedCost,
   };
+}
+
+/**
+ * Parse findings from HoP agent output
+ */
+function parseFindingsFromOutput(output: string, scanContexts: ScanContext[]): AgentFinding[] {
+  try {
+    // Try to find JSON in the output
+    const jsonMatch = output.match(/\{[\s\S]*"findings"[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed.findings)) {
+        return parsed.findings.map((f: any) => ({
+          agent: f.agent || 'unknown',
+          projectId: f.projectId || scanContexts[0]?.project.id || '',
+          issue: f.issue || '',
+          action: f.action || '',
+          severity: f.severity || 'medium',
+          effort: f.effort || 'medium',
+          impact: f.impact || 'medium',
+          confidence: f.confidence || 0.8,
+        }));
+      }
+    }
+    return [];
+  } catch {
+    console.warn('[Orchestrator] Failed to parse findings from HoP output');
+    return [];
+  }
+}
+
+/**
+ * Fallback: Run agents manually if SDK autonomous mode fails
+ */
+async function runAgentsManually(
+  scanContexts: ScanContext[],
+  runId: string
+): Promise<{
+  findings: AgentFinding[];
+  agentsSpawned: string[];
+  totalTokens: number;
+  estimatedCost: number;
+}> {
+  const findings: AgentFinding[] = [];
+  const agentsSpawned: string[] = [];
+  let totalTokens = 0;
+  let estimatedCost = 0;
+
+  for (const scanContext of scanContexts) {
+    const relevantAgentRoles = getRelevantAgents(scanContext);
+
+    for (const role of relevantAgentRoles) {
+      try {
+        const agentContext = buildAgentContext(role, scanContext);
+        
+        const result = await runAgentWithSDK(role, agentContext, {
+          projectId: scanContext.project.id,
+          orchestratorRunId: runId,
+        });
+
+        agentsSpawned.push(role);
+        totalTokens += result.session.tokensUsed;
+        estimatedCost += estimateCostFromTokens(result.session.tokensUsed);
+
+        if (result.findings && result.findings.length > 0) {
+          const enhancedFindings = result.findings.map(f => ({
+            ...f,
+            agent: role,
+            projectId: scanContext.project.id,
+          }));
+          findings.push(...enhancedFindings);
+        }
+      } catch (error) {
+        console.error(`[Fallback] Error running ${role}:`, error);
+      }
+    }
+  }
+
+  return { findings, agentsSpawned, totalTokens, estimatedCost };
 }
 
 /**
@@ -462,9 +747,7 @@ function estimateCostFromTokens(tokens: number): number {
 async function runOrchestratorLegacy(
   scanContexts: ScanContext[]
 ): Promise<OrchestratorResult> {
-  // Import legacy implementation
-  const { agents } = await import('./agents');
-  
+  // Use new agent registry (consolidated)
   const runId = `orch_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const allFindings: AgentFinding[] = [];
   const conversation: string[] = [];
@@ -476,7 +759,8 @@ async function runOrchestratorLegacy(
     const relevantRoles = getRelevantAgents(scanContext);
     
     for (const role of relevantRoles) {
-      const agent = (agents as any)[role];
+      // Use new agent registry from lib/agents/index.ts
+      const agent = agentRegistry[role];
       if (!agent) continue;
 
       agentsSpawned.push(role);
@@ -485,7 +769,7 @@ async function runOrchestratorLegacy(
         const response = await anthropic.messages.create({
           model: agent.model,
           max_tokens: 2048,
-          system: agent.instructions,
+          system: agent.prompt, // New registry uses 'prompt' not 'instructions'
           messages: [{
             role: 'user',
             content: buildAgentContext(role, scanContext),

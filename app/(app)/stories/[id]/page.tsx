@@ -15,6 +15,8 @@ interface Story {
   status: string;
   prUrl: string | null;
   linearTaskId: string | null;
+  linearIssueUrl: string | null;
+  linearIdentifier: string | null;
   commitSha: string | null;
   createdAt: string;
   executedAt: string | null;
@@ -184,12 +186,18 @@ export default function StoryDetailPage() {
     });
   };
   
-  // Build Linear URL - using team slug from project or fallback
-  const getLinearUrl = (linearTaskId: string | null, teamId: string | null) => {
-    if (!linearTaskId) return null;
-    // Linear issue IDs are typically in format TEAM-123
-    // Just use the ID directly as it's already the issue identifier
-    return `https://linear.app/team/issue/${linearTaskId}`;
+  // Get Linear URL - prefer stored URL, fallback to building from identifier
+  const getLinearUrl = (story: Story) => {
+    // Use stored URL if available (preferred)
+    if (story.linearIssueUrl) return story.linearIssueUrl;
+    // No Linear integration
+    if (!story.linearTaskId) return null;
+    // Fallback: construct URL if we have identifier
+    if (story.linearIdentifier) {
+      return `https://linear.app/media-maker/issue/${story.linearIdentifier}`;
+    }
+    // Last resort: use UUID (will redirect in Linear)
+    return `https://linear.app/issue/${story.linearTaskId}`;
   };
   
   // Default GitHub owner for repos stored without owner prefix
@@ -229,7 +237,7 @@ export default function StoryDetailPage() {
     );
   }
   
-  const linearUrl = getLinearUrl(story.linearTaskId, story.project.linearTeamId);
+  const linearUrl = getLinearUrl(story);
   const githubUrl = getGitHubUrl(story.project.repo);
   
   return (
@@ -283,7 +291,7 @@ export default function StoryDetailPage() {
               <span className="card-title">🔗 Links</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {story.linearTaskId && (
+              {(story.linearTaskId || story.linearIssueUrl) && (
                 <a
                   href={linearUrl || '#'}
                   target="_blank"
@@ -303,7 +311,7 @@ export default function StoryDetailPage() {
                   <div>
                     <div style={{ fontWeight: 500 }}>View in Linear</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      {story.linearTaskId}
+                      {story.linearIdentifier || story.linearTaskId?.substring(0, 8)}
                     </div>
                   </div>
                   <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>↗</span>

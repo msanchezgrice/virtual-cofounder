@@ -532,5 +532,10 @@ export function getAgentsByType(type: AgentDefinition['type']): AgentDefinition[
   return Object.values(agentRegistry).filter(agent => agent.type === type);
 }
 
-// Re-export the original AgentConfig for backward compatibility
-export type { AgentConfig } from '@/lib/agents';
+// Legacy AgentConfig type for backward compatibility
+export interface AgentConfig {
+  name: string;
+  role: string;
+  model: 'claude-opus-4-5-20251101' | 'claude-sonnet-4-5-20250929';
+  instructions: string;
+}

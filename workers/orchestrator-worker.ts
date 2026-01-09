@@ -136,13 +136,17 @@ _Story ID: ${dbStory.id}_`,
           stateId: backlogStateId,
         });
 
-        // Update story with Linear task ID
+        // Update story with Linear task ID, URL, and identifier
         await prisma.story.update({
           where: { id: dbStory.id },
-          data: { linearTaskId: linearTask.id },
+          data: { 
+            linearTaskId: linearTask.id,
+            linearIssueUrl: linearTask.url,
+            linearIdentifier: linearTask.identifier,
+          },
         });
 
-        console.log(`[Orchestrator Worker] Created Linear task ${linearTask.identifier} for story ${dbStory.id}`);
+        console.log(`[Orchestrator Worker] Created Linear task ${linearTask.identifier} (${linearTask.url}) for story ${dbStory.id}`);
 
         // Post agent dialogue as a comment
         if (result.conversation && result.conversation.length > 0) {

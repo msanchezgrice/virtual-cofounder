@@ -166,7 +166,9 @@ model Story {
   // Execution tracking
   status       String    @default("pending") // 'pending'|'in_progress'|'completed'|'failed'|'rejected'
   prUrl        String?   @map("pr_url")
-  linearTaskId String?   @map("linear_task_id") // Linear issue ID
+  linearTaskId String?   @map("linear_task_id") // Linear issue UUID (for API operations)
+  linearIssueUrl   String?   @map("linear_issue_url") // Full Linear URL for direct linking
+  linearIdentifier String?   @map("linear_identifier") // Human-readable identifier (e.g., "VIR-263")
   commitSha    String?   @map("commit_sha")
   executedAt   DateTime? @map("executed_at")
 
