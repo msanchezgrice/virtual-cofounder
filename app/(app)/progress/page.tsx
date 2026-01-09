@@ -144,19 +144,44 @@ function StageTimeline({ stages }: { stages: StageData[] }) {
   const stageIcons = ['💡', '🔧', '🧪', '🎯', '🚀', '📈'];
   
   return (
-    <div className="card" style={{ padding: '32px' }}>
-      <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px' }}>Journey to Paying Customers</h2>
-      <div className="stage-timeline">
+    <div className="card" style={{ padding: '24px', marginBottom: '20px' }}>
+      <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>Journey to Paying Customers</h2>
+      <div style={{ 
+        display: 'flex', 
+        overflowX: 'auto', 
+        gap: '8px',
+        paddingBottom: '8px',
+        WebkitOverflowScrolling: 'touch',
+        scrollSnapType: 'x mandatory',
+      }}>
         {stages.map((stage, index) => (
-          <div key={stage.id} className="stage">
+          <div 
+            key={stage.id} 
+            style={{ 
+              textAlign: 'center', 
+              minWidth: '100px',
+              flex: '0 0 auto',
+              scrollSnapAlign: 'start',
+              padding: '8px',
+            }}
+          >
             <div 
               className={`stage-icon ${stage.complete ? 'completed' : stage.current ? 'current' : 'upcoming'}`}
+              style={{
+                width: '48px',
+                height: '48px',
+                margin: '0 auto 10px',
+                fontSize: '20px',
+              }}
             >
               {stageIcons[index] || '⭐'}
             </div>
-            <div className="stage-name">{stage.name}</div>
-            <div className={`stage-status ${stage.current ? 'active' : ''}`}>
-              {stage.complete ? 'Complete' : stage.current ? 'IN PROGRESS' : `${76 + index * 5}+ pts`}
+            <div className="stage-name" style={{ fontSize: '13px' }}>{stage.name}</div>
+            <div 
+              className={`stage-status ${stage.current ? 'active' : ''}`}
+              style={{ fontSize: '11px' }}
+            >
+              {stage.complete ? '✓' : stage.current ? 'NOW' : `${76 + index * 5}+`}
             </div>
           </div>
         ))}
@@ -169,8 +194,16 @@ function LaunchScore({ score }: { score: number }) {
   const scoreDeg = (score / 100) * 360;
   
   return (
-    <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <div>
+    <div className="card" style={{ 
+      display: 'flex', 
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between', 
+      alignItems: 'center',
+      gap: '20px',
+      marginBottom: '20px',
+    }}>
+      <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Launch Readiness Score</h2>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
           {score >= 76 ? 'Ready for launch!' : 
@@ -181,11 +214,16 @@ function LaunchScore({ score }: { score: number }) {
       </div>
       <div 
         className="score-circle"
-        style={{ '--score-deg': `${scoreDeg}deg` } as React.CSSProperties}
+        style={{ 
+          '--score-deg': `${scoreDeg}deg`,
+          width: '120px',
+          height: '120px',
+          flexShrink: 0,
+        } as React.CSSProperties}
       >
-        <div className="score-inner">
-          <span className="score-value">{score}</span>
-          <span className="score-max">/ 100</span>
+        <div className="score-inner" style={{ width: '90px', height: '90px' }}>
+          <span className="score-value" style={{ fontSize: '28px' }}>{score}</span>
+          <span className="score-max" style={{ fontSize: '12px' }}>/ 100</span>
         </div>
       </div>
     </div>
@@ -228,35 +266,39 @@ function LaunchChecklist({ items }: { items: ChecklistItem[] }) {
 
 function WorkProgress({ summary }: { summary: WorkSummary }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Work Progress</h2>
-      <div className="grid grid-cols-4 gap-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{summary.pending}</div>
-          <div className="text-xs text-gray-500">Pending</div>
+    <div className="card" style={{ marginBottom: '20px' }}>
+      <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Work Progress</h2>
+      <div className="responsive-grid responsive-grid-4">
+        <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#3B82F6' }}>{summary.pending}</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Pending</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-yellow-600">{summary.in_progress}</div>
-          <div className="text-xs text-gray-500">In Progress</div>
+        <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#F59E0B' }}>{summary.in_progress}</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>In Progress</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-green-600">{summary.completed}</div>
-          <div className="text-xs text-gray-500">Completed</div>
+        <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#10B981' }}>{summary.completed}</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Completed</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{summary.completion_rate}%</div>
-          <div className="text-xs text-gray-500">Done</div>
+        <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{summary.completion_rate}%</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Done</div>
         </div>
       </div>
-      <div className="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div className="h-full flex">
+      <div style={{ marginTop: '16px', height: '8px', background: '#E5E7EB', borderRadius: '999px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', display: 'flex' }}>
           <div 
-            className="bg-green-500" 
-            style={{ width: `${(summary.completed / Math.max(summary.total, 1)) * 100}%` }} 
+            style={{ 
+              background: '#10B981',
+              width: `${(summary.completed / Math.max(summary.total, 1)) * 100}%`,
+            }} 
           />
           <div 
-            className="bg-yellow-500" 
-            style={{ width: `${(summary.in_progress / Math.max(summary.total, 1)) * 100}%` }} 
+            style={{ 
+              background: '#F59E0B',
+              width: `${(summary.in_progress / Math.max(summary.total, 1)) * 100}%`,
+            }} 
           />
         </div>
       </div>
@@ -407,10 +449,10 @@ export default function ProgressPage() {
             Track your journey from idea to paying users
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="page-header-actions">
           <button
             onClick={() => refresh()}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
             style={{ padding: '8px 12px' }}
           >
             ↻

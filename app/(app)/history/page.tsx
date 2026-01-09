@@ -225,10 +225,10 @@ export default function HistoryPage() {
             )}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="page-header-actions">
           <button
             onClick={() => refresh()}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
             style={{ padding: '8px 12px' }}
           >
             ↻
@@ -236,7 +236,8 @@ export default function HistoryPage() {
           <select
             value={activityFilter}
             onChange={(e) => handleFilterChange('activity', e.target.value)}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
+            style={{ minWidth: '100px', fontSize: '13px' }}
           >
             <option value="all">All Activity</option>
             <option value="scan">Scans</option>
@@ -247,7 +248,8 @@ export default function HistoryPage() {
           <select
             value={projectFilter}
             onChange={(e) => handleFilterChange('project', e.target.value)}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
+            style={{ minWidth: '100px', fontSize: '13px' }}
           >
             <option value="all">All Projects</option>
             {projects.map((p) => (

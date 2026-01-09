@@ -11,17 +11,32 @@ export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     
-    // TODO: Integrate with your waitlist service (e.g., Loops, Resend, etc.)
-    // For now, just simulate a submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setSubmitted(true);
-    setLoading(false);
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'landing_page' }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+      
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -611,6 +626,7 @@ export default function LandingPage() {
                     required
                     className="modal-input"
                   />
+                  {error && <p className="modal-error">{error}</p>}
                   <button type="submit" className="btn btn-primary modal-submit" disabled={loading}>
                     {loading ? 'Joining...' : 'Join waitlist'}
                   </button>
@@ -756,6 +772,16 @@ export default function LandingPage() {
           font-size: 0.85rem;
           color: var(--text-muted);
           margin-top: 1rem;
+        }
+
+        .modal-error {
+          color: #dc2626;
+          font-size: 0.9rem;
+          margin: 0;
+          padding: 0.75rem;
+          background: #fef2f2;
+          border-radius: 6px;
+          text-align: center;
         }
 
         .modal-success {

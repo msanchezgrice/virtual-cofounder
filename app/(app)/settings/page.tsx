@@ -99,19 +99,21 @@ export default function SettingsPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="app-page" style={{ maxWidth: '900px' }}>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">
-          Manage integrations, feature flags, and system limits
-        </p>
+      <div className="page-header" style={{ marginBottom: '32px' }}>
+        <div>
+          <h1 className="page-title">⚙️ Settings</h1>
+          <p className="page-subtitle">
+            Manage integrations, feature flags, and system limits
+          </p>
+        </div>
       </div>
 
       {/* Integrations */}
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Integrations</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Integrations</h2>
+        <div className="responsive-grid responsive-grid-2">
           {integrations.map((integration) => (
             <div
               key={integration.id}
@@ -139,8 +141,8 @@ export default function SettingsPage() {
       </section>
 
       {/* Feature Flags */}
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Feature Flags</h2>
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Feature Flags</h2>
         <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
           {flags.map((flag) => (
             <div key={flag.key} className="p-4 flex items-center justify-between">
@@ -169,10 +171,10 @@ export default function SettingsPage() {
       </section>
 
       {/* Limits & Constraints */}
-      <section className="mb-10">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Limits & Constraints</h2>
-        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Limits & Constraints</h2>
+        <div className="card" style={{ padding: '20px' }}>
+          <div className="responsive-grid responsive-grid-2" style={{ marginBottom: '20px' }}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Max Concurrent Agents
@@ -258,8 +260,8 @@ export default function SettingsPage() {
       </section>
 
       {/* Danger Zone */}
-      <section>
-        <h2 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h2>
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#DC2626', marginBottom: '16px' }}>Danger Zone</h2>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>

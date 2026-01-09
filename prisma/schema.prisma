@@ -476,3 +476,25 @@ model AgentOutput {
   @@index([projectId, outputType])
   @@map("agent_outputs")
 }
+
+// ============================================================================
+// WAITLIST
+// ============================================================================
+
+model WaitlistSignup {
+  id    String @id @default(uuid())
+  email String @unique
+
+  // Engagement tracking
+  backgroundInfo String?   @map("background_info") @db.Text // If they reply with how they'll use it
+  source         String?   // 'landing_page'|'referral'|etc.
+  
+  // Email tracking
+  welcomeEmailSentAt DateTime? @map("welcome_email_sent_at")
+  resendEmailId      String?   @map("resend_email_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("waitlist_signups")
+}

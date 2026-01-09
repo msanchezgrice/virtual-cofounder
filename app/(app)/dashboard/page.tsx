@@ -304,15 +304,17 @@ export default function DashboardPage() {
   // Show skeleton loading on initial load
   if (loading && !data) {
     return (
-      <div style={{ padding: '24px', background: 'var(--bg-cream, #FDF8F3)', minHeight: '100%' }}>
+      <div className="app-page">
         {/* Header skeleton */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <div className="animate-pulse" style={{ height: '32px', background: '#E5E7EB', borderRadius: '8px', width: '300px' }} />
-          <div className="animate-pulse" style={{ height: '40px', background: '#E5E7EB', borderRadius: '8px', width: '140px' }} />
+        <div className="page-header">
+          <div className="animate-pulse" style={{ height: '32px', background: '#E5E7EB', borderRadius: '8px', width: '250px', maxWidth: '100%' }} />
+          <div className="page-header-actions">
+            <div className="animate-pulse" style={{ height: '40px', background: '#E5E7EB', borderRadius: '8px', width: '140px' }} />
+          </div>
         </div>
         
         {/* Stats skeleton */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div className="responsive-grid responsive-grid-4" style={{ marginBottom: '24px' }}>
           <StatCardSkeleton />
           <StatCardSkeleton />
           <StatCardSkeleton />
@@ -326,42 +328,22 @@ export default function DashboardPage() {
   }
 
   return (
-    <div style={{ padding: '24px', background: 'var(--bg-cream, #FDF8F3)', minHeight: '100%' }}>
+    <div className="app-page">
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary, #1C1917)' }}>
+      <div className="page-header">
+        <h1 className="page-title">
           {getGreeting()}, Miguel 👋
         </h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="page-header-actions">
           <button
             onClick={() => refresh()}
-            style={{
-              padding: '10px 16px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              background: 'white',
-              color: 'var(--text-primary, #1C1917)',
-              border: '1px solid var(--border-light, #E7E5E4)',
-              cursor: 'pointer',
-            }}
+            className="btn btn-secondary touch-target"
           >
             ↻ Refresh
           </button>
           <Link
             href="/priorities"
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              background: 'var(--accent-purple, #8B5CF6)',
-              color: 'white',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className="btn btn-primary touch-target"
           >
             ➕ New Priority
           </Link>
@@ -386,7 +368,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="responsive-grid responsive-grid-4" style={{ marginBottom: '24px' }}>
         <StatCard
           label="Work In Progress"
           value={stats.workInProgress}

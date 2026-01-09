@@ -128,27 +128,44 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="app-page">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Agent Activity</h1>
-        <div className="flex items-center gap-3">
+      <div className="page-header">
+        <h1 className="page-title">🤖 Agent Activity</h1>
+        <div className="page-header-actions">
           {data && data.stats.activeCount > 0 && (
-            <span className="px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#D1FAE5',
+              color: '#065F46',
+              padding: '6px 12px',
+              borderRadius: '999px',
+              fontSize: '13px',
+              fontWeight: 600,
+            }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                background: '#10B981',
+                borderRadius: '50%',
+                animation: 'pulse 2s infinite',
+              }}></span>
               {data.stats.activeCount} Active
             </span>
           )}
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+            className="btn btn-secondary touch-target"
+            style={{ minWidth: '100px', fontSize: '13px' }}
           >
             <option value="all">All Agents</option>
-            <option value="code">Code Agents</option>
-            <option value="ops">Analysis Agents</option>
-            <option value="content">Content Agents</option>
-            <option value="infra">Infrastructure Agents</option>
+            <option value="code">Code</option>
+            <option value="ops">Analysis</option>
+            <option value="content">Content</option>
+            <option value="infra">Infra</option>
           </select>
         </div>
       </div>
@@ -232,11 +249,18 @@ export default function AgentsPage() {
       )}
 
       {/* Agent Registry */}
-      <div className="mb-8">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{
+          fontSize: '12px',
+          fontWeight: 600,
+          color: 'var(--text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '12px',
+        }}>
           Agent Registry ({filteredRegistry.length})
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="responsive-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px' }}>
           {filteredRegistry.map((agent) => (
             <div
               key={agent.role}

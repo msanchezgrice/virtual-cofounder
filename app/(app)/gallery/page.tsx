@@ -98,18 +98,20 @@ export default function GalleryPage() {
     STATUS_LABELS[s] || { label: s, color: 'bg-gray-100 text-gray-800' };
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="app-page">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-gray-900">Gallery</h1>
-        <p className="text-gray-500 mt-1">
-          Browse and review agent outputs: designs, documents, research, and analysis
-        </p>
+      <div className="page-header" style={{ marginBottom: '24px' }}>
+        <div>
+          <h1 className="page-title">🎨 Gallery</h1>
+          <p className="page-subtitle">
+            Browse and review agent outputs
+          </p>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="card" style={{ padding: '16px', marginBottom: '24px' }}>
+        <div className="responsive-grid responsive-grid-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
@@ -177,26 +179,25 @@ export default function GalleryPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="responsive-grid responsive-grid-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
-              <div className="h-40 bg-gray-100 rounded-lg mb-4" />
-              <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-gray-100 rounded w-1/2" />
+            <div key={i} className="card animate-pulse" style={{ padding: '16px' }}>
+              <div style={{ height: '140px', background: 'var(--bg-warm)', borderRadius: '8px', marginBottom: '16px' }} />
+              <div style={{ height: '16px', background: 'var(--bg-warm)', borderRadius: '4px', width: '75%', marginBottom: '8px' }} />
+              <div style={{ height: '12px', background: 'var(--bg-warm)', borderRadius: '4px', width: '50%' }} />
             </div>
           ))}
         </div>
       ) : outputs.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-          <div className="text-4xl mb-4">📭</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No outputs yet</h3>
-          <p className="text-gray-500">
-            Agent outputs will appear here when agents create designs, documents, research, or
-            analysis.
+        <div className="card" style={{ padding: '48px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📭</div>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>No outputs yet</h3>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Agent outputs will appear here when agents create designs, documents, or research.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="responsive-grid responsive-grid-3">
           {outputs.map((output) => {
             const typeInfo = getTypeInfo(output.outputType);
             const statusInfo = getStatusInfo(output.status);

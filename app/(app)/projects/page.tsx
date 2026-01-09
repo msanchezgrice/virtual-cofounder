@@ -111,55 +111,64 @@ function ProjectCard({ project }: { project: ProjectWithStats }) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="block bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all group"
+      className="block bg-white border border-gray-200 rounded-xl p-4 md:p-5 hover:shadow-md transition-all group touch-target"
     >
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4">
         {/* Project Icon */}
         <div
-          className={`w-16 h-16 rounded-xl bg-gradient-to-br ${getProjectGradient(project.name)} flex items-center justify-center`}
+          className={`w-12 h-12 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${getProjectGradient(project.name)} flex items-center justify-center flex-shrink-0`}
         >
-          <span className="text-3xl">{getProjectEmoji(project.name)}</span>
+          <span className="text-2xl md:text-3xl">{getProjectEmoji(project.name)}</span>
         </div>
 
         {/* Project Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 truncate">
               {project.name}
             </h3>
             <span
-              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${statusStyle.bg} ${statusStyle.text}`}
+              className={`px-2 py-0.5 rounded-full text-xs font-semibold uppercase ${statusStyle.bg} ${statusStyle.text}`}
             >
               {project.stage}
             </span>
+            {/* Mobile score badge */}
+            <span className="md:hidden ml-auto text-lg font-bold text-purple-600">
+              {project.launchScore}
+            </span>
           </div>
           <p className="text-sm text-gray-500 truncate">
-            {project.domain || 'No domain configured'}
+            {project.domain || 'No domain'}
           </p>
+          {/* Mobile stats row */}
+          <div className="flex gap-4 mt-2 md:hidden text-xs text-gray-500">
+            <span>{project.inProgress} in progress</span>
+            <span>{project.forReview} for review</span>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div className="hidden md:grid grid-cols-4 gap-6 text-center">
+        {/* Stats - Desktop only */}
+        <div className="hidden md:grid grid-cols-4 gap-4 text-center flex-shrink-0">
           <div>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-xl font-bold text-purple-600">
               {project.launchScore}
             </div>
-            <div className="text-xs text-gray-500">Launch Score</div>
+            <div className="text-xs text-gray-500">Launch</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xl font-bold text-gray-900">
               {project.inProgress}
             </div>
-            <div className="text-xs text-gray-500">In Progress</div>
+            <div className="text-xs text-gray-500">WIP</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-amber-600">
+            <div className="text-xl font-bold text-amber-600">
               {project.forReview}
             </div>
-            <div className="text-xs text-gray-500">For Review</div>
+            <div className="text-xs text-gray-500">Review</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${getHealthColor(project.healthScore)}`}>
+            <div className={`text-xl font-bold ${getHealthColor(project.healthScore)}`}>
               {project.healthScore}%
             </div>
             <div className="text-xs text-gray-500">Health</div>
@@ -167,7 +176,7 @@ function ProjectCard({ project }: { project: ProjectWithStats }) {
         </div>
 
         {/* Arrow */}
-        <span className="text-gray-400 group-hover:text-purple-600 transition-colors">
+        <span className="text-gray-400 group-hover:text-purple-600 transition-colors hidden md:block">
           →
         </span>
       </div>
@@ -234,25 +243,26 @@ export default function ProjectsPage() {
           <h1 className="page-title">📁 Projects</h1>
           <p className="page-subtitle">Manage all your projects</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="page-header-actions">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white cursor-pointer"
+            className="btn btn-secondary touch-target"
+            style={{ minWidth: '120px', fontSize: '13px' }}
           >
-            <option value="launch-score">Sort by Launch Score</option>
-            <option value="health">Sort by Health</option>
-            <option value="alphabetical">Sort A-Z</option>
-            <option value="recent">Sort by Recent</option>
+            <option value="launch-score">Launch Score</option>
+            <option value="health">Health</option>
+            <option value="alphabetical">A-Z</option>
+            <option value="recent">Recent</option>
           </select>
           <button 
             onClick={() => refresh()}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
           >
-            ↻ Refresh
+            ↻
           </button>
-          <button className="btn btn-primary">
-            ➕ Add Project
+          <button className="btn btn-primary touch-target">
+            ➕<span className="hide-mobile" style={{ marginLeft: '4px' }}>Add Project</span>
           </button>
         </div>
       </div>

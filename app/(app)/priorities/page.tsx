@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
 interface Story {
@@ -55,6 +54,7 @@ export default function PrioritiesPage() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [page, setPage] = useState(1);
   const [reranking, setReranking] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Cache projects for 1 hour since they don't change often
   const { data: projectsData, loading: projectsLoading } = useApiCache<ProjectsResponse>(
@@ -231,47 +231,52 @@ export default function PrioritiesPage() {
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Priority Stack</h1>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="page-header-actions">
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--border-light)',
-              borderRadius: '8px',
-              fontSize: '13px',
-              background: 'white',
-              cursor: 'pointer',
-              minWidth: '160px',
-            }}
+            className="btn btn-secondary touch-target"
+            style={{ minWidth: '120px', fontSize: '13px' }}
           >
-            <option value="">All Projects ({projects.length})</option>
+            <option value="">All Projects</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          
+          {/* View Toggle */}
+          <div className="view-toggle">
+            <button 
+              className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+            >
+              ≡
+            </button>
+            <button 
+              className={`view-toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+              onClick={() => setViewMode('cards')}
+            >
+              ▦
+            </button>
+          </div>
+          
           <button
             onClick={handleRerank}
             disabled={reranking}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <span style={{ 
               display: 'inline-block',
               animation: reranking ? 'spin 1s linear infinite' : 'none',
             }}>🔄</span>
-            Re-rank
+            <span className="hide-mobile">Re-rank</span>
           </button>
         </div>
       </div>
 
       {/* Priority Summary Cards */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '12px',
-        marginBottom: '24px',
-      }}>
+      <div className="responsive-grid responsive-grid-4" style={{ marginBottom: '24px' }}>
         <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#991B1B' }}>{summary.p0Count}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>P0 Critical</div>
@@ -309,121 +314,227 @@ export default function PrioritiesPage() {
           </div>
         ) : (
           <>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>#</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Story</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Project</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Priority</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Impact</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Confidence</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Score</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Links</th>
-                </tr>
-              </thead>
-              <tbody>
+            {/* Table View - Hidden on mobile when card view is active */}
+            {viewMode === 'table' && (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                      <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>#</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Story</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Project</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Priority</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Impact</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Score</th>
+                      <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Links</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stories.map((story, index) => {
+                      const globalIndex = (page - 1) * pagination.limit + index;
+                      return (
+                        <tr 
+                          key={story.id} 
+                          style={{ 
+                            borderBottom: '1px solid var(--border-light)',
+                            cursor: 'pointer',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-warm)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ 
+                            padding: '16px 8px', 
+                            fontWeight: 600, 
+                            color: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--text-muted)',
+                            fontSize: '14px',
+                          }}>
+                            {globalIndex + 1}
+                          </td>
+                          <td style={{ padding: '16px 8px' }}>
+                            <Link 
+                              href={`/stories/${story.id}`}
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{story.title}</div>
+                              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                {story.rationale?.slice(0, 50) || 'No description'}
+                                {story.rationale && story.rationale.length > 50 ? '...' : ''}
+                              </div>
+                            </Link>
+                          </td>
+                          <td style={{ padding: '16px 8px', fontSize: '13px' }}>
+                            {story.project?.name || 'Unknown'}
+                          </td>
+                          <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                            {getPriorityBadge(story.priorityLevel)}
+                          </td>
+                          <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                            {getImpactDots(story.priorityScore)}
+                          </td>
+                          <td style={{ 
+                            padding: '16px 8px', 
+                            textAlign: 'center', 
+                            fontWeight: 700, 
+                            color: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--text-primary)',
+                            fontSize: '16px',
+                          }}>
+                            {story.priorityScore || 50}
+                          </td>
+                          <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                              {story.linearTaskId && (
+                                <a
+                                  href={`https://linear.app/issue/${story.linearTaskId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="touch-target"
+                                  style={{
+                                    padding: '4px 8px',
+                                    fontSize: '11px',
+                                    background: 'var(--bg-warm)',
+                                    borderRadius: '4px',
+                                    textDecoration: 'none',
+                                    color: 'var(--text-muted)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    minHeight: '32px',
+                                  }}
+                                  title="View in Linear"
+                                >
+                                  📋
+                                </a>
+                              )}
+                              {story.prUrl && (
+                                <a
+                                  href={story.prUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="touch-target"
+                                  style={{
+                                    padding: '4px 8px',
+                                    fontSize: '11px',
+                                    background: 'var(--bg-warm)',
+                                    borderRadius: '4px',
+                                    textDecoration: 'none',
+                                    color: 'var(--text-muted)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    minHeight: '32px',
+                                  }}
+                                  title="View Pull Request"
+                                >
+                                  🔀
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Card View - Better for mobile */}
+            {viewMode === 'cards' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {stories.map((story, index) => {
                   const globalIndex = (page - 1) * pagination.limit + index;
                   return (
-                    <tr 
-                      key={story.id} 
-                      style={{ 
-                        borderBottom: '1px solid var(--border-light)',
-                        cursor: 'pointer',
-                        transition: 'background 0.15s',
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-warm)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    <Link 
+                      key={story.id}
+                      href={`/stories/${story.id}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      <td style={{ 
-                        padding: '16px 8px', 
-                        fontWeight: 600, 
-                        color: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--text-muted)',
-                        fontSize: '14px',
-                      }}>
-                        {globalIndex + 1}
-                      </td>
-                      <td style={{ padding: '16px 8px' }}>
-                        <Link 
-                          href={`/stories/${story.id}`}
-                          style={{ textDecoration: 'none', color: 'inherit' }}
-                        >
-                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{story.title}</div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                            {story.rationale?.slice(0, 50) || 'No description'}
-                            {story.rationale && story.rationale.length > 50 ? '...' : ''}
+                      <div 
+                        className="story-card-mobile"
+                        style={{ 
+                          background: globalIndex === 0 ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))' : 'white',
+                          borderColor: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--border-light)',
+                        }}
+                      >
+                        <div className="story-card-mobile-header">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                            <span style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--text-muted)',
+                              minWidth: '24px',
+                            }}>
+                              #{globalIndex + 1}
+                            </span>
+                            {getPriorityBadge(story.priorityLevel)}
+                            <span style={{ 
+                              fontWeight: 700, 
+                              fontSize: '18px',
+                              color: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--text-primary)',
+                              marginLeft: 'auto',
+                            }}>
+                              {story.priorityScore || 50}
+                            </span>
                           </div>
-                        </Link>
-                      </td>
-                      <td style={{ padding: '16px 8px', fontSize: '13px' }}>
-                        {story.project?.name || 'Unknown'}
-                      </td>
-                      <td style={{ padding: '16px 8px', textAlign: 'center' }}>
-                        {getPriorityBadge(story.priorityLevel)}
-                      </td>
-                      <td style={{ padding: '16px 8px', textAlign: 'center' }}>
-                        {getImpactDots(story.priorityScore)}
-                      </td>
-                      <td style={{ padding: '16px 8px', textAlign: 'center' }}>
-                        {getConfidenceDots(story.priorityScore)}
-                      </td>
-                      <td style={{ 
-                        padding: '16px 8px', 
-                        textAlign: 'center', 
-                        fontWeight: 700, 
-                        color: globalIndex === 0 ? 'var(--accent-purple)' : 'var(--text-primary)',
-                        fontSize: '16px',
-                      }}>
-                        {story.priorityScore || 50}
-                      </td>
-                      <td style={{ padding: '16px 8px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                          {story.linearTaskId && (
-                            <a
-                              href={`https://linear.app/issue/${story.linearTaskId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                padding: '4px 8px',
-                                fontSize: '11px',
-                                background: 'var(--bg-warm)',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                color: 'var(--text-muted)',
-                              }}
-                              title="View in Linear"
-                            >
-                              📋
-                            </a>
-                          )}
-                          {story.prUrl && (
-                            <a
-                              href={story.prUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              style={{
-                                padding: '4px 8px',
-                                fontSize: '11px',
-                                background: 'var(--bg-warm)',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                color: 'var(--text-muted)',
-                              }}
-                              title="View Pull Request"
-                            >
-                              🔀
-                            </a>
-                          )}
                         </div>
-                      </td>
-                    </tr>
+                        
+                        <div style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '15px' }}>
+                          {story.title}
+                        </div>
+                        
+                        {story.rationale && (
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                            {story.rationale.slice(0, 100)}{story.rationale.length > 100 ? '...' : ''}
+                          </div>
+                        )}
+                        
+                        <div className="story-card-mobile-meta">
+                          <span style={{ 
+                            fontSize: '12px', 
+                            color: 'var(--text-muted)',
+                            background: 'var(--bg-warm)',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                          }}>
+                            {story.project?.name || 'Unknown'}
+                          </span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            {getImpactDots(story.priorityScore)} Impact
+                          </span>
+                          <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
+                            {story.linearTaskId && (
+                              <span
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '12px',
+                                  background: 'var(--bg-warm)',
+                                  borderRadius: '4px',
+                                }}
+                              >
+                                📋
+                              </span>
+                            )}
+                            {story.prUrl && (
+                              <span
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '12px',
+                                  background: 'var(--bg-warm)',
+                                  borderRadius: '4px',
+                                }}
+                              >
+                                🔀
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            )}
 
             {/* Pagination controls */}
             {pagination.totalPages > 1 && (
@@ -471,31 +582,26 @@ export default function PrioritiesPage() {
         <div className="card-header">
           <span className="card-title">⚡ Scoring Formula</span>
         </div>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(5, 1fr)', 
-          gap: '16px',
-          fontSize: '13px',
-        }}>
+        <div className="responsive-grid responsive-grid-5" style={{ fontSize: '13px' }}>
           <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
             <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>40%</div>
-            <div style={{ color: 'var(--text-muted)' }}>Priority Signal</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Priority Signal</div>
           </div>
           <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
             <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>25%</div>
-            <div style={{ color: 'var(--text-muted)' }}>Launch Impact</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Launch Impact</div>
           </div>
           <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
             <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>15%</div>
-            <div style={{ color: 'var(--text-muted)' }}>Effort (inverse)</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Effort (inv)</div>
           </div>
           <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
             <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>10%</div>
-            <div style={{ color: 'var(--text-muted)' }}>Age Boost</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Age Boost</div>
           </div>
           <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
             <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>10%</div>
-            <div style={{ color: 'var(--text-muted)' }}>User Focus</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>User Focus</div>
           </div>
         </div>
       </div>

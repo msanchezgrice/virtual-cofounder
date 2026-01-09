@@ -347,15 +347,15 @@ export default function ScansPage() {
 
   if (loading && !scansData) {
     return (
-      <div style={{ padding: '24px', background: 'var(--bg-cream, #FDF8F3)', minHeight: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div className="app-page">
+        <div className="page-header">
           <div className="animate-pulse" style={{ height: '28px', background: '#E5E7EB', borderRadius: '8px', width: '150px' }} />
-          <div className="flex gap-2">
-            <div className="animate-pulse" style={{ height: '36px', background: '#E5E7EB', borderRadius: '8px', width: '120px' }} />
+          <div className="page-header-actions">
+            <div className="animate-pulse" style={{ height: '36px', background: '#E5E7EB', borderRadius: '8px', width: '100px' }} />
             <div className="animate-pulse" style={{ height: '36px', background: '#E5E7EB', borderRadius: '8px', width: '100px' }} />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div className="responsive-grid responsive-grid-5" style={{ marginBottom: '24px' }}>
           {[1, 2, 3, 4, 5].map((i) => (
             <ScoreCardSkeleton key={i} />
           ))}
@@ -366,36 +366,23 @@ export default function ScansPage() {
   }
 
   return (
-    <div style={{ padding: '24px', background: 'var(--bg-cream, #FDF8F3)', minHeight: '100%' }}>
+    <div className="app-page">
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary, #1C1917)' }}>
-          Scan Results
-        </h1>
-        <div style={{ display: 'flex', gap: '8px' }}>
+      <div className="page-header">
+        <h1 className="page-title">🔍 Scan Results</h1>
+        <div className="page-header-actions">
           <button
             onClick={() => refresh()}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              background: 'white',
-              border: '1px solid var(--border-light, #E7E5E4)',
-              cursor: 'pointer',
-            }}
+            className="btn btn-secondary touch-target"
+            style={{ padding: '8px 12px' }}
           >
             ↻
           </button>
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            style={{
-              padding: '8px 16px',
-              border: '1px solid var(--border-light, #E7E5E4)',
-              borderRadius: '8px',
-              fontSize: '13px',
-              background: 'white',
-            }}
+            className="btn btn-secondary touch-target"
+            style={{ minWidth: '100px', fontSize: '13px' }}
           >
             <option value="all">All Projects</option>
             {projects.map((p) => (
@@ -405,19 +392,12 @@ export default function ScansPage() {
           <button
             onClick={handleRunScan}
             disabled={triggering}
+            className="btn btn-primary touch-target"
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              background: 'var(--accent-purple, #8B5CF6)',
-              color: 'white',
-              border: 'none',
-              cursor: triggering ? 'not-allowed' : 'pointer',
               opacity: triggering ? 0.7 : 1,
             }}
           >
-            {triggering ? '⏳ Running...' : '🔍 Run Scan'}
+            {triggering ? '⏳' : '🔍'}<span className="hide-mobile" style={{ marginLeft: '4px' }}>{triggering ? 'Running...' : 'Run Scan'}</span>
           </button>
         </div>
       </div>
@@ -438,12 +418,12 @@ export default function ScansPage() {
       )}
 
       {/* Scan Score Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="responsive-grid responsive-grid-5" style={{ marginBottom: '24px' }}>
         <ScoreCard icon="🌐" label="Domain" score={scores.domain.score} max={scores.domain.max} />
         <ScoreCard icon="🔎" label="SEO" score={scores.seo.score} max={scores.seo.max} />
         <ScoreCard icon="📊" label="Analytics" score={scores.analytics.score} max={scores.analytics.max} />
         <ScoreCard icon="🔒" label="Security" score={scores.security.score} max={scores.security.max} />
-        <ScoreCard icon="⚡" label="Performance" score={scores.performance.score} max={scores.performance.max} />
+        <ScoreCard icon="⚡" label="Perf" score={scores.performance.score} max={scores.performance.max} />
       </div>
 
       {/* Findings */}

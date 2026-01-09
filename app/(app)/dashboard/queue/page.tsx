@@ -218,29 +218,25 @@ export default function ExecutionQueuePage() {
         <h1 className="page-title">
           Execution Queue
           <span style={{
-            marginLeft: '12px',
+            marginLeft: '8px',
             fontSize: '14px',
             fontWeight: 400,
             color: 'var(--text-muted)',
           }}>
-            ({stats.total} total)
+            ({stats.total})
           </span>
         </h1>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="page-header-actions">
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
+            className="btn btn-secondary touch-target"
             style={{
-              padding: '6px 12px',
-              border: '1px solid var(--border-light)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              background: 'white',
-              cursor: 'pointer',
-              minWidth: '150px',
+              minWidth: '120px',
+              fontSize: '13px',
             }}
           >
-            <option value="">All Projects ({projects.length})</option>
+            <option value="">All Projects</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -255,21 +251,25 @@ export default function ExecutionQueuePage() {
             borderRadius: '8px',
             fontSize: '12px',
             fontWeight: 600,
+            whiteSpace: 'nowrap',
           }}>
             <span style={{
               width: '8px',
               height: '8px',
               borderRadius: '50%',
               background: workerActive ? '#10B981' : '#EF4444',
+              flexShrink: 0,
             }} />
-            {workerActive ? 'WORKER ACTIVE' : 'WORKER PAUSED'}
+            <span className="hide-mobile">{workerActive ? 'WORKER ACTIVE' : 'WORKER PAUSED'}</span>
+            <span className="show-mobile" style={{ display: 'none' }}>{workerActive ? 'ON' : 'OFF'}</span>
           </span>
           <button
             onClick={() => setWorkerActive(!workerActive)}
-            className="btn btn-secondary"
+            className="btn btn-secondary touch-target"
             style={{ fontSize: '12px', padding: '6px 12px' }}
           >
-            {workerActive ? '⏸️ Pause' : '▶️ Resume'}
+            {workerActive ? '⏸️' : '▶️'}
+            <span className="hide-mobile" style={{ marginLeft: '4px' }}>{workerActive ? 'Pause' : 'Resume'}</span>
           </button>
         </div>
       </div>
@@ -366,29 +366,53 @@ export default function ExecutionQueuePage() {
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {upNext.map((story, index) => (
-              <div key={story.id} className="card" style={{ marginBottom: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{
-                    fontSize: '14px',
-                    color: 'var(--text-muted)',
-                    fontWeight: 600,
-                    width: '32px',
-                    textAlign: 'right',
-                  }}>
-                    #{(page - 1) * pagination.limit + index + (executing ? 2 : 1)}
+              <div key={story.id} className="story-card-mobile card" style={{ marginBottom: 0, padding: '16px' }}>
+                {/* Mobile-first layout: stacks on mobile, row on desktop */}
+                <div className="story-card-mobile-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: 1 }}>
+                    <span style={{
+                      fontSize: '13px',
+                      color: 'var(--text-muted)',
+                      fontWeight: 600,
+                      minWidth: '28px',
+                    }}>
+                      #{(page - 1) * pagination.limit + index + (executing ? 2 : 1)}
+                    </span>
+                    {getPriorityBadge(story.priorityLevel)}
+                    <Link 
+                      href={`/stories/${story.id}`}
+                      style={{ 
+                        fontWeight: 500, 
+                        textDecoration: 'none', 
+                        color: 'var(--text-primary)',
+                        flex: 1,
+                        minWidth: '150px',
+                      }}
+                    >
+                      {story.title}
+                    </Link>
                   </div>
-                  {getPriorityBadge(story.priorityLevel)}
-                  <Link 
-                    href={`/stories/${story.id}`}
-                    style={{ flex: 1, fontWeight: 500, textDecoration: 'none', color: 'var(--text-primary)' }}
-                  >
-                    {story.title}
-                  </Link>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                </div>
+                
+                <div className="story-card-mobile-meta">
+                  <span style={{ 
+                    fontSize: '12px', 
+                    color: 'var(--text-muted)',
+                    background: 'var(--bg-warm)',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                  }}>
                     {story.project.name}
                   </span>
                   {story.priorityScore && (
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
+                    <span style={{ 
+                      fontSize: '11px', 
+                      color: 'var(--text-muted)', 
+                      fontFamily: "'DM Mono', monospace",
+                      background: 'var(--bg-warm)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                    }}>
                       {story.priorityScore}pts
                     </span>
                   )}
@@ -398,6 +422,7 @@ export default function ExecutionQueuePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
+                      className="touch-target"
                       style={{
                         padding: '4px 8px',
                         fontSize: '11px',
@@ -405,6 +430,9 @@ export default function ExecutionQueuePage() {
                         borderRadius: '4px',
                         textDecoration: 'none',
                         color: 'var(--text-muted)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        minHeight: '28px',
                       }}
                       title="View in Linear"
                     >
@@ -413,8 +441,8 @@ export default function ExecutionQueuePage() {
                   )}
                   <button
                     onClick={() => handlePrioritize(story.id)}
-                    className="btn btn-secondary"
-                    style={{ fontSize: '11px', padding: '4px 8px' }}
+                    className="btn btn-secondary touch-target"
+                    style={{ fontSize: '11px', padding: '6px 12px', marginLeft: 'auto' }}
                   >
                     ↑ Prioritize
                   </button>
