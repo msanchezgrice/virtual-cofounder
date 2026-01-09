@@ -469,6 +469,9 @@ async function runOrchestratorSDK(
 
     let finalOutput = '';
     let messageCount = 0;
+    
+    // Track tool use for Task spawning
+    let currentToolUse: { name: string; inputJson: string; index: number } | null = null;
 
     console.log('[Orchestrator] Starting SDK message stream...');
 
@@ -489,6 +492,89 @@ async function runOrchestratorSDK(
           }
           break;
 
+        case 'stream_event':
+          // SDK sends stream_event messages with nested event data
+          // Tool use is detected via content_block_start/delta/stop events
+          const streamMsg = message as {
+            type: 'stream_event';
+            event?: {
+              type: string;
+              index?: number;
+              content_block?: {
+                type: string;
+                name?: string;
+                input?: Record<string, unknown>;
+              };
+              delta?: {
+                type: string;
+                partial_json?: string;
+              };
+            };
+          };
+          
+          // Check if this is a tool_use start event
+          if (streamMsg.event?.type === 'content_block_start' && 
+              streamMsg.event.content_block?.type === 'tool_use') {
+            const toolName = streamMsg.event.content_block.name || '';
+            console.log(`[Orchestrator] Tool use start: ${toolName}`);
+            if (toolName === 'Task') {
+              currentToolUse = { name: toolName, inputJson: '', index: streamMsg.event.index || 0 };
+            }
+          }
+          
+          // Accumulate JSON input for tool use
+          if (streamMsg.event?.type === 'content_block_delta' && 
+              streamMsg.event.delta?.type === 'input_json_delta' &&
+              currentToolUse && streamMsg.event.index === currentToolUse.index) {
+            currentToolUse.inputJson += streamMsg.event.delta.partial_json || '';
+          }
+          
+          // Process completed tool use
+          if (streamMsg.event?.type === 'content_block_stop' && currentToolUse) {
+            try {
+              const toolInput = JSON.parse(currentToolUse.inputJson) as {
+                subagent_type?: string;
+                description?: string;
+                prompt?: string;
+              };
+              const spawnedAgentType = toolInput.subagent_type;
+              
+              if (currentToolUse.name === 'Task' && spawnedAgentType) {
+                agentsSpawned.push(spawnedAgentType);
+                conversation.push(`[HoP] Spawned ${spawnedAgentType} agent`);
+                console.log(`[Orchestrator] HoP spawned: ${spawnedAgentType}`);
+                
+                // Create agent session record
+                const agentDef = agentRegistry[spawnedAgentType];
+                if (agentDef) {
+                  const taskPrompt = toolInput.prompt || toolInput.description || '';
+                  const projectIdMatch = taskPrompt.match(/ID:\s*([a-f0-9-]+)/i);
+                  const projectId = projectIdMatch?.[1] || scanContexts[0]?.project.id;
+                  
+                  prisma.agentSession.create({
+                    data: {
+                      orchestratorRunId: options.orchestratorRunId,
+                      projectId,
+                      agentName: agentDef.name,
+                      agentType: 'specialist',
+                      status: 'running',
+                      thinkingTrace: [{ turn: 1, thinking: `Spawned by Head of Product agent`, action: 'spawn' }],
+                      toolCalls: [],
+                    },
+                  }).then(session => {
+                    console.log(`[Orchestrator] Created session ${session.id} for ${spawnedAgentType}`);
+                  }).catch(err => {
+                    console.error(`[Orchestrator] Failed to create session for ${spawnedAgentType}:`, err);
+                  });
+                }
+              }
+            } catch (e) {
+              console.log(`[Orchestrator] Failed to parse tool input JSON: ${(e as Error).message}`);
+            }
+            currentToolUse = null;
+          }
+          break;
+          
         case 'tool_progress':
           // Track when HoP spawns a subagent via Task
           // SDK uses subagent_type not agentName
