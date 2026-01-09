@@ -99,6 +99,16 @@ export async function GET(
     });
 
     // Process findings by agent
+    type ProcessedFinding = {
+      id: string;
+      issue: string;
+      action: string;
+      severity: string;
+      effort: string;
+      impact: string;
+      confidence: number;
+      createdAt: Date;
+    };
     const findingsByAgent = findings.reduce((acc, f) => {
       acc[f.agent] = acc[f.agent] || [];
       acc[f.agent].push({
@@ -112,7 +122,7 @@ export async function GET(
         createdAt: f.createdAt,
       });
       return acc;
-    }, {} as Record<string, typeof findings>);
+    }, {} as Record<string, ProcessedFinding[]>);
 
     // Calculate stats
     const stats = {
