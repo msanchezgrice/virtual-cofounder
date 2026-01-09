@@ -75,7 +75,7 @@ export async function GET(
     const processedSessions = sessions.map(session => {
       // Find matching agent in registry
       const agentEntry = Object.entries(agentRegistry).find(
-        ([_, a]) => a.name === session.agentName || session.agentName.toLowerCase().includes(_.toLowerCase())
+        ([key, a]) => (a as AgentDefinition).name === session.agentName || session.agentName.toLowerCase().includes(key.toLowerCase())
       );
       const role = agentEntry?.[0] || 'unknown';
       const display = AGENT_DISPLAY[role] || { icon: '🤖', gradient: 'from-gray-500 to-gray-600' };
