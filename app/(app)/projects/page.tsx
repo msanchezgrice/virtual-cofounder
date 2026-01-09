@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useApiCache } from '@/lib/hooks/useApiCache';
 
@@ -26,6 +27,8 @@ interface ProjectsResponse {
   count: number;
   error?: string;
 }
+
+type SortOption = 'alphabetical' | 'launch-score' | 'health' | 'recent';
 
 // Get emoji for project based on name
 function getProjectEmoji(name: string): string {
@@ -173,6 +176,8 @@ function ProjectCard({ project }: { project: ProjectWithStats }) {
 }
 
 export default function ProjectsPage() {
+  const [sortBy, setSortBy] = useState<SortOption>('launch-score');
+  
   // Use cached API with the new aggregated endpoint
   // This eliminates N+1 queries - was fetching progress for each project
   const { data, loading, error, refresh } = useApiCache<ProjectsResponse>(
@@ -183,7 +188,24 @@ export default function ProjectsPage() {
     }
   );
 
-  const projects = data?.projects ?? [];
+  const rawProjects = data?.projects ?? [];
+  
+  // Sort projects based on selected option
+  const projects = useMemo(() => {
+    const sorted = [...rawProjects];
+    switch (sortBy) {
+      case 'alphabetical':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'launch-score':
+        return sorted.sort((a, b) => b.launchScore - a.launchScore);
+      case 'health':
+        return sorted.sort((a, b) => b.healthScore - a.healthScore);
+      case 'recent':
+        return sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      default:
+        return sorted;
+    }
+  }, [rawProjects, sortBy]);
 
   if (loading && !data) {
     return (
@@ -212,7 +234,17 @@ export default function ProjectsPage() {
           <h1 className="page-title">📁 Projects</h1>
           <p className="page-subtitle">Manage all your projects</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white cursor-pointer"
+          >
+            <option value="launch-score">Sort by Launch Score</option>
+            <option value="health">Sort by Health</option>
+            <option value="alphabetical">Sort A-Z</option>
+            <option value="recent">Sort by Recent</option>
+          </select>
           <button 
             onClick={() => refresh()}
             className="btn btn-secondary"

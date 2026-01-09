@@ -58,7 +58,7 @@ interface HistoryEvent {
   };
 }
 
-type TabType = 'history' | 'stories' | 'scans' | 'agents' | 'settings';
+type TabType = 'history' | 'priority' | 'stories' | 'scans' | 'agents' | 'settings';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -243,6 +243,7 @@ export default function ProjectDetailPage() {
       <div className="flex gap-1 mb-6 border-b border-gray-200">
         {[
           { id: 'history', label: 'History' },
+          { id: 'priority', label: 'Priority' },
           { id: 'stories', label: 'Stories' },
           { id: 'scans', label: 'Scans' },
           { id: 'agents', label: 'Agents' },
@@ -270,6 +271,9 @@ export default function ProjectDetailPage() {
           setTimeRange={setTimeRange}
           formatRelativeTime={formatRelativeTime}
         />
+      )}
+      {activeTab === 'priority' && (
+        <PriorityTab projectId={projectId} projectName={project.name} />
       )}
       {activeTab === 'stories' && (
         <StoriesTab stories={project.stories} />
@@ -610,6 +614,243 @@ function AgentsTab({ projectId }: { projectId: string }) {
         <div className="text-4xl mb-4">🤖</div>
         <p>No agents currently running on this project</p>
         <p className="text-sm text-gray-400 mt-2">Agents will appear here when processing stories</p>
+      </div>
+    </div>
+  );
+}
+
+interface PriorityStory {
+  id: string;
+  title: string;
+  rationale: string;
+  priorityLevel: string | null;
+  priorityScore: number | null;
+  status: string;
+  linearTaskId: string | null;
+  prUrl: string | null;
+  createdAt: string;
+}
+
+interface PriorityResponse {
+  stories: PriorityStory[];
+  summary: {
+    totalStories: number;
+    p0Count: number;
+    p1Count: number;
+    p2Count: number;
+    p3Count: number;
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+function PriorityTab({ projectId, projectName }: { projectId: string; projectName: string }) {
+  const [stories, setStories] = useState<PriorityStory[]>([]);
+  const [summary, setSummary] = useState({ totalStories: 0, p0Count: 0, p1Count: 0, p2Count: 0, p3Count: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0, hasMore: false });
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const fetchPriorities = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/priorities?projectId=${projectId}&page=${page}&limit=50`);
+        const data: PriorityResponse = await res.json();
+        setStories(data.stories || []);
+        setSummary(data.summary || { totalStories: 0, p0Count: 0, p1Count: 0, p2Count: 0, p3Count: 0 });
+        setPagination(data.pagination || { page: 1, limit: 50, total: 0, totalPages: 0, hasMore: false });
+      } catch (error) {
+        console.error('Failed to fetch priorities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPriorities();
+  }, [projectId, page]);
+
+  const getPriorityBadge = (priorityLevel: string | null) => {
+    const styles: Record<string, { bg: string; color: string }> = {
+      'P0': { bg: '#FEE2E2', color: '#991B1B' },
+      'P1': { bg: '#FEF3C7', color: '#92400E' },
+      'P2': { bg: '#DBEAFE', color: '#1E40AF' },
+      'P3': { bg: '#F3F4F6', color: '#6B7280' },
+    };
+    const style = styles[priorityLevel || 'P2'] || styles['P2'];
+    return (
+      <span style={{
+        background: style.bg,
+        color: style.color,
+        padding: '4px 10px',
+        borderRadius: '12px',
+        fontSize: '11px',
+        fontWeight: 600,
+      }}>
+        {priorityLevel || 'P2'}
+      </span>
+    );
+  };
+
+  const getImpactDots = (score: number | null) => {
+    const normalizedScore = Math.min(5, Math.max(1, Math.ceil((score || 50) / 20)));
+    return (
+      <span style={{ color: '#10B981' }}>
+        {'●'.repeat(normalizedScore)}
+        <span style={{ color: '#E5E7EB' }}>{'○'.repeat(5 - normalizedScore)}</span>
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="text-center py-12 text-gray-500">
+          Loading priorities...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Priority Summary Cards */}
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-red-700">{summary.p0Count}</div>
+          <div className="text-xs text-gray-500">P0 Critical</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-amber-700">{summary.p1Count}</div>
+          <div className="text-xs text-gray-500">P1 High</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-blue-700">{summary.p2Count}</div>
+          <div className="text-xs text-gray-500">P2 Medium</div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+          <div className="text-2xl font-bold text-gray-500">{summary.p3Count}</div>
+          <div className="text-xs text-gray-500">P3 Low</div>
+        </div>
+      </div>
+
+      {/* Priority Stack Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">🎯 Priority Stack for {projectName}</h2>
+          <span className="text-sm text-gray-500">
+            {summary.totalStories} stories • Page {pagination.page} of {pagination.totalPages || 1}
+          </span>
+        </div>
+
+        {stories.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-4">📭</div>
+            <p className="text-gray-500">No stories to prioritize for this project</p>
+            <p className="text-sm text-gray-400 mt-2">Stories will appear here when they need prioritization</p>
+          </div>
+        ) : (
+          <>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="py-3 px-2 text-left text-xs font-medium text-gray-500">#</th>
+                  <th className="py-3 px-2 text-left text-xs font-medium text-gray-500">Story</th>
+                  <th className="py-3 px-2 text-center text-xs font-medium text-gray-500">Priority</th>
+                  <th className="py-3 px-2 text-center text-xs font-medium text-gray-500">Impact</th>
+                  <th className="py-3 px-2 text-center text-xs font-medium text-gray-500">Score</th>
+                  <th className="py-3 px-2 text-center text-xs font-medium text-gray-500">Links</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stories.map((story, index) => {
+                  const globalIndex = (page - 1) * pagination.limit + index;
+                  return (
+                    <tr 
+                      key={story.id}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="py-4 px-2 text-sm font-semibold text-gray-500">
+                        {globalIndex + 1}
+                      </td>
+                      <td className="py-4 px-2">
+                        <Link href={`/stories/${story.id}`} className="block">
+                          <div className="font-medium text-gray-900 hover:text-purple-600">{story.title}</div>
+                          <div className="text-xs text-gray-500 truncate max-w-md">
+                            {story.rationale?.slice(0, 80) || 'No description'}
+                            {story.rationale && story.rationale.length > 80 ? '...' : ''}
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="py-4 px-2 text-center">
+                        {getPriorityBadge(story.priorityLevel)}
+                      </td>
+                      <td className="py-4 px-2 text-center text-sm">
+                        {getImpactDots(story.priorityScore)}
+                      </td>
+                      <td className="py-4 px-2 text-center font-bold text-purple-600">
+                        {story.priorityScore || 50}
+                      </td>
+                      <td className="py-4 px-2 text-center">
+                        <div className="flex gap-2 justify-center">
+                          {story.linearTaskId && (
+                            <a
+                              href={`https://linear.app/issue/${story.linearTaskId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 text-xs bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                              title="View in Linear"
+                            >
+                              📋
+                            </a>
+                          )}
+                          {story.prUrl && (
+                            <a
+                              href={story.prUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 text-xs bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                              title="View PR"
+                            >
+                              🔀
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 text-sm border border-gray-200 rounded disabled:opacity-50 hover:bg-gray-50"
+                >
+                  ← Previous
+                </button>
+                <span className="px-4 py-1 text-sm text-gray-500">
+                  {page} / {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                  disabled={!pagination.hasMore}
+                  className="px-3 py-1 text-sm border border-gray-200 rounded disabled:opacity-50 hover:bg-gray-50"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

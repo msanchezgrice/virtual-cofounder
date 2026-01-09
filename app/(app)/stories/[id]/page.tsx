@@ -192,13 +192,20 @@ export default function StoryDetailPage() {
     return `https://linear.app/team/issue/${linearTaskId}`;
   };
   
+  // Default GitHub owner for repos stored without owner prefix
+  const DEFAULT_GITHUB_OWNER = 'msanchezgrice';
+  
   // Build GitHub repo URL
   const getGitHubUrl = (repo: string | null) => {
     if (!repo) return null;
     // If it's already a URL, return it
     if (repo.startsWith('http')) return repo;
-    // Otherwise assume it's owner/repo format
-    return `https://github.com/${repo}`;
+    // If it's already in owner/repo format, use it
+    if (repo.includes('/')) {
+      return `https://github.com/${repo}`;
+    }
+    // Otherwise prepend the default owner
+    return `https://github.com/${DEFAULT_GITHUB_OWNER}/${repo}`;
   };
   
   if (loading && !data) {

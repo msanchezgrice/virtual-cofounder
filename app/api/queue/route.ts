@@ -17,19 +17,24 @@ const SINGLE_USER_WORKSPACE_ID = '00000000-0000-0000-0000-000000000002';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const workspaceId = searchParams.get('workspaceId') || SINGLE_USER_WORKSPACE_ID;
+  const projectId = searchParams.get('projectId');
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
   const skip = (page - 1) * limit;
 
   try {
     const queueStatuses = ['pending', 'approved', 'in_progress'];
+    
+    // Build where clause with optional project filter
+    const baseWhere = {
+      project: { workspaceId },
+      status: { in: queueStatuses },
+      ...(projectId && { projectId }),
+    };
 
     // Get total count for pagination
     const totalCount = await db.story.count({
-      where: {
-        project: { workspaceId },
-        status: { in: queueStatuses },
-      },
+      where: baseWhere,
     });
 
     // Get currently executing story (in_progress) - always first
@@ -37,6 +42,7 @@ export async function GET(request: NextRequest) {
       where: {
         project: { workspaceId },
         status: 'in_progress',
+        ...(projectId && { projectId }),
       },
       include: {
         project: {
@@ -50,6 +56,7 @@ export async function GET(request: NextRequest) {
       where: {
         project: { workspaceId },
         status: { in: ['pending', 'approved'] },
+        ...(projectId && { projectId }),
       },
       include: {
         project: {
@@ -64,24 +71,27 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    // Get count by status for stats
+    // Get count by status for stats (filtered by project if specified)
     const [pendingCount, approvedCount, inProgressCount] = await Promise.all([
       db.story.count({
         where: {
           project: { workspaceId },
           status: 'pending',
+          ...(projectId && { projectId }),
         },
       }),
       db.story.count({
         where: {
           project: { workspaceId },
           status: 'approved',
+          ...(projectId && { projectId }),
         },
       }),
       db.story.count({
         where: {
           project: { workspaceId },
           status: 'in_progress',
+          ...(projectId && { projectId }),
         },
       }),
     ]);

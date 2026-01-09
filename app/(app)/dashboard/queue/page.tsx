@@ -4,6 +4,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
+interface Project {
+  id: string;
+  name: string;
+}
+
+interface ProjectsResponse {
+  projects: Project[];
+  count: number;
+}
+
 interface Story {
   id: string;
   title: string;
@@ -47,10 +57,27 @@ export default function ExecutionQueuePage() {
   const [page, setPage] = useState(1);
   const [workerActive, setWorkerActive] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedProject, setSelectedProject] = useState<string>('');
+
+  // Cache projects for filtering dropdown
+  const { data: projectsData } = useApiCache<ProjectsResponse>(
+    '/api/projects',
+    { ttl: 60 * 60 * 1000 } // 1 hour cache
+  );
+  const projects = projectsData?.projects || [];
+
+  // Build API URL with project filter
+  const apiUrl = useMemo(() => {
+    let url = `/api/queue?page=${page}&limit=50`;
+    if (selectedProject) {
+      url += `&projectId=${selectedProject}`;
+    }
+    return url;
+  }, [page, selectedProject]);
 
   // Use cached API with short TTL for real-time feel but still benefit from caching
   const { data, loading, refresh } = useApiCache<QueueResponse>(
-    `/api/queue?page=${page}&limit=50`,
+    apiUrl,
     { ttl: 30 * 1000, backgroundRefresh: true } // 30 second cache with background refresh
   );
 
@@ -62,6 +89,11 @@ export default function ExecutionQueuePage() {
     }, 15000);
     return () => clearInterval(interval);
   }, [refresh]);
+
+  // Reset page when project filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [selectedProject]);
 
   const handlePrioritize = async (storyId: string) => {
     try {
@@ -195,6 +227,24 @@ export default function ExecutionQueuePage() {
           </span>
         </h1>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            style={{
+              padding: '6px 12px',
+              border: '1px solid var(--border-light)',
+              borderRadius: '8px',
+              fontSize: '12px',
+              background: 'white',
+              cursor: 'pointer',
+              minWidth: '150px',
+            }}
+          >
+            <option value="">All Projects ({projects.length})</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
           <span style={{
             display: 'flex',
             alignItems: 'center',
