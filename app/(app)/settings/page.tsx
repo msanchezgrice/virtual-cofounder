@@ -174,7 +174,7 @@ export default function SettingsPage() {
       <section style={{ marginBottom: '40px' }}>
         <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>Limits & Constraints</h2>
         <div className="card" style={{ padding: '20px' }}>
-          <div className="responsive-grid responsive-grid-2" style={{ marginBottom: '20px' }}
+          <div className="responsive-grid responsive-grid-2" style={{ marginBottom: '20px' }}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Max Concurrent Agents
