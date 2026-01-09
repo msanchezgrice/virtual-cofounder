@@ -9,6 +9,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { parseQuickCommand } from '@/lib/agents/chat';
+import { syncMessageToSlack } from '@/lib/chat-slack-sync';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -65,6 +66,11 @@ export async function POST(req: Request) {
         metadata: command.type !== 'none' ? { respondingTo: command } : undefined,
       },
     });
+
+    // Sync user message to Slack (async, don't block)
+    syncMessageToSlack(userMessage.id).catch(err => 
+      console.error('[Chat API] Slack sync error:', err)
+    );
 
     // Return both messages and stream URL
     return NextResponse.json({

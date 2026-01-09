@@ -14,6 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/dashboard', icon: '📊', label: 'Dashboard' },
   { href: '/dashboard/queue', icon: '📋', label: 'Queue', badge: true },
+  { href: '/chat', icon: '💬', label: 'Chat', badge: true },
   { href: '/priorities', icon: '🎯', label: 'Priorities' },
   { href: '/progress', icon: '🚀', label: 'Progress' },
   { href: '/projects', icon: '📁', label: 'Projects' },
@@ -33,20 +34,27 @@ export default function AppLayout({
 }) {
   const pathname = usePathname();
   const [queueCount, setQueueCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const fetchQueueCount = async () => {
+    const fetchCounts = async () => {
       try {
-        const res = await fetch('/api/stories?status=pending&limit=1');
-        const data = await res.json();
-        setQueueCount(data.pagination?.total || 0);
+        // Fetch queue count
+        const queueRes = await fetch('/api/stories?status=pending&limit=1');
+        const queueData = await queueRes.json();
+        setQueueCount(queueData.pagination?.total || 0);
+        
+        // Fetch chat unread count
+        const chatRes = await fetch('/api/chat/unread');
+        const chatData = await chatRes.json();
+        setChatUnreadCount(chatData.unreadCount || 0);
       } catch (e) {
-        console.error('Failed to fetch queue count:', e);
+        console.error('Failed to fetch counts:', e);
       }
     };
-    fetchQueueCount();
-    const interval = setInterval(fetchQueueCount, 30000);
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -79,6 +87,7 @@ export default function AppLayout({
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
     if (href === '/dashboard/queue') return pathname === '/dashboard/queue';
+    if (href === '/chat') return pathname === '/chat' || pathname.startsWith('/chat/');
     return pathname === href || pathname.startsWith(href + '/');
   };
 
@@ -212,7 +221,7 @@ export default function AppLayout({
             >
               <span style={{ fontSize: '16px', width: '24px', textAlign: 'center' }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge && queueCount > 0 && (
+              {item.badge && item.href === '/dashboard/queue' && queueCount > 0 && (
                 <span style={{
                   background: '#8B5CF6',
                   color: 'white',
@@ -221,6 +230,16 @@ export default function AppLayout({
                   fontSize: '11px',
                   fontWeight: 600,
                 }}>{queueCount}</span>
+              )}
+              {item.badge && item.href === '/chat' && chatUnreadCount > 0 && (
+                <span style={{
+                  background: '#10B981',
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}>{chatUnreadCount}</span>
               )}
             </Link>
           ))}
