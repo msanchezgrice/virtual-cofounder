@@ -5,12 +5,13 @@
  * Each tool must implement the execute() function that returns a string result.
  */
 
-import { createLinearTask, addLinearComment, updateLinearTaskStatus } from '@/lib/linear';
+import { createLinearTask, addLinearComment, updateLinearTaskStatus, getDefaultTeamId } from '@/lib/linear';
 import { sendSlackNotification } from '@/lib/slack';
-import { runDomainScanner } from '@/lib/scanners/domain';
-import { runSEOScanner } from '@/lib/scanners/seo';
-import { runPerformanceScanner } from '@/lib/scanners/performance';
-import { runSecurityScanner } from '@/lib/scanners/security';
+import { scanDomain } from '@/lib/scanners/domain';
+import { scanSEO } from '@/lib/scanners/seo';
+import { scanPerformance } from '@/lib/scanners/performance';
+import { scanNpmAudit } from '@/lib/scanners/security-npm';
+import { scanSecrets } from '@/lib/scanners/security-secrets';
 
 // ============================================================================
 // TOOL INTERFACES
@@ -49,11 +50,12 @@ export const createLinearTaskTool: ToolDefinition = {
   },
   async execute(input, context) {
     try {
+      const teamId = await getDefaultTeamId();
       const task = await createLinearTask({
+        teamId,
         title: input.title,
         description: input.description || '',
         priority: input.priority || 2,
-        projectId: context.projectId,
       });
       return JSON.stringify({ success: true, taskId: task.id, url: task.url, identifier: task.identifier });
     } catch (error) {
@@ -132,6 +134,7 @@ export const sendSlackMessageTool: ToolDefinition = {
         projectName: 'Agent',
         title: 'Agent Message',
         rationale: input.message,
+        prUrl: '', // Optional for agent messages
       });
       return JSON.stringify({ success: true });
     } catch (error) {
@@ -156,7 +159,7 @@ export const scanDomainTool: ToolDefinition = {
   },
   async execute(input, _context) {
     try {
-      const result = await runDomainScanner({ domain: input.domain });
+      const result = await scanDomain(input.domain);
       return JSON.stringify(result);
     } catch (error) {
       return JSON.stringify({ success: false, error: (error as Error).message });
@@ -176,7 +179,9 @@ export const scanSEOTool: ToolDefinition = {
   },
   async execute(input, _context) {
     try {
-      const result = await runSEOScanner({ url: input.url });
+      // Extract domain from URL
+      const domain = input.url.replace(/^https?:\/\//, '').split('/')[0];
+      const result = await scanSEO(domain);
       return JSON.stringify(result);
     } catch (error) {
       return JSON.stringify({ success: false, error: (error as Error).message });
@@ -196,7 +201,7 @@ export const scanPerformanceTool: ToolDefinition = {
   },
   async execute(input, _context) {
     try {
-      const result = await runPerformanceScanner({ url: input.url });
+      const result = await scanPerformance(input.url);
       return JSON.stringify(result);
     } catch (error) {
       return JSON.stringify({ success: false, error: (error as Error).message });
@@ -219,8 +224,12 @@ export const scanSecurityTool: ToolDefinition = {
       const repoPath = input.repoPath || context.workingDirectory;
       if (!repoPath) throw new Error('No repository path provided');
       
-      const result = await runSecurityScanner({ repoPath });
-      return JSON.stringify(result);
+      // Run npm audit scan
+      const npmResult = await scanNpmAudit(repoPath);
+      
+      return JSON.stringify({
+        npmAudit: npmResult,
+      });
     } catch (error) {
       return JSON.stringify({ success: false, error: (error as Error).message });
     }
@@ -311,12 +320,16 @@ export const takeScreenshotTool: ToolDefinition = {
   async execute(input, _context) {
     try {
       // Dynamic import to avoid loading browserless in all contexts
-      const { takeScreenshot } = await import('@/lib/browserless');
-      const result = await takeScreenshot(input.url, { fullPage: input.fullPage });
+      const { captureScreenshot } = await import('@/lib/scanners/screenshot');
+      const result = await captureScreenshot(input.url, {
+        viewportWidth: 1280,
+        viewportHeight: input.fullPage ? 4000 : 800,
+      });
       return JSON.stringify({
         success: true,
-        imageBase64: result.base64?.slice(0, 100) + '...',
-        message: 'Screenshot captured. Use HostOutput to save.',
+        hasScreenshot: !!result.screenshotUrl,
+        screenshotUrl: result.screenshotUrl,
+        message: 'Screenshot captured.',
       });
     } catch (error) {
       return JSON.stringify({ success: false, error: (error as Error).message });
