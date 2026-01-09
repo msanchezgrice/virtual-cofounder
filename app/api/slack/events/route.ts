@@ -675,23 +675,40 @@ async function viewStory(storyId: string, userId?: string, channelId?: string): 
 
       const client = getSlackClient();
 
-      // Build message with Linear link if available
-      let message = `📋 **${story.title}**\n\n`;
-      message += `**Project:** ${story.project.name}\n`;
-      message += `**Priority:** ${story.priorityLevel || story.priority}\n`;
-      message += `**Status:** ${story.status}\n\n`;
+      // Build message with Slack mrkdwn formatting (use * for bold, not **)
+      let message = `📋 *${story.title}*\n\n`;
+      message += `*Project:* ${story.project.name}\n`;
+      message += `*Priority:* ${story.priorityLevel || story.priority}\n`;
+      message += `*Status:* ${story.status}\n`;
+      
+      if (story.rationale) {
+        message += `\n*Rationale:* ${story.rationale.substring(0, 200)}${story.rationale.length > 200 ? '...' : ''}\n`;
+      }
 
+      // Links section
+      const links: string[] = [];
+      
       if (story.linearIssueUrl) {
-        message += `🔗 View in Linear: ${story.linearIssueUrl} (${story.linearIdentifier || 'Linear'})\n\n`;
+        links.push(`<${story.linearIssueUrl}|📊 View in Linear (${story.linearIdentifier || 'Linear'})>`);
       } else if (story.linearTaskId) {
-        message += `🔗 View in Linear: https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}\n\n`;
+        links.push(`<https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}|📊 View in Linear>`);
       }
 
       if (story.prUrl) {
-        message += `🔗 Pull Request: ${story.prUrl}\n\n`;
+        links.push(`<${story.prUrl}|🔗 View Pull Request>`);
       }
 
-      message += `_Story ID: ${storyId}_`;
+      // Add dashboard link
+      const dashboardUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}/stories/${storyId}`
+        : `https://www.virtualcofounder.ai/stories/${storyId}`;
+      links.push(`<${dashboardUrl}|🖥️ View in Dashboard>`);
+
+      if (links.length > 0) {
+        message += `\n${links.join(' • ')}\n`;
+      }
+
+      message += `\n_Story ID: ${storyId}_`;
 
       await client.chat.postEphemeral({
         channel: channelId,
