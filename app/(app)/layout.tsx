@@ -2,9 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
-const navItems = [
+interface NavItem {
+  href: string;
+  icon: string;
+  label: string;
+  badge?: boolean;
+}
+
+const navItems: NavItem[] = [
   { href: '/dashboard', icon: '📊', label: 'Dashboard' },
+  { href: '/dashboard/queue', icon: '📋', label: 'Queue', badge: true },
   { href: '/priorities', icon: '🎯', label: 'Priorities' },
   { href: '/progress', icon: '🚀', label: 'Progress' },
   { href: '/projects', icon: '📁', label: 'Projects' },
@@ -23,9 +32,26 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
+  const [queueCount, setQueueCount] = useState(0);
+
+  useEffect(() => {
+    const fetchQueueCount = async () => {
+      try {
+        const res = await fetch('/api/stories?status=pending&limit=1');
+        const data = await res.json();
+        setQueueCount(data.pagination?.total || 0);
+      } catch (e) {
+        console.error('Failed to fetch queue count:', e);
+      }
+    };
+    fetchQueueCount();
+    const interval = setInterval(fetchQueueCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === '/dashboard') return pathname === '/dashboard';
+    if (href === '/dashboard/queue') return pathname === '/dashboard/queue';
     return pathname === href || pathname.startsWith(href + '/');
   };
 
@@ -95,6 +121,16 @@ export default function AppLayout({
             >
               <span style={{ fontSize: '16px', width: '24px', textAlign: 'center' }}>{item.icon}</span>
               <span style={{ flex: 1 }}>{item.label}</span>
+              {item.badge && queueCount > 0 && (
+                <span style={{
+                  background: '#8B5CF6',
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }}>{queueCount}</span>
+              )}
             </Link>
           ))}
         </div>

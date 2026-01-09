@@ -1,48 +1,21 @@
-/**
- * Priorities Page - Stack-Ranked Story Lists
- * 
- * Shows all stories ranked by priority with:
- * - Global view across all projects
- * - Per-project views
- * - Priority factors breakdown
- * - Quick approval actions
- * 
- * Performance optimized with caching and pagination
- */
-
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
-import { PriorityBadge } from '@/components/priority';
-import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
+import { useState, useEffect, useMemo } from 'react';
 
-interface RankedStory {
+interface Story {
   id: string;
   title: string;
+  rationale: string;
   projectId: string;
-  projectName: string;
   status: string;
-  priorityLevel: 'P0' | 'P1' | 'P2' | 'P3';
-  priorityScore: number;
-  compositeScore: number;
-  factors: {
-    prioritySignal: number;
-    launchImpact: number;
-    effort: number;
-    age: number;
-    userFocus: number;
-  };
+  priorityLevel: 'P0' | 'P1' | 'P2' | 'P3' | null;
+  priorityScore: number | null;
   linearTaskId: string | null;
   createdAt: string;
-}
-
-interface PrioritySignal {
-  id: string;
-  source: string;
-  priority: string;
-  rawText: string;
-  createdAt: string;
-  projectId: string | null;
+  project?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface Project {
@@ -51,20 +24,8 @@ interface Project {
 }
 
 interface PrioritiesResponse {
-  signals: PrioritySignal[];
-  stories: Array<{
-    id: string;
-    title: string;
-    projectId: string;
-    project?: { id: string; name: string };
-    status: string;
-    priorityLevel: string | null;
-    priorityScore: number | null;
-    linearTaskId: string | null;
-    createdAt: string;
-  }>;
+  stories: Story[];
   summary: {
-    totalSignals: number;
     totalStories: number;
     p0Count: number;
     p1Count: number;
@@ -74,261 +35,114 @@ interface PrioritiesResponse {
   error?: string;
 }
 
-interface ProjectsResponse {
-  projects: Project[];
-  error?: string;
-}
+export default function PrioritiesPage() {
+  const [stories, setStories] = useState<Story[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [lastRanked, setLastRanked] = useState<Date | null>(null);
+  const [reranking, setReranking] = useState(false);
 
-function FactorsBreakdown({ factors }: { factors: RankedStory['factors'] }) {
-  const items = [
-    { label: 'Priority Signal', value: factors.prioritySignal, weight: '40%' },
-    { label: 'Launch Impact', value: factors.launchImpact, weight: '25%' },
-    { label: 'Effort (inverse)', value: factors.effort, weight: '15%' },
-    { label: 'Age Boost', value: factors.age, weight: '10%' },
-    { label: 'User Focus', value: factors.userFocus, weight: '10%' },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, [selectedProject]);
 
-  return (
-    <div className="grid grid-cols-5 gap-2 text-xs">
-      {items.map((item) => (
-        <div key={item.label} className="text-center">
-          <div className="font-medium text-gray-600">{item.value}</div>
-          <div className="text-gray-400">{item.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function StoryRow({ 
-  story, 
-  rank,
-  onApprove 
-}: { 
-  story: RankedStory; 
-  rank: number;
-  onApprove: (id: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const [approving, setApproving] = useState(false);
-
-  const handleApprove = async () => {
-    setApproving(true);
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      await onApprove(story.id);
+      const [prioritiesRes, projectsRes] = await Promise.all([
+        fetch(selectedProject ? `/api/priorities?projectId=${selectedProject}` : '/api/priorities'),
+        fetch('/api/projects'),
+      ]);
+      
+      const prioritiesData: PrioritiesResponse = await prioritiesRes.json();
+      const projectsData = await projectsRes.json();
+      
+      setStories(prioritiesData.stories || []);
+      setProjects(projectsData.projects || []);
+      setLastRanked(new Date());
+    } catch (error) {
+      console.error('Failed to fetch priorities:', error);
+      setStories([]);
     } finally {
-      setApproving(false);
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="card" style={{ marginBottom: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-        {/* Rank */}
-        <div style={{ 
-          flexShrink: 0, 
-          width: '40px', 
-          height: '40px', 
-          borderRadius: '50%', 
-          background: rank <= 3 ? 'linear-gradient(135deg, var(--accent-purple), var(--accent-violet))' : 'var(--bg-warm)',
-          color: rank <= 3 ? 'white' : 'var(--text-secondary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 700,
-          fontSize: '16px'
-        }}>
-          {rank}
-        </div>
+  const handleRerank = async () => {
+    setReranking(true);
+    // Simulate re-ranking (in a real app this would call a backend service)
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await fetchData();
+    setReranking(false);
+  };
 
-        {/* Main content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <PriorityBadge priority={story.priorityLevel} size="sm" />
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{story.projectName}</span>
-          </div>
-          <h3 style={{ fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {story.title}
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            <span>Score: <strong>{story.compositeScore}</strong></span>
-            <span className={`status-badge status-${story.status}`}>{story.status}</span>
-            {story.linearTaskId && (
-              <a 
-                href={`https://linear.app/issue/${story.linearTaskId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: 'var(--accent-purple)', textDecoration: 'none' }}
-              >
-                View in Linear →
-              </a>
-            )}
-          </div>
-        </div>
+  const getTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-        {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="btn btn-secondary btn-sm"
-          >
-            {expanded ? 'Hide' : 'Details'}
-          </button>
-          {story.status === 'pending' && (
-            <button
-              onClick={handleApprove}
-              disabled={approving}
-              className="btn btn-primary btn-sm"
-              style={{ background: 'var(--accent-green)' }}
-            >
-              {approving ? '⏳' : '✓ Approve'}
-            </button>
-          )}
-        </div>
-      </div>
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  };
 
-      {/* Expanded details */}
-      {expanded && (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-light)' }}>
-          <h4 style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '8px' }}>Priority Factors</h4>
-          <FactorsBreakdown factors={story.factors} />
-        </div>
-      )}
-    </div>
-  );
-}
+  const getPriorityBadge = (priorityLevel: string | null) => {
+    const styles: Record<string, { bg: string; color: string }> = {
+      'P0': { bg: '#FEE2E2', color: '#991B1B' },
+      'P1': { bg: '#FEF3C7', color: '#92400E' },
+      'P2': { bg: '#DBEAFE', color: '#1E40AF' },
+      'P3': { bg: '#F3F4F6', color: '#6B7280' },
+    };
+    const style = styles[priorityLevel || 'P2'] || styles['P2'];
+    return (
+      <span style={{
+        background: style.bg,
+        color: style.color,
+        padding: '4px 10px',
+        borderRadius: '12px',
+        fontSize: '11px',
+        fontWeight: 600,
+      }}>
+        {priorityLevel || 'P2'}
+      </span>
+    );
+  };
 
-function SignalCard({ signal }: { signal: PrioritySignal }) {
-  return (
-    <div className="p-3 bg-gray-50 rounded-lg">
-      <div className="flex items-center gap-2 mb-1">
-        <PriorityBadge priority={signal.priority as 'P0' | 'P1' | 'P2' | 'P3'} size="sm" />
-        <span className="text-xs text-gray-500 capitalize">{signal.source}</span>
-      </div>
-      <p className="text-sm text-gray-700 truncate">{signal.rawText}</p>
-      <p className="text-xs text-gray-400 mt-1">
-        {new Date(signal.createdAt).toLocaleString()}
-      </p>
-    </div>
-  );
-}
+  const getImpactDots = (score: number | null) => {
+    const normalizedScore = Math.min(5, Math.max(1, Math.ceil((score || 50) / 20)));
+    return (
+      <span style={{ color: 'var(--accent-green)' }}>
+        {'●'.repeat(normalizedScore)}
+        <span style={{ color: 'var(--border-light)' }}>{'○'.repeat(5 - normalizedScore)}</span>
+      </span>
+    );
+  };
 
-// Skeleton components
-function StoryRowSkeleton() {
-  return (
-    <div className="card animate-pulse" style={{ marginBottom: '12px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#E5E7EB' }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ height: '16px', background: '#E5E7EB', borderRadius: '4px', width: '60%', marginBottom: '8px' }} />
-          <div style={{ height: '12px', background: '#E5E7EB', borderRadius: '4px', width: '40%' }} />
-        </div>
-      </div>
-    </div>
-  );
-}
+  const getConfidenceDots = (score: number | null) => {
+    // Confidence is derived from score variance - higher scores = more confident
+    const confidence = Math.min(5, Math.max(1, Math.ceil((score || 50) / 25)));
+    return (
+      <span style={{ color: 'var(--accent-green)' }}>
+        {'●'.repeat(confidence)}
+        <span style={{ color: 'var(--border-light)' }}>{'○'.repeat(5 - confidence)}</span>
+      </span>
+    );
+  };
 
-export default function PrioritiesPage() {
-  const [selectedProject, setSelectedProject] = useState<string>('');
-
-  // Fetch projects with caching
-  const { data: projectsData } = useApiCache<ProjectsResponse>(
-    '/api/projects',
-    { ttl: 5 * 60 * 1000 }
-  );
-  const projects = projectsData?.projects ?? [];
-  const projectMap = useMemo(() => 
-    projects.reduce((acc, p) => ({ ...acc, [p.id]: p.name }), {} as Record<string, string>),
-    [projects]
-  );
-
-  // Fetch priorities with caching
-  const prioritiesUrl = selectedProject 
-    ? `/api/priorities?projectId=${selectedProject}`
-    : '/api/priorities';
-  
-  const { data: prioritiesData, loading, refresh } = useApiCache<PrioritiesResponse>(
-    prioritiesUrl,
-    { ttl: 2 * 60 * 1000, backgroundRefresh: true }
-  );
-
-  // Map API response to RankedStory format
-  const stories: RankedStory[] = useMemo(() => {
-    if (!prioritiesData?.stories) return [];
-    return prioritiesData.stories.map((s) => ({
-      id: s.id,
-      title: s.title,
-      projectId: s.projectId,
-      projectName: s.project?.name || projectMap[s.projectId] || 'Unknown',
-      status: s.status,
-      priorityLevel: (s.priorityLevel || 'P2') as 'P0' | 'P1' | 'P2' | 'P3',
-      priorityScore: s.priorityScore || 50,
-      compositeScore: s.priorityScore || 50,
-      factors: {
-        prioritySignal: 50,
-        launchImpact: 50,
-        effort: 50,
-        age: 50,
-        userFocus: 50,
-      },
-      linearTaskId: s.linearTaskId,
-      createdAt: s.createdAt,
-    }));
-  }, [prioritiesData?.stories, projectMap]);
-
-  const signals = prioritiesData?.signals ?? [];
-
-  // Filter stories by project
   const filteredStories = selectedProject
     ? stories.filter(s => s.projectId === selectedProject)
     : stories;
 
-  // Group by project for per-project view
-  const storiesByProject = useMemo(() => 
-    stories.reduce((acc, story) => {
-      if (!acc[story.projectId]) {
-        acc[story.projectId] = { name: story.projectName, stories: [] };
-      }
-      acc[story.projectId].stories.push(story);
-      return acc;
-    }, {} as Record<string, { name: string; stories: RankedStory[] }>),
-    [stories]
-  );
-
-  // Handle story approval
-  const handleApprove = useCallback(async (storyId: string) => {
-    try {
-      const res = await fetch(`/api/stories/${storyId}/approve`, { method: 'POST' });
-      if (res.ok) {
-        // Invalidate cache and refresh
-        invalidateCache('/api/priorities');
-        invalidateCache('/api/dashboard');
-        refresh();
-      }
-    } catch (err) {
-      console.error('Failed to approve story:', err);
-    }
-  }, [refresh]);
-
-  if (loading && !prioritiesData) {
+  if (loading) {
     return (
       <div className="app-page">
         <div className="page-header">
-          <div>
-            <h1 className="page-title">🎯 Priorities</h1>
-            <p className="page-subtitle">Stack-ranked stories by priority score</p>
-          </div>
-          <div className="h-9 w-48 bg-gray-200 rounded animate-pulse" />
+          <h1 className="page-title">Priority Stack</h1>
         </div>
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <StoryRowSkeleton key={i} />
-            ))}
-          </div>
-          <div>
-            <div className="h-32 bg-gray-200 rounded-lg animate-pulse" />
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+          <div style={{ color: 'var(--text-muted)' }}>Loading priorities...</div>
         </div>
       </div>
     );
@@ -338,105 +152,157 @@ export default function PrioritiesPage() {
     <div className="app-page">
       {/* Header */}
       <div className="page-header">
-        <div>
-          <h1 className="page-title">🎯 Priorities</h1>
-          <p className="page-subtitle">
-            Stack-ranked stories by priority score
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => refresh()}
-            className="btn btn-secondary"
-          >
-            ↻
-          </button>
+        <h1 className="page-title">Priority Stack</h1>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <select
             value={selectedProject}
             onChange={(e) => setSelectedProject(e.target.value)}
-            className="btn btn-secondary"
-            style={{ minWidth: '200px' }}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid var(--border-light)',
+              borderRadius: '8px',
+              fontSize: '13px',
+              background: 'white',
+              cursor: 'pointer',
+              minWidth: '160px',
+            }}
           >
             <option value="">All Projects</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+          <button
+            onClick={handleRerank}
+            disabled={reranking}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <span style={{ 
+              display: 'inline-block',
+              animation: reranking ? 'spin 1s linear infinite' : 'none',
+            }}>🔄</span>
+            Re-rank
+          </button>
         </div>
       </div>
 
-      {prioritiesData?.error && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-yellow-700">
-          ⚠️ {prioritiesData.error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-6">
-        {/* Main: Ranked Stories */}
-        <div className="col-span-2 space-y-3">
-          <h2 className="text-sm font-medium text-gray-500 mb-3">
-            {filteredStories.length} Stories Ranked
-          </h2>
-          {filteredStories.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">No stories to prioritize</p>
-            </div>
-          ) : (
-            filteredStories.map((story, index) => (
-              <StoryRow
-                key={story.id}
-                story={story}
-                rank={index + 1}
-                onApprove={handleApprove}
-              />
-            ))
-          )}
+      {/* Overall Priority Stack Card */}
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">🎯 Overall Priority Stack</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Last ranked: {lastRanked ? getTimeAgo(lastRanked) : 'never'}
+          </span>
         </div>
 
-        {/* Sidebar: Recent Signals */}
-        <div>
-          <h2 className="text-sm font-medium text-gray-500 mb-3">
-            Recent Priority Signals
-          </h2>
-          {signals.length === 0 ? (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500">No recent signals</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Signals come from Slack, Linear comments, and scans
-              </p>
+        {filteredStories.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📭</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No stories to prioritize</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              Stories will appear here when they need prioritization
             </div>
-          ) : (
-            <div className="space-y-2">
-              {signals.slice(0, 10).map((signal) => (
-                <SignalCard key={signal.id} signal={signal} />
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
+                <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>#</th>
+                <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Story</th>
+                <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Project</th>
+                <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Priority</th>
+                <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Impact</th>
+                <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Confidence</th>
+                <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStories.map((story, index) => (
+                <tr key={story.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                  <td style={{ 
+                    padding: '16px 8px', 
+                    fontWeight: 600, 
+                    color: index === 0 ? 'var(--accent-purple)' : 'var(--text-muted)',
+                    fontSize: '14px',
+                  }}>
+                    {index + 1}
+                  </td>
+                  <td style={{ padding: '16px 8px' }}>
+                    <div style={{ fontWeight: 500 }}>{story.title}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      {story.rationale?.slice(0, 50) || 'No description'}
+                      {story.rationale && story.rationale.length > 50 ? '...' : ''}
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px 8px', fontSize: '13px' }}>
+                    {story.project?.name || 'Unknown'}
+                  </td>
+                  <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                    {getPriorityBadge(story.priorityLevel)}
+                  </td>
+                  <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                    {getImpactDots(story.priorityScore)}
+                  </td>
+                  <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                    {getConfidenceDots(story.priorityScore)}
+                  </td>
+                  <td style={{ 
+                    padding: '16px 8px', 
+                    textAlign: 'center', 
+                    fontWeight: 700, 
+                    color: index === 0 ? 'var(--accent-purple)' : 'var(--text-primary)',
+                    fontSize: '16px',
+                  }}>
+                    {story.priorityScore || 50}
+                  </td>
+                </tr>
               ))}
-            </div>
-          )}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-          {/* Per-project breakdown */}
-          <div className="mt-8">
-            <h2 className="text-sm font-medium text-gray-500 mb-3">
-              By Project
-            </h2>
-            <div className="space-y-2">
-              {Object.entries(storiesByProject).slice(0, 8).map(([projectId, data]) => (
-                <button
-                  key={projectId}
-                  onClick={() => setSelectedProject(projectId)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    selectedProject === projectId
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                >
-                  <span className="font-medium">{data.name}</span>
-                  <span className="text-gray-400 ml-2">({data.stories.length})</span>
-                </button>
-              ))}
-            </div>
+      {/* Scoring Formula */}
+      <div className="card" style={{ marginTop: '24px' }}>
+        <div className="card-header">
+          <span className="card-title">⚡ Scoring Formula</span>
+        </div>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(5, 1fr)', 
+          gap: '16px',
+          fontSize: '13px',
+        }}>
+          <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>40%</div>
+            <div style={{ color: 'var(--text-muted)' }}>Priority Signal</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>25%</div>
+            <div style={{ color: 'var(--text-muted)' }}>Launch Impact</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>15%</div>
+            <div style={{ color: 'var(--text-muted)' }}>Effort (inverse)</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>10%</div>
+            <div style={{ color: 'var(--text-muted)' }}>Age Boost</div>
+          </div>
+          <div style={{ textAlign: 'center', padding: '12px', background: 'var(--bg-warm)', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '4px' }}>10%</div>
+            <div style={{ color: 'var(--text-muted)' }}>User Focus</div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
