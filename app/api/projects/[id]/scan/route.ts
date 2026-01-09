@@ -21,10 +21,11 @@ const scanQueue = new Queue('scans', { connection });
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const projectId = params.id;
+    // In Next.js 15, params is a Promise that needs to be awaited
+    const { id: projectId } = await context.params;
 
     // Get project
     const project = await db.project.findUnique({
