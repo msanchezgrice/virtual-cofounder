@@ -58,14 +58,22 @@ export async function POST(request: Request) {
       await logSlackInbound(event, body.team_id);
 
       // Handle message events (user replies to check-in)
-      // Filter out bot messages, message edits, and other subtypes
+      // DISABLED: Auto-reply to all messages was too noisy
+      // Only respond to @mentions (handled below) or thread replies to bot
+      // To re-enable, uncomment the handleUserMessage call
       if (
         event.type === 'message' &&
         !event.bot_id &&
         !event.subtype &&
         event.text
       ) {
-        await handleUserMessage(event);
+        // Only respond if this is a reply in a thread the bot started
+        // (thread_ts exists and is different from ts means it's a reply)
+        if (event.thread_ts && event.thread_ts !== event.ts) {
+          await handleUserMessage(event);
+        }
+        // Otherwise just log the message for signal tracking (no auto-reply)
+        // The message is already logged to SlackInbound above
       }
 
       // Handle app mentions (when someone @mentions the bot)
