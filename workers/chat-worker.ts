@@ -467,13 +467,22 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
       persistSession: false,
       includePartialMessages: true,
     };
-    
+
+    console.log(`[Chat Worker] SDK options configured, calling query()...`);
+
     // Run the agent
-    const agentQuery = query({
-      prompt,
-      options: sdkOptions,
-    });
-    
+    let agentQuery;
+    try {
+      agentQuery = query({
+        prompt,
+        options: sdkOptions,
+      });
+      console.log(`[Chat Worker] query() returned, type: ${typeof agentQuery}, isAsyncIterable: ${!!agentQuery[Symbol.asyncIterator]}`);
+    } catch (err) {
+      console.error(`[Chat Worker] Error calling query():`, err);
+      throw err;
+    }
+
     let fullContent = '';
     let toolsUsed: string[] = [];
     let lastPublishedLength = 0;
