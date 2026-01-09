@@ -19,9 +19,10 @@ import Redis from 'ioredis';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Timeout for waiting for worker to start processing
-const WORKER_TIMEOUT_MS = 30000; // 30 seconds
-const POLL_INTERVAL_MS = 500; // Check every 500ms
+// Timeout for waiting for worker to process
+// Agent SDK can take 60-90 seconds for complex requests
+const WORKER_TIMEOUT_MS = 120000; // 2 minutes
+const POLL_INTERVAL_MS = 1000; // Check every 1 second
 
 export async function GET(
   req: Request,
