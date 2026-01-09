@@ -6,12 +6,15 @@
  * - Per-project views
  * - Priority factors breakdown
  * - Quick approval actions
+ * 
+ * Performance optimized with caching and pagination
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { PriorityBadge } from '@/components/priority';
+import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
 interface RankedStory {
   id: string;
@@ -45,6 +48,35 @@ interface PrioritySignal {
 interface Project {
   id: string;
   name: string;
+}
+
+interface PrioritiesResponse {
+  signals: PrioritySignal[];
+  stories: Array<{
+    id: string;
+    title: string;
+    projectId: string;
+    project?: { id: string; name: string };
+    status: string;
+    priorityLevel: string | null;
+    priorityScore: number | null;
+    linearTaskId: string | null;
+    createdAt: string;
+  }>;
+  summary: {
+    totalSignals: number;
+    totalStories: number;
+    p0Count: number;
+    p1Count: number;
+    p2Count: number;
+    p3Count: number;
+  };
+  error?: string;
+}
+
+interface ProjectsResponse {
+  projects: Project[];
+  error?: string;
 }
 
 function FactorsBreakdown({ factors }: { factors: RankedStory['factors'] }) {
@@ -181,94 +213,70 @@ function SignalCard({ signal }: { signal: PrioritySignal }) {
   );
 }
 
+// Skeleton components
+function StoryRowSkeleton() {
+  return (
+    <div className="card animate-pulse" style={{ marginBottom: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#E5E7EB' }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ height: '16px', background: '#E5E7EB', borderRadius: '4px', width: '60%', marginBottom: '8px' }} />
+          <div style={{ height: '12px', background: '#E5E7EB', borderRadius: '4px', width: '40%' }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PrioritiesPage() {
-  const [stories, setStories] = useState<RankedStory[]>([]);
-  const [signals, setSignals] = useState<PrioritySignal[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch data
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        // Fetch projects first
-        const projectRes = await fetch('/api/projects');
-        let projectMap: Record<string, string> = {};
-        if (projectRes.ok) {
-          const data = await projectRes.json();
-          const projectList = Array.isArray(data) ? data : (data.projects || []);
-          setProjects(projectList);
-          projectMap = projectList.reduce((acc: Record<string, string>, p: Project) => {
-            acc[p.id] = p.name;
-            return acc;
-          }, {});
-        }
+  // Fetch projects with caching
+  const { data: projectsData } = useApiCache<ProjectsResponse>(
+    '/api/projects',
+    { ttl: 5 * 60 * 1000 }
+  );
+  const projects = projectsData?.projects ?? [];
+  const projectMap = useMemo(() => 
+    projects.reduce((acc, p) => ({ ...acc, [p.id]: p.name }), {} as Record<string, string>),
+    [projects]
+  );
 
-        // Fetch priorities
-        const priorityRes = await fetch('/api/priorities');
-        if (priorityRes.ok) {
-          const data = await priorityRes.json();
-          // Map API response to our RankedStory format
-          const mappedStories: RankedStory[] = (data.stories || []).map((s: {
-            id: string;
-            title: string;
-            projectId: string;
-            project?: { id: string; name: string };
-            status: string;
-            priorityLevel: string | null;
-            priorityScore: number | null;
-            linearTaskId: string | null;
-            createdAt: string;
-          }) => ({
-            id: s.id,
-            title: s.title,
-            projectId: s.projectId,
-            projectName: s.project?.name || projectMap[s.projectId] || 'Unknown',
-            status: s.status,
-            priorityLevel: (s.priorityLevel || 'P2') as 'P0' | 'P1' | 'P2' | 'P3',
-            priorityScore: s.priorityScore || 50,
-            compositeScore: s.priorityScore || 50,
-            factors: {
-              prioritySignal: 50,
-              launchImpact: 50,
-              effort: 50,
-              age: 50,
-              userFocus: 50,
-            },
-            linearTaskId: s.linearTaskId,
-            createdAt: s.createdAt,
-          }));
-          setStories(mappedStories);
-          setSignals(data.signals || []);
-        }
-      } catch (err) {
-        setError('Failed to load priorities');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
+  // Fetch priorities with caching
+  const prioritiesUrl = selectedProject 
+    ? `/api/priorities?projectId=${selectedProject}`
+    : '/api/priorities';
+  
+  const { data: prioritiesData, loading, refresh } = useApiCache<PrioritiesResponse>(
+    prioritiesUrl,
+    { ttl: 2 * 60 * 1000, backgroundRefresh: true }
+  );
 
-    fetchData();
-  }, []);
+  // Map API response to RankedStory format
+  const stories: RankedStory[] = useMemo(() => {
+    if (!prioritiesData?.stories) return [];
+    return prioritiesData.stories.map((s) => ({
+      id: s.id,
+      title: s.title,
+      projectId: s.projectId,
+      projectName: s.project?.name || projectMap[s.projectId] || 'Unknown',
+      status: s.status,
+      priorityLevel: (s.priorityLevel || 'P2') as 'P0' | 'P1' | 'P2' | 'P3',
+      priorityScore: s.priorityScore || 50,
+      compositeScore: s.priorityScore || 50,
+      factors: {
+        prioritySignal: 50,
+        launchImpact: 50,
+        effort: 50,
+        age: 50,
+        userFocus: 50,
+      },
+      linearTaskId: s.linearTaskId,
+      createdAt: s.createdAt,
+    }));
+  }, [prioritiesData?.stories, projectMap]);
 
-  // Handle story approval
-  const handleApprove = async (storyId: string) => {
-    try {
-      const res = await fetch(`/api/stories/${storyId}/approve`, { method: 'POST' });
-      if (res.ok) {
-        // Update local state
-        setStories(stories.map(s => 
-          s.id === storyId ? { ...s, status: 'approved' } : s
-        ));
-      }
-    } catch (err) {
-      console.error('Failed to approve story:', err);
-    }
-  };
+  const signals = prioritiesData?.signals ?? [];
 
   // Filter stories by project
   const filteredStories = selectedProject
@@ -276,20 +284,51 @@ export default function PrioritiesPage() {
     : stories;
 
   // Group by project for per-project view
-  const storiesByProject = stories.reduce((acc, story) => {
-    if (!acc[story.projectId]) {
-      acc[story.projectId] = { name: story.projectName, stories: [] };
-    }
-    acc[story.projectId].stories.push(story);
-    return acc;
-  }, {} as Record<string, { name: string; stories: RankedStory[] }>);
+  const storiesByProject = useMemo(() => 
+    stories.reduce((acc, story) => {
+      if (!acc[story.projectId]) {
+        acc[story.projectId] = { name: story.projectName, stories: [] };
+      }
+      acc[story.projectId].stories.push(story);
+      return acc;
+    }, {} as Record<string, { name: string; stories: RankedStory[] }>),
+    [stories]
+  );
 
-  if (loading) {
+  // Handle story approval
+  const handleApprove = useCallback(async (storyId: string) => {
+    try {
+      const res = await fetch(`/api/stories/${storyId}/approve`, { method: 'POST' });
+      if (res.ok) {
+        // Invalidate cache and refresh
+        invalidateCache('/api/priorities');
+        invalidateCache('/api/dashboard');
+        refresh();
+      }
+    } catch (err) {
+      console.error('Failed to approve story:', err);
+    }
+  }, [refresh]);
+
+  if (loading && !prioritiesData) {
     return (
       <div className="app-page">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="h-64 bg-gray-200 rounded" />
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">🎯 Priorities</h1>
+            <p className="page-subtitle">Stack-ranked stories by priority score</p>
+          </div>
+          <div className="h-9 w-48 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-3 gap-6">
+          <div className="col-span-2 space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <StoryRowSkeleton key={i} />
+            ))}
+          </div>
+          <div>
+            <div className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -305,22 +344,30 @@ export default function PrioritiesPage() {
             Stack-ranked stories by priority score
           </p>
         </div>
-        <select
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="btn btn-secondary"
-          style={{ minWidth: '200px' }}
-        >
-          <option value="">All Projects</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => refresh()}
+            className="btn btn-secondary"
+          >
+            ↻
+          </button>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="btn btn-secondary"
+            style={{ minWidth: '200px' }}
+          >
+            <option value="">All Projects</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
-          {error}
+      {prioritiesData?.error && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-yellow-700">
+          ⚠️ {prioritiesData.error}
         </div>
       )}
 

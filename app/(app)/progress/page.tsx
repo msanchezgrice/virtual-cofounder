@@ -7,12 +7,13 @@
  * - Checklist of requirements
  * - AI recommendations
  * 
- * Feature flag: LAUNCH_READINESS
+ * Performance optimized with caching
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useApiCache } from '@/lib/hooks/useApiCache';
 
 interface StageData {
   id: string;
@@ -51,6 +52,11 @@ interface ProgressData {
 interface Project {
   id: string;
   name: string;
+}
+
+interface ProjectsResponse {
+  projects: Project[];
+  error?: string;
 }
 
 // Placeholder data for when no project is selected or feature is disabled
@@ -318,76 +324,31 @@ function EmptyState() {
 }
 
 export default function ProgressPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [data, setData] = useState<ProgressData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [projectsLoading, setProjectsLoading] = useState(true);
-  const [projectsError, setProjectsError] = useState(false);
 
-  // Fetch projects list
-  useEffect(() => {
-    async function fetchProjects() {
-      setProjectsLoading(true);
-      setProjectsError(false);
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        // API returns {projects: [...]} not just an array
-        const projectList = Array.isArray(data) ? data : (data.projects || []);
-        setProjects(projectList);
-        
-        // Check if there was an error flag in the response
-        if (data.error) {
-          setProjectsError(true);
-        }
-        
-        // Auto-select first project if available
-        if (projectList.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projectList[0].id);
-        }
-      } catch {
-        console.error('Failed to fetch projects');
-        setProjectsError(true);
-      } finally {
-        setProjectsLoading(false);
-      }
-    }
-    fetchProjects();
-  }, []); // Remove selectedProjectId dependency to avoid refetching
+  // Fetch projects with caching
+  const { data: projectsData, loading: projectsLoading } = useApiCache<ProjectsResponse>(
+    '/api/projects',
+    { ttl: 5 * 60 * 1000 }
+  );
+  
+  const projects = projectsData?.projects ?? [];
+  const projectsError = !!projectsData?.error;
 
-  // Fetch progress data when project changes
-  useEffect(() => {
-    async function fetchProgress() {
-      if (!selectedProjectId) {
-        setData(null);
-        setLoading(false);
-        return;
-      }
+  // Auto-select first project if none selected
+  const effectiveProjectId = useMemo(() => {
+    if (selectedProjectId) return selectedProjectId;
+    return projects.length > 0 ? projects[0].id : '';
+  }, [selectedProjectId, projects]);
 
-      setLoading(true);
-      setError(null);
+  // Fetch progress data for selected project with caching
+  const { data: progressData, loading: progressLoading, error: progressError, refresh } = useApiCache<ProgressData>(
+    effectiveProjectId ? `/api/projects/${effectiveProjectId}/progress` : null,
+    { ttl: 3 * 60 * 1000, backgroundRefresh: true }
+  );
 
-      try {
-        const res = await fetch(`/api/projects/${selectedProjectId}/progress`);
-        if (res.ok) {
-          const progressData = await res.json();
-          setData(progressData);
-        } else {
-          setError('Failed to load progress data');
-          setData(PLACEHOLDER_DATA);
-        }
-      } catch {
-        setError('Failed to load progress data');
-        setData(PLACEHOLDER_DATA);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProgress();
-  }, [selectedProjectId]);
+  const data = progressData || (effectiveProjectId ? PLACEHOLDER_DATA : null);
+  const loading = projectsLoading || (effectiveProjectId && progressLoading && !progressData);
 
   return (
     <div className="app-page">
@@ -398,19 +359,28 @@ export default function ProgressPage() {
             Track your journey from idea to paying users
           </p>
         </div>
-        <ProjectSelector
-          projects={projects}
-          selectedId={selectedProjectId}
-          onSelect={setSelectedProjectId}
-          loading={projectsLoading}
-          error={projectsError}
-        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => refresh()}
+            className="btn btn-secondary"
+            style={{ padding: '8px 12px' }}
+          >
+            ↻
+          </button>
+          <ProjectSelector
+            projects={projects}
+            selectedId={effectiveProjectId}
+            onSelect={setSelectedProjectId}
+            loading={projectsLoading}
+            error={projectsError}
+          />
+        </div>
       </div>
 
-      {error && (
+      {progressError && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-yellow-800">
-            {error} - showing sample data.
+            Failed to load progress data - showing sample data.
           </p>
         </div>
       )}

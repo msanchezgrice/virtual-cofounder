@@ -1,22 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useApiCache } from '@/lib/hooks/useApiCache';
 
-interface Project {
+interface ProjectWithStats {
   id: string;
   name: string;
   domain: string | null;
   status: string;
   createdAt: string;
-}
-
-interface ProjectWithStats extends Project {
   launchScore: number;
+  stage: string;
+  healthScore: number;
   inProgress: number;
   forReview: number;
-  healthScore: number;
-  stage: string;
+  totalStories: number;
+  completedStories: number;
+  hasPosthog: boolean;
+  hasResend: boolean;
+  lastScannedAt: string | null;
+}
+
+interface ProjectsResponse {
+  projects: ProjectWithStats[];
+  count: number;
+  error?: string;
 }
 
 // Get emoji for project based on name
@@ -67,67 +75,130 @@ function getHealthColor(health: number): string {
   return 'text-red-600';
 }
 
+// Project card skeleton
+function ProjectCardSkeleton() {
+  return (
+    <div className="animate-pulse block bg-white border border-gray-200 rounded-xl p-5">
+      <div className="flex items-center gap-5">
+        <div className="w-16 h-16 rounded-xl bg-gray-200" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-5 bg-gray-200 rounded w-32" />
+            <div className="h-5 bg-gray-200 rounded w-16" />
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-48" />
+        </div>
+        <div className="hidden md:grid grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="text-center">
+              <div className="h-7 bg-gray-200 rounded w-10 mx-auto mb-1" />
+              <div className="h-3 bg-gray-200 rounded w-14 mx-auto" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Project card component
+function ProjectCard({ project }: { project: ProjectWithStats }) {
+  const statusStyle = getStatusStyle(project.stage);
+  
+  return (
+    <Link
+      href={`/projects/${project.id}`}
+      className="block bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all group"
+    >
+      <div className="flex items-center gap-5">
+        {/* Project Icon */}
+        <div
+          className={`w-16 h-16 rounded-xl bg-gradient-to-br ${getProjectGradient(project.name)} flex items-center justify-center`}
+        >
+          <span className="text-3xl">{getProjectEmoji(project.name)}</span>
+        </div>
+
+        {/* Project Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 truncate">
+              {project.name}
+            </h3>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${statusStyle.bg} ${statusStyle.text}`}
+            >
+              {project.stage}
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 truncate">
+            {project.domain || 'No domain configured'}
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="hidden md:grid grid-cols-4 gap-6 text-center">
+          <div>
+            <div className="text-2xl font-bold text-purple-600">
+              {project.launchScore}
+            </div>
+            <div className="text-xs text-gray-500">Launch Score</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900">
+              {project.inProgress}
+            </div>
+            <div className="text-xs text-gray-500">In Progress</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-amber-600">
+              {project.forReview}
+            </div>
+            <div className="text-xs text-gray-500">For Review</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${getHealthColor(project.healthScore)}`}>
+              {project.healthScore}%
+            </div>
+            <div className="text-xs text-gray-500">Health</div>
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <span className="text-gray-400 group-hover:text-purple-600 transition-colors">
+          →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<ProjectWithStats[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchProjects() {
-      try {
-        const res = await fetch('/api/projects');
-        const data = await res.json();
-        const projectList: Project[] = data.projects || [];
-
-        // Fetch progress data for each project to get launch score
-        const projectsWithStats = await Promise.all(
-          projectList.map(async (project) => {
-            try {
-              const progressRes = await fetch(`/api/projects/${project.id}/progress`);
-              if (progressRes.ok) {
-                const progress = await progressRes.json();
-                return {
-                  ...project,
-                  launchScore: progress.score || 0,
-                  stage: progress.stage || 'idea',
-                  inProgress: progress.workSummary?.inProgress || 0,
-                  forReview: progress.workSummary?.pending || 0,
-                  healthScore: Math.round((progress.score || 0) * 1.2) % 100 + 50, // Derive from score
-                };
-              }
-            } catch (e) {
-              console.error(`Failed to fetch progress for ${project.id}:`, e);
-            }
-            return {
-              ...project,
-              launchScore: 0,
-              stage: 'idea',
-              inProgress: 0,
-              forReview: 0,
-              healthScore: 80,
-            };
-          })
-        );
-
-        setProjects(projectsWithStats);
-      } catch (err) {
-        setError('Failed to load projects');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  // Use cached API with the new aggregated endpoint
+  // This eliminates N+1 queries - was fetching progress for each project
+  const { data, loading, error, refresh } = useApiCache<ProjectsResponse>(
+    '/api/projects/with-stats',
+    {
+      ttl: 5 * 60 * 1000, // 5 minutes
+      backgroundRefresh: true,
     }
+  );
 
-    fetchProjects();
-  }, []);
+  const projects = data?.projects ?? [];
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="app-page">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="h-32 bg-gray-200 rounded" />
-          <div className="h-32 bg-gray-200 rounded" />
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">📁 Projects</h1>
+            <p className="page-subtitle">Manage all your projects</p>
+          </div>
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="space-y-4">
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
         </div>
       </div>
     );
@@ -141,14 +212,22 @@ export default function ProjectsPage() {
           <h1 className="page-title">📁 Projects</h1>
           <p className="page-subtitle">Manage all your projects</p>
         </div>
-        <button className="btn btn-primary">
-          ➕ Add Project
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => refresh()}
+            className="btn btn-secondary"
+          >
+            ↻ Refresh
+          </button>
+          <button className="btn btn-primary">
+            ➕ Add Project
+          </button>
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
-          {error}
+      {data?.error && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-yellow-700">
+          ⚠️ {data.error} - Showing cached data
         </div>
       )}
 
@@ -160,77 +239,9 @@ export default function ProjectsPage() {
             <p className="text-sm text-gray-400 mt-1">Add a project to get started</p>
           </div>
         ) : (
-          projects.map((project) => {
-            const statusStyle = getStatusStyle(project.stage);
-            return (
-              <Link
-                key={project.id}
-                href={`/projects/${project.id}`}
-                className="block bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all group"
-              >
-                <div className="flex items-center gap-5">
-                  {/* Project Icon */}
-                  <div
-                    className={`w-16 h-16 rounded-xl bg-gradient-to-br ${getProjectGradient(
-                      project.name
-                    )} flex items-center justify-center`}
-                  >
-                    <span className="text-3xl">{getProjectEmoji(project.name)}</span>
-                  </div>
-
-                  {/* Project Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">
-                        {project.name}
-                      </h3>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${statusStyle.bg} ${statusStyle.text}`}
-                      >
-                        {project.stage}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500 truncate">
-                      {project.domain || 'No domain configured'}
-                    </p>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="hidden md:grid grid-cols-4 gap-6 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-purple-600">
-                        {project.launchScore}
-                      </div>
-                      <div className="text-xs text-gray-500">Launch Score</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {project.inProgress}
-                      </div>
-                      <div className="text-xs text-gray-500">In Progress</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-amber-600">
-                        {project.forReview}
-                      </div>
-                      <div className="text-xs text-gray-500">For Review</div>
-                    </div>
-                    <div>
-                      <div className={`text-2xl font-bold ${getHealthColor(project.healthScore)}`}>
-                        {project.healthScore}%
-                      </div>
-                      <div className="text-xs text-gray-500">Health</div>
-                    </div>
-                  </div>
-
-                  {/* Arrow */}
-                  <span className="text-gray-400 group-hover:text-purple-600 transition-colors">
-                    →
-                  </span>
-                </div>
-              </Link>
-            );
-          })
+          projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))
         )}
       </div>
     </div>

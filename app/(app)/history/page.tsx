@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useApiCache } from '@/lib/hooks/useApiCache';
 
 interface ActivityItem {
   id: string;
@@ -8,7 +9,27 @@ interface ActivityItem {
   title: string;
   description: string;
   project?: string;
+  projectId?: string;
   timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface Project {
+  id: string;
+  name: string;
+}
+
+interface ActivityResponse {
+  activities: ActivityItem[];
+  projects: Project[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+  error?: string;
 }
 
 // Get icon and background for activity type
@@ -58,122 +79,134 @@ function formatRelativeTime(dateStr: string): string {
   });
 }
 
+// Activity item skeleton
+function ActivitySkeleton() {
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 animate-pulse">
+      <div className="w-10 h-10 rounded-xl bg-gray-200" />
+      <div className="flex-1 min-w-0">
+        <div className="h-4 bg-gray-200 rounded w-32 mb-2" />
+        <div className="h-3 bg-gray-200 rounded w-48" />
+      </div>
+      <div className="h-3 bg-gray-200 rounded w-20" />
+    </div>
+  );
+}
+
+// Activity item component
+function ActivityItemRow({ activity }: { activity: ActivityItem }) {
+  const style = getActivityStyle(activity.type);
+  
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+      <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center text-lg`}>
+        {style.icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-gray-900">{activity.title}</div>
+        <div className="text-sm text-gray-500 truncate">{activity.description}</div>
+      </div>
+      {activity.project && (
+        <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full whitespace-nowrap">
+          {activity.project}
+        </span>
+      )}
+      <span className="text-xs text-gray-400 whitespace-nowrap">
+        {formatRelativeTime(activity.timestamp)}
+      </span>
+    </div>
+  );
+}
+
+// Pagination component
+function Pagination({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-100">
+      <button
+        onClick={() => onPageChange(page - 1)}
+        disabled={page <= 1}
+        className="px-3 py-1 text-sm rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+      >
+        ← Previous
+      </button>
+      <span className="text-sm text-gray-500">
+        Page {page} of {totalPages}
+      </span>
+      <button
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages}
+        className="px-3 py-1 text-sm rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+      >
+        Next →
+      </button>
+    </div>
+  );
+}
+
 export default function HistoryPage() {
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activityFilter, setActivityFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch projects
-        const projectsRes = await fetch('/api/projects');
-        const projectsData = await projectsRes.json();
-        const projectList = projectsData.projects || [];
-        setProjects(projectList);
+  // Build API URL with filters
+  const apiUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('limit', '30');
+    if (activityFilter !== 'all') params.set('type', activityFilter);
+    if (projectFilter !== 'all') params.set('projectId', projectFilter);
+    return `/api/activity?${params.toString()}`;
+  }, [page, activityFilter, projectFilter]);
 
-        // Fetch activity from multiple sources
-        const activityItems: ActivityItem[] = [];
-
-        // Fetch orchestrator runs
-        try {
-          const runsRes = await fetch('/api/orchestrator/runs');
-          if (runsRes.ok) {
-            const runsData = await runsRes.json();
-            const runs = runsData.runs || runsData || [];
-            if (Array.isArray(runs)) {
-              runs.forEach((run: { id: string; createdAt: string; storiesCount?: number; findingsCount?: number }) => {
-                activityItems.push({
-                  id: `run-${run.id}`,
-                  type: 'orchestrator',
-                  title: 'Orchestrator Run',
-                  description: `${run.storiesCount || 0} stories created, ${run.findingsCount || 0} findings`,
-                  timestamp: run.createdAt,
-                });
-              });
-            }
-          }
-        } catch (e) {
-          console.error('Failed to fetch orchestrator runs:', e);
-        }
-
-        // Fetch scans
-        try {
-          const scansRes = await fetch('/api/scans');
-          if (scansRes.ok) {
-            const scansData = await scansRes.json();
-            const scans = scansData.scans || [];
-            scans.slice(0, 20).forEach((scan: { id: string; scanType: string; scannedAt: string; project?: { name: string } }) => {
-              activityItems.push({
-                id: `scan-${scan.id}`,
-                type: 'scan',
-                title: `${scan.scanType.charAt(0).toUpperCase() + scan.scanType.slice(1)} Scan`,
-                description: scan.project?.name || 'Unknown project',
-                project: scan.project?.name,
-                timestamp: scan.scannedAt,
-              });
-            });
-          }
-        } catch (e) {
-          console.error('Failed to fetch scans:', e);
-        }
-
-        // Fetch completions
-        try {
-          const completionsRes = await fetch('/api/completions');
-          if (completionsRes.ok) {
-            const completionsData = await completionsRes.json();
-            const completions = completionsData.completions || [];
-            completions.slice(0, 20).forEach((completion: { id: string; prUrl?: string; createdAt: string; story?: { title: string; project?: { name: string } } }) => {
-              activityItems.push({
-                id: `completion-${completion.id}`,
-                type: 'pr_merged',
-                title: completion.prUrl ? 'PR Created' : 'Work Completed',
-                description: completion.story?.title || 'Unknown story',
-                project: completion.story?.project?.name,
-                timestamp: completion.createdAt,
-              });
-            });
-          }
-        } catch (e) {
-          console.error('Failed to fetch completions:', e);
-        }
-
-        // Sort by timestamp (newest first)
-        activityItems.sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-
-        setActivities(activityItems);
-      } catch (err) {
-        console.error('Failed to load history:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  // Filter activities
-  const filteredActivities = activities.filter((activity) => {
-    if (activityFilter !== 'all' && activity.type !== activityFilter) {
-      return false;
-    }
-    if (projectFilter !== 'all' && activity.project !== projectFilter) {
-      return false;
-    }
-    return true;
+  // Use single cached API call instead of 4 separate calls
+  const { data, loading, refresh } = useApiCache<ActivityResponse>(apiUrl, {
+    ttl: 2 * 60 * 1000, // 2 minutes for activity
+    backgroundRefresh: true,
   });
 
-  if (loading) {
+  const activities = data?.activities ?? [];
+  const projects = data?.projects ?? [];
+  const pagination = data?.pagination ?? { page: 1, totalPages: 0, total: 0, limit: 30, hasMore: false };
+
+  // Reset page when filters change
+  const handleFilterChange = (type: 'activity' | 'project', value: string) => {
+    if (type === 'activity') {
+      setActivityFilter(value);
+    } else {
+      setProjectFilter(value);
+    }
+    setPage(1); // Reset to first page
+  };
+
+  if (loading && !data) {
     return (
       <div className="app-page">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="h-64 bg-gray-200 rounded" />
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">📜 Activity History</h1>
+            <p className="page-subtitle">Track all system activity and events</p>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 w-32 bg-gray-200 rounded animate-pulse" />
+            <div className="h-9 w-32 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="divide-y divide-gray-100">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <ActivitySkeleton key={i} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -185,28 +218,40 @@ export default function HistoryPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">📜 Activity History</h1>
-          <p className="page-subtitle">Track all system activity and events</p>
+          <p className="page-subtitle">
+            Track all system activity and events
+            {pagination.total > 0 && (
+              <span className="text-gray-400 ml-2">({pagination.total} items)</span>
+            )}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => refresh()}
+            className="btn btn-secondary"
+            style={{ padding: '8px 12px' }}
+          >
+            ↻
+          </button>
           <select
             value={activityFilter}
-            onChange={(e) => setActivityFilter(e.target.value)}
+            onChange={(e) => handleFilterChange('activity', e.target.value)}
             className="btn btn-secondary"
           >
             <option value="all">All Activity</option>
             <option value="scan">Scans</option>
             <option value="orchestrator">Orchestrator</option>
             <option value="pr_merged">PRs</option>
-            <option value="message">Messages</option>
+            <option value="completion">Completions</option>
           </select>
           <select
             value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
+            onChange={(e) => handleFilterChange('project', e.target.value)}
             className="btn btn-secondary"
           >
             <option value="all">All Projects</option>
             {projects.map((p) => (
-              <option key={p.id} value={p.name}>
+              <option key={p.id} value={p.id}>
                 {p.name}
               </option>
             ))}
@@ -214,9 +259,15 @@ export default function HistoryPage() {
         </div>
       </div>
 
+      {data?.error && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-yellow-700">
+          ⚠️ {data.error}
+        </div>
+      )}
+
       {/* Activity List */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {filteredActivities.length === 0 ? (
+        {activities.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <p>No activity found</p>
             <p className="text-sm text-gray-400 mt-1">
@@ -224,30 +275,18 @@ export default function HistoryPage() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {filteredActivities.map((activity) => {
-              const style = getActivityStyle(activity.type);
-              return (
-                <div
-                  key={activity.id}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div
-                    className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center text-lg`}
-                  >
-                    {style.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900">{activity.title}</div>
-                    <div className="text-sm text-gray-500 truncate">{activity.description}</div>
-                  </div>
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
-                    {formatRelativeTime(activity.timestamp)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          <>
+            <div className="divide-y divide-gray-100">
+              {activities.map((activity) => (
+                <ActivityItemRow key={activity.id} activity={activity} />
+              ))}
+            </div>
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+            />
+          </>
         )}
       </div>
     </div>

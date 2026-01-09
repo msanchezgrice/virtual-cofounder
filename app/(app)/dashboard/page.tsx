@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
+// Types
 interface Story {
   id: string;
   title: string;
   priorityLevel: string | null;
+  priorityScore: number;
   status: string;
   project: {
     id: string;
@@ -19,110 +22,284 @@ interface DashboardStats {
   readyForReview: number;
   shippedThisWeek: number;
   launchScore: number;
+  totalStories: number;
+  completedStories: number;
+}
+
+interface DashboardResponse {
+  stats: DashboardStats;
+  focusStories: Story[];
+  activity: {
+    newStoriesLast24h: number;
+    projectCount: number;
+  };
+  error?: string;
+}
+
+// Skeleton components for loading states
+function StatCardSkeleton() {
+  return (
+    <div
+      className="animate-pulse"
+      style={{
+        background: 'white',
+        padding: '20px',
+        borderRadius: '12px',
+        border: '1px solid var(--border-light, #E7E5E4)',
+      }}
+    >
+      <div style={{ height: '14px', background: '#E5E7EB', borderRadius: '4px', width: '80px', marginBottom: '8px' }} />
+      <div style={{ height: '32px', background: '#E5E7EB', borderRadius: '6px', width: '60px', marginBottom: '8px' }} />
+      <div style={{ height: '12px', background: '#E5E7EB', borderRadius: '4px', width: '100px' }} />
+    </div>
+  );
+}
+
+function FocusSectionSkeleton() {
+  return (
+    <div
+      style={{
+        background: 'white',
+        borderRadius: '12px',
+        border: '1px solid var(--border-light, #E7E5E4)',
+        padding: '20px',
+      }}
+    >
+      <div style={{ height: '20px', background: '#E5E7EB', borderRadius: '4px', width: '150px', marginBottom: '16px' }} />
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="animate-pulse"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px',
+            background: 'var(--bg-warm, #F9F3ED)',
+            borderRadius: '8px',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ height: '24px', width: '40px', background: '#E5E7EB', borderRadius: '12px' }} />
+          <div style={{ flex: 1, height: '16px', background: '#E5E7EB', borderRadius: '4px' }} />
+          <div style={{ height: '14px', width: '80px', background: '#E5E7EB', borderRadius: '4px' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({
+  label,
+  value,
+  subtext,
+  color,
+  trend,
+}: {
+  label: string;
+  value: number;
+  subtext: string;
+  color: string;
+  trend?: 'up' | 'down' | 'neutral';
+}) {
+  const trendIcon = trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→';
+  const trendColor = trend === 'up' ? 'var(--accent-green, #10B981)' : 
+                      trend === 'down' ? 'var(--accent-red, #EF4444)' : 
+                      'var(--text-muted, #A8A29E)';
+
+  return (
+    <div
+      style={{
+        background: 'white',
+        padding: '20px',
+        borderRadius: '12px',
+        border: '1px solid var(--border-light, #E7E5E4)',
+      }}
+    >
+      <div style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', marginBottom: '4px' }}>
+        {label}
+      </div>
+      <div style={{ fontSize: '32px', fontWeight: 700, color }}>
+        {value}
+      </div>
+      <div style={{ fontSize: '12px', color: trendColor, marginTop: '4px' }}>
+        {trendIcon} {subtext}
+      </div>
+    </div>
+  );
+}
+
+// Focus Story Item
+function FocusStoryItem({ story }: { story: Story }) {
+  const priorityStyle = getPriorityStyle(story.priorityLevel);
+  
+  return (
+    <Link
+      href={`/stories/${story.id}`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '12px',
+        background: 'var(--bg-warm, #F9F3ED)',
+        borderRadius: '8px',
+        textDecoration: 'none',
+        color: 'inherit',
+        transition: 'background 0.2s, transform 0.15s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = '#F3EDE7';
+        e.currentTarget.style.transform = 'translateX(4px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'var(--bg-warm, #F9F3ED)';
+        e.currentTarget.style.transform = 'translateX(0)';
+      }}
+    >
+      <span
+        style={{
+          padding: '4px 10px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.02em',
+          ...priorityStyle,
+        }}
+      >
+        {story.priorityLevel || 'P2'}
+      </span>
+      <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-primary, #1C1917)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {story.title}
+      </span>
+      <span style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', flexShrink: 0 }}>
+        {story.project.name}
+      </span>
+    </Link>
+  );
+}
+
+function getPriorityStyle(priority: string | null) {
+  switch (priority) {
+    case 'P0':
+      return { background: '#FEE2E2', color: '#991B1B' };
+    case 'P1':
+      return { background: '#FEF3C7', color: '#92400E' };
+    case 'P2':
+      return { background: '#DBEAFE', color: '#1E40AF' };
+    case 'P3':
+      return { background: '#F3F4F6', color: '#6B7280' };
+    default:
+      return { background: '#F3F4F6', color: '#6B7280' };
+  }
+}
+
+// Get greeting based on time of day
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// Today's Focus Section (lazy loadable)
+function TodaysFocus({ stories, loading }: { stories: Story[]; loading: boolean }) {
+  if (loading) {
+    return <FocusSectionSkeleton />;
+  }
+
+  return (
+    <div
+      style={{
+        background: 'white',
+        borderRadius: '12px',
+        border: '1px solid var(--border-light, #E7E5E4)',
+        padding: '20px',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <span style={{ fontSize: '16px', fontWeight: 600 }}>🔥 Today&apos;s Focus</span>
+        <Link
+          href="/priorities"
+          style={{
+            padding: '6px 12px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 500,
+            background: 'white',
+            color: 'var(--text-primary, #1C1917)',
+            border: '1px solid var(--border-light, #E7E5E4)',
+            textDecoration: 'none',
+          }}
+        >
+          View All
+        </Link>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {stories.length === 0 ? (
+          <div
+            style={{
+              padding: '24px',
+              textAlign: 'center',
+              color: 'var(--text-muted, #A8A29E)',
+            }}
+          >
+            <p style={{ marginBottom: '8px' }}>No active stories yet!</p>
+            <p style={{ fontSize: '14px' }}>Run the orchestrator to generate work items.</p>
+          </div>
+        ) : (
+          stories.map((story) => (
+            <FocusStoryItem key={story.id} story={story} />
+          ))
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
+  // Use cached API hook - caches for 5 minutes, with background refresh
+  const { data, loading, refresh } = useApiCache<DashboardResponse>(
+    '/api/dashboard/stats',
+    {
+      ttl: 5 * 60 * 1000, // 5 minutes
+      backgroundRefresh: true,
+    }
+  );
+
+  // Extract data with defaults
+  const stats = data?.stats ?? {
     workInProgress: 0,
     readyForReview: 0,
     shippedThisWeek: 0,
     launchScore: 0,
-  });
-  const [focusStories, setFocusStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        // Fetch stories
-        const storiesRes = await fetch('/api/stories');
-        const storiesData = await storiesRes.json();
-        const stories = storiesData.stories || [];
-
-        // Calculate stats from stories
-        const inProgress = stories.filter((s: Story) => s.status === 'in_progress').length;
-        const forReview = stories.filter((s: Story) => s.status === 'pending' || s.status === 'approved').length;
-        const completed = stories.filter((s: Story) => {
-          if (s.status !== 'completed') return false;
-          // Check if completed this week (simplified)
-          return true;
-        }).length;
-
-        // Get high priority stories for focus section
-        const highPriority = stories
-          .filter((s: Story) => s.status === 'pending' || s.status === 'approved' || s.status === 'in_progress')
-          .sort((a: Story, b: Story) => {
-            const priorityOrder: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
-            const aOrder = priorityOrder[a.priorityLevel || 'P2'] || 2;
-            const bOrder = priorityOrder[b.priorityLevel || 'P2'] || 2;
-            return aOrder - bOrder;
-          })
-          .slice(0, 5);
-
-        // Fetch projects for launch score
-        const projectsRes = await fetch('/api/projects');
-        const projectsData = await projectsRes.json();
-        const projects = projectsData.projects || [];
-        
-        // Calculate average launch score (simplified)
-        let avgScore = 0;
-        if (projects.length > 0) {
-          // If we have project health data, use it
-          avgScore = 65; // Default placeholder
-        }
-
-        setStats({
-          workInProgress: inProgress,
-          readyForReview: forReview,
-          shippedThisWeek: completed,
-          launchScore: avgScore,
-        });
-        setFocusStories(highPriority);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchDashboardData();
-  }, []);
-
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    totalStories: 0,
+    completedStories: 0,
   };
+  const focusStories = data?.focusStories ?? [];
 
-  const getPriorityStyle = (priority: string | null) => {
-    switch (priority) {
-      case 'P0':
-        return { background: '#FEE2E2', color: '#991B1B' };
-      case 'P1':
-        return { background: '#FEF3C7', color: '#92400E' };
-      case 'P2':
-        return { background: '#DBEAFE', color: '#1E40AF' };
-      case 'P3':
-        return { background: '#F3F4F6', color: '#6B7280' };
-      default:
-        return { background: '#F3F4F6', color: '#6B7280' };
-    }
-  };
-
-  if (loading) {
+  // Show skeleton loading on initial load
+  if (loading && !data) {
     return (
-      <div style={{ padding: '24px' }}>
-        <div style={{ animation: 'pulse 2s infinite' }}>
-          <div style={{ height: '32px', background: '#E5E7EB', borderRadius: '8px', width: '300px', marginBottom: '24px' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} style={{ height: '100px', background: '#E5E7EB', borderRadius: '12px' }} />
-            ))}
-          </div>
-          <div style={{ height: '200px', background: '#E5E7EB', borderRadius: '12px' }} />
+      <div style={{ padding: '24px', background: 'var(--bg-cream, #FDF8F3)', minHeight: '100%' }}>
+        {/* Header skeleton */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div className="animate-pulse" style={{ height: '32px', background: '#E5E7EB', borderRadius: '8px', width: '300px' }} />
+          <div className="animate-pulse" style={{ height: '40px', background: '#E5E7EB', borderRadius: '8px', width: '140px' }} />
         </div>
+        
+        {/* Stats skeleton */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
+        
+        {/* Focus section skeleton */}
+        <FocusSectionSkeleton />
       </div>
     );
   }
@@ -134,178 +311,93 @@ export default function DashboardPage() {
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary, #1C1917)' }}>
           {getGreeting()}, Miguel 👋
         </h1>
-        <Link
-          href="/priorities"
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: 600,
-            background: 'var(--accent-purple, #8B5CF6)',
-            color: 'white',
-            textDecoration: 'none',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
-        >
-          ➕ New Priority
-        </Link>
-      </div>
-
-      {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        {/* Work In Progress */}
-        <div style={{
-          background: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          border: '1px solid var(--border-light, #E7E5E4)',
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', marginBottom: '4px' }}>
-            Work In Progress
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--text-primary, #1C1917)' }}>
-            {stats.workInProgress}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--accent-green, #10B981)', marginTop: '4px' }}>
-            ↑ Active stories
-          </div>
-        </div>
-
-        {/* Ready for Review */}
-        <div style={{
-          background: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          border: '1px solid var(--border-light, #E7E5E4)',
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', marginBottom: '4px' }}>
-            Ready for Review
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--accent-amber, #F59E0B)' }}>
-            {stats.readyForReview}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted, #A8A29E)', marginTop: '4px' }}>
-            → Needs attention
-          </div>
-        </div>
-
-        {/* Shipped This Week */}
-        <div style={{
-          background: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          border: '1px solid var(--border-light, #E7E5E4)',
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', marginBottom: '4px' }}>
-            Shipped This Week
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--accent-green, #10B981)' }}>
-            {stats.shippedThisWeek}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--accent-green, #10B981)', marginTop: '4px' }}>
-            ↑ Completed
-          </div>
-        </div>
-
-        {/* Launch Score */}
-        <div style={{
-          background: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          border: '1px solid var(--border-light, #E7E5E4)',
-        }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', marginBottom: '4px' }}>
-            Launch Score
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--accent-purple, #8B5CF6)' }}>
-            {stats.launchScore}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted, #A8A29E)', marginTop: '4px' }}>
-            Beta stage • {100 - stats.launchScore} to launch
-          </div>
-        </div>
-      </div>
-
-      {/* Today's Focus */}
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        border: '1px solid var(--border-light, #E7E5E4)',
-        padding: '20px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '16px', fontWeight: 600 }}>🔥 Today&apos;s Focus</span>
-          <Link
-            href="/priorities"
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => refresh()}
             style={{
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '12px',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              fontSize: '14px',
               fontWeight: 500,
               background: 'white',
               color: 'var(--text-primary, #1C1917)',
               border: '1px solid var(--border-light, #E7E5E4)',
-              textDecoration: 'none',
+              cursor: 'pointer',
             }}
           >
-            View All
+            ↻ Refresh
+          </button>
+          <Link
+            href="/priorities"
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
+              background: 'var(--accent-purple, #8B5CF6)',
+              color: 'white',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            ➕ New Priority
           </Link>
         </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {focusStories.length === 0 ? (
-            <div style={{
-              padding: '24px',
-              textAlign: 'center',
-              color: 'var(--text-muted, #A8A29E)',
-            }}>
-              <p style={{ marginBottom: '8px' }}>No active stories yet!</p>
-              <p style={{ fontSize: '14px' }}>Run the orchestrator to generate work items.</p>
-            </div>
-          ) : (
-            focusStories.map((story) => {
-              const priorityStyle = getPriorityStyle(story.priorityLevel);
-              return (
-                <Link
-                  key={story.id}
-                  href={`/stories/${story.id}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px',
-                    background: 'var(--bg-warm, #F9F3ED)',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  <span style={{
-                    padding: '4px 10px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.02em',
-                    ...priorityStyle,
-                  }}>
-                    {story.priorityLevel || 'P2'}
-                  </span>
-                  <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-primary, #1C1917)' }}>
-                    {story.title}
-                  </span>
-                  <span style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)' }}>
-                    {story.project.name}
-                  </span>
-                </Link>
-              );
-            })
-          )}
-        </div>
       </div>
+
+      {/* Error banner if any */}
+      {data?.error && (
+        <div
+          style={{
+            background: '#FEF3C7',
+            border: '1px solid #FCD34D',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            color: '#92400E',
+            fontSize: '14px',
+          }}
+        >
+          ⚠️ {data.error} - Showing cached data
+        </div>
+      )}
+
+      {/* Stats Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <StatCard
+          label="Work In Progress"
+          value={stats.workInProgress}
+          subtext="Active stories"
+          color="var(--text-primary, #1C1917)"
+          trend="up"
+        />
+        <StatCard
+          label="Ready for Review"
+          value={stats.readyForReview}
+          subtext="Needs attention"
+          color="var(--accent-amber, #F59E0B)"
+          trend="neutral"
+        />
+        <StatCard
+          label="Shipped This Week"
+          value={stats.shippedThisWeek}
+          subtext="Completed"
+          color="var(--accent-green, #10B981)"
+          trend={stats.shippedThisWeek > 0 ? 'up' : 'neutral'}
+        />
+        <StatCard
+          label="Launch Score"
+          value={stats.launchScore}
+          subtext={`${100 - stats.launchScore} to launch`}
+          color="var(--accent-purple, #8B5CF6)"
+          trend={stats.launchScore > 60 ? 'up' : 'neutral'}
+        />
+      </div>
+
+      {/* Today's Focus */}
+      <TodaysFocus stories={focusStories} loading={false} />
     </div>
   );
 }
