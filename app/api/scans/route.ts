@@ -51,9 +51,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ scans: formattedScans });
   } catch (error) {
     console.error('Error fetching scans:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch scans' },
-      { status: 500 }
-    );
+    // Return graceful response with empty data for UI to handle
+    return NextResponse.json({
+      scans: [],
+      error: 'Database connection timeout - please refresh'
+    });
   }
 }

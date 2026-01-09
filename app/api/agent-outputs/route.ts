@@ -142,10 +142,13 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error fetching agent outputs:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    // Return graceful response with empty data for UI to handle
+    return NextResponse.json({
+      outputs: [],
+      pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
+      filters: { outputTypes: [], statuses: [], projects: [] },
+      error: 'Database connection timeout - please refresh'
+    });
   }
 }
 

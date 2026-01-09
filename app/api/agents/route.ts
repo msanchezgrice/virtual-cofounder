@@ -151,9 +151,17 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Failed to fetch agents:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch agents' },
-      { status: 500 }
-    );
+    // Return graceful response with empty data for UI to handle
+    return NextResponse.json({
+      activeAgents: [],
+      registry: [],
+      recentSessions: [],
+      stats: {
+        activeCount: 0,
+        totalAgents: 0,
+        sessionsToday: 0,
+      },
+      error: 'Database connection timeout - please refresh'
+    });
   }
 }

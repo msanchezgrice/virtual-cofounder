@@ -15,9 +15,10 @@ export async function GET() {
     return NextResponse.json({ runs });
   } catch (error) {
     console.error('Failed to fetch orchestrator history:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch history' },
-      { status: 500 }
-    );
+    // Return graceful response with empty data for UI to handle
+    return NextResponse.json({
+      runs: [],
+      error: 'Database connection timeout - please refresh'
+    });
   }
 }
