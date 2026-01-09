@@ -13,7 +13,7 @@ import { WebClient } from '@slack/web-api';
 const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 // Default workspace for MVP
-const DEFAULT_WORKSPACE_ID = 'cm3wev4rp0000pa2o0vyqz4qa';
+const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000002';
 
 // Slack channel from environment (or default)
 const SLACK_CHANNEL = process.env.SLACK_CHANNEL_ID || process.env.SLACK_CHANNEL || '#cofounder-updates';

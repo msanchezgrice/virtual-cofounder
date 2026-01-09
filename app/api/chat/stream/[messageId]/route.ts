@@ -23,7 +23,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // Default workspace for MVP
-const DEFAULT_WORKSPACE_ID = 'cm3wev4rp0000pa2o0vyqz4qa';
+const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000002';
 
 // Model mapping for SDK
 const MODEL_MAP: Record<string, 'opus' | 'sonnet' | 'haiku'> = {
