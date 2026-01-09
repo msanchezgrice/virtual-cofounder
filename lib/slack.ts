@@ -26,6 +26,7 @@ export interface CompletionNotification {
   priority: 'high' | 'medium' | 'low';
   policy: 'auto_safe' | 'approval_required' | 'suggest_only';
   agentName?: string;
+  linearUrl?: string; // Linear issue URL for direct linking
 }
 
 /**
@@ -105,16 +106,27 @@ export async function sendCompletionNotification(
               value: `approve_${completion.completionId}`,
               action_id: 'approve_completion',
             },
-            {
-              type: 'button',
-              text: {
-                type: 'plain_text',
-                text: 'View Details',
-                emoji: true,
-              },
-              value: `view_${completion.completionId}`,
-              action_id: 'view_completion',
-            },
+            // View Details button - opens Linear directly if URL available
+            completion.linearUrl
+              ? {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: '📊 View in Linear',
+                    emoji: true,
+                  },
+                  url: completion.linearUrl,
+                }
+              : {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: 'View Details',
+                    emoji: true,
+                  },
+                  value: `view_${completion.completionId}`,
+                  action_id: 'view_completion',
+                },
             {
               type: 'button',
               text: {

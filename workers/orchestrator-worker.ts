@@ -170,8 +170,15 @@ _Story ID: ${dbStory.id}_`,
       }
 
       // Send Slack notification (non-blocking)
+      // Include Linear URL if we created a task
       if (project) {
         try {
+          // Fetch the updated story to get the Linear URL
+          const updatedStory = await prisma.story.findUnique({
+            where: { id: dbStory.id },
+            select: { linearIssueUrl: true },
+          });
+          
           await sendCompletionNotification({
             completionId: dbStory.id,
             projectName: project.name,
@@ -179,6 +186,7 @@ _Story ID: ${dbStory.id}_`,
             rationale: story.rationale,
             priority: story.priority,
             policy: story.policy,
+            linearUrl: updatedStory?.linearIssueUrl || undefined,
           });
         } catch (slackError) {
           // Log but don't fail the job if Slack fails
