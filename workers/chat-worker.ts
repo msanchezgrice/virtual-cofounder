@@ -503,14 +503,27 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
         case 'stream_event': {
           // Handle streaming events for tool use detection
           const streamMsg = message as any;
-          
-          if (streamMsg.event?.type === 'content_block_start' && 
+
+          if (streamMsg.event?.type === 'content_block_start' &&
               streamMsg.event.content_block?.type === 'tool_use') {
             const toolName = streamMsg.event.content_block.name || '';
             toolsUsed.push(toolName);
             await publishToStream(messageId, { type: 'tool', tool: toolName, status: 'starting' });
+
+            // IMPORTANT: Check for Task tool spawning via stream_event (SDK uses this, not tool_progress)
+            if (toolName === 'Task' || toolName === 'task') {
+              console.log(`[Chat Worker] Detected Task tool in stream_event`);
+            }
           }
-          
+
+          // Check for tool input in content_block_delta events
+          if (streamMsg.event?.type === 'content_block_delta' &&
+              streamMsg.event.delta?.type === 'input_json_delta') {
+            // Tool input comes through as partial_json - need to accumulate it
+            // For now, log that we're seeing tool input
+            console.log(`[Chat Worker] Received tool input_json_delta`);
+          }
+
           // For text deltas in stream events
           if (streamMsg.event?.type === 'content_block_delta' &&
               streamMsg.event.delta?.type === 'text_delta') {
