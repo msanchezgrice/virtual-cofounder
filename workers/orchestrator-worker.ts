@@ -1,4 +1,5 @@
 // Orchestrator worker - Processes individual project analyses
+// Uses Agent SDK for autonomous subagent spawning when AGENT_SDK_ENABLED=true
 import { config } from 'dotenv';
 import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.local') });
@@ -9,6 +10,7 @@ import { PrismaClient } from '@prisma/client';
 import { runOrchestrator, type ScanContext } from '../lib/orchestrator';
 import { sendCompletionNotification } from '../lib/slack';
 import { createLinearTask, getDefaultTeamId, mapPriorityToLinear, addLinearComment, getOrCreateProject, getOrCreateLabel, getBacklogStateId } from '../lib/linear';
+import { featureFlags } from '../lib/config/feature-flags';
 
 // Create fresh Prisma client with direct connection (not pooler)
 const directDatabaseUrl = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true&connection_limit=1', '');
@@ -261,7 +263,8 @@ worker.on('error', (err) => {
   console.error('[Orchestrator Worker] Worker error:', err);
 });
 
-console.log('[Orchestrator Worker] Started and waiting for jobs...');
+console.log(`[Orchestrator Worker] Started (SDK: ${featureFlags.AGENT_SDK_ENABLED ? 'enabled - autonomous subagent spawning' : 'disabled - legacy mode'})`);
+console.log('[Orchestrator Worker] Waiting for jobs...');
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {

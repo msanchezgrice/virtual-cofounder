@@ -173,16 +173,19 @@ export async function POST(request: NextRequest) {
     if (payload.type === 'Issue' && payload.action === 'update') {
       const linearTaskId = payload.data.id;
       const newState = payload.data.state;
-
-      if (!newState || !payload.updatedFrom?.stateId) {
-        // State didn't change, ignore
-        return NextResponse.json({ received: true });
-      }
+      const newPriority = payload.data.priority;
+      const priorityChanged = payload.updatedFrom?.priority !== undefined && 
+                               payload.updatedFrom.priority !== newPriority;
 
       // Find story with this Linear task ID
       const story = await prisma.story.findFirst({
         where: {
           linearTaskId,
+        },
+        include: {
+          project: {
+            select: { workspaceId: true },
+          },
         },
       });
 
@@ -191,47 +194,85 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
       }
 
-      // Map Linear state to story status
-      const newStatus = mapLinearStateToStatus(newState.type);
+      // Track what we updated
+      const updates: { status?: string; priorityLevel?: string; priorityScore?: number } = {};
 
-      // Update story status
-      await prisma.story.update({
-        where: {
-          id: story.id,
-        },
-        data: {
-          status: newStatus,
-        },
-      });
+      // Handle priority change from Linear
+      if (priorityChanged && newPriority !== undefined) {
+        const newPriorityLevel = mapLinearToPriorityLevel(newPriority);
+        // Calculate priority score based on level (P0=100, P1=75, P2=50, P3=25)
+        const priorityScoreMap: Record<string, number> = { P0: 100, P1: 75, P2: 50, P3: 25 };
+        const newPriorityScore = priorityScoreMap[newPriorityLevel] || 50;
 
-      console.log(
-        `Updated story ${story.id} status to ${newStatus} (Linear: ${newState.name})`
-      );
+        updates.priorityLevel = newPriorityLevel;
+        updates.priorityScore = newPriorityScore;
 
-      // If status changed to "in_progress" and multi-source approval is enabled,
-      // enqueue the story for execution
-      if (
-        newStatus === 'in_progress' &&
-        featureFlags.MULTI_SOURCE_APPROVAL
-      ) {
-        const jobId = await enqueueStoryForExecution(
-          story.id,
-          story.priorityLevel || 'P2',
-          'linear'
+        // Create a priority signal for audit trail
+        await prisma.prioritySignal.create({
+          data: {
+            workspaceId: story.project.workspaceId,
+            projectId: story.projectId,
+            storyId: story.id,
+            source: 'linear',
+            signalType: 'priority_set',
+            priority: newPriorityLevel,
+            rawText: `Priority changed to ${newPriorityLevel} from Linear (${payload.data.identifier || linearTaskId})`,
+            confidence: 1.0,
+            isExplicit: true,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
+        });
+
+        console.log(
+          `[LinearWebhook] Priority changed from ${payload.updatedFrom?.priority} to ${newPriority} (${newPriorityLevel}) for story ${story.id}`
         );
-        
-        if (jobId) {
-          console.log(
-            `Enqueued story ${story.id} for execution (job: ${jobId}) from Linear status change`
+      }
+
+      // Handle status change
+      if (newState && payload.updatedFrom?.stateId) {
+        const newStatus = mapLinearStateToStatus(newState.type);
+        updates.status = newStatus;
+
+        console.log(
+          `[LinearWebhook] Status changed to ${newStatus} (Linear: ${newState.name}) for story ${story.id}`
+        );
+
+        // If status changed to "in_progress" and multi-source approval is enabled,
+        // enqueue the story for execution
+        if (
+          newStatus === 'in_progress' &&
+          featureFlags.MULTI_SOURCE_APPROVAL
+        ) {
+          const jobId = await enqueueStoryForExecution(
+            story.id,
+            updates.priorityLevel || story.priorityLevel || 'P2',
+            'linear'
           );
+          
+          if (jobId) {
+            console.log(
+              `[LinearWebhook] Enqueued story ${story.id} for execution (job: ${jobId}) from Linear status change`
+            );
+          }
         }
+      }
+
+      // Only update if we have changes
+      if (Object.keys(updates).length > 0) {
+        await prisma.story.update({
+          where: { id: story.id },
+          data: updates,
+        });
+      } else {
+        console.log('[LinearWebhook] No status or priority changes detected');
+        return NextResponse.json({ received: true });
       }
 
       return NextResponse.json({
         success: true,
         storyId: story.id,
-        status: newStatus,
-        enqueued: newStatus === 'in_progress' && featureFlags.MULTI_SOURCE_APPROVAL,
+        updates,
+        enqueued: updates.status === 'in_progress' && featureFlags.MULTI_SOURCE_APPROVAL,
       });
     }
 

@@ -12,6 +12,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { featureFlags } from '@/lib/config/feature-flags';
 import { processPrioritySignal } from '@/lib/priority/classifier';
 import { enqueueStoryForExecution } from '@/lib/queue/execution';
+import { updateLinearTaskPriority, mapPriorityToLinear } from '@/lib/linear';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -669,11 +670,13 @@ async function viewStory(storyId: string, userId?: string, channelId?: string): 
       // Build message with Linear link if available
       let message = `📋 **${story.title}**\n\n`;
       message += `**Project:** ${story.project.name}\n`;
-      message += `**Priority:** ${story.priority}\n`;
+      message += `**Priority:** ${story.priorityLevel || story.priority}\n`;
       message += `**Status:** ${story.status}\n\n`;
 
-      if (story.linearTaskId) {
-        message += `🔗 View in Linear: https://linear.app/issue/${story.linearTaskId}\n\n`;
+      if (story.linearIssueUrl) {
+        message += `🔗 View in Linear: ${story.linearIssueUrl} (${story.linearIdentifier || 'Linear'})\n\n`;
+      } else if (story.linearTaskId) {
+        message += `🔗 View in Linear: https://linear.app/media-maker/issue/${story.linearIdentifier || story.linearTaskId}\n\n`;
       }
 
       if (story.prUrl) {
@@ -790,7 +793,7 @@ async function handleReactionAdded(event: any): Promise<void> {
   try {
     // If it's a priority emoji, process as signal
     if (action.startsWith('P')) {
-      await processPrioritySignal({
+      const signalResult = await processPrioritySignal({
         source: 'slack',
         signalType: 'emoji_reaction',
         rawContent: `User reacted with :${reaction}: (${action})`,
@@ -804,6 +807,47 @@ async function handleReactionAdded(event: any): Promise<void> {
         },
       });
       console.log(`[Slack Events] Priority signal from emoji: ${action}`);
+
+      // Try to find if this reaction is on a story notification
+      // and sync the priority to Linear
+      if (event.item?.ts && event.item?.channel) {
+        const slackMessage = await db.slackMessage.findFirst({
+          where: {
+            messageTs: event.item.ts,
+            channelId: event.item.channel,
+          },
+        });
+
+        if (slackMessage && slackMessage.commandType?.startsWith('story_')) {
+          const storyId = slackMessage.commandType.replace('story_', '');
+          const story = await db.story.findUnique({
+            where: { id: storyId },
+            select: { id: true, linearTaskId: true, priorityLevel: true },
+          });
+
+          if (story) {
+            // Update story priority in DB
+            await db.story.update({
+              where: { id: storyId },
+              data: {
+                priorityLevel: action,
+                priorityScore: signalResult?.classification?.priorityScore || 50,
+              },
+            });
+
+            // Sync to Linear if linked
+            if (story.linearTaskId) {
+              try {
+                const linearPriority = mapPriorityToLinear(action);
+                await updateLinearTaskPriority(story.linearTaskId, linearPriority);
+                console.log(`[Slack Events] Synced priority ${action} to Linear task ${story.linearTaskId}`);
+              } catch (linearError) {
+                console.error('[Slack Events] Failed to sync priority to Linear:', linearError);
+              }
+            }
+          }
+        }
+      }
     }
 
     // If it's an approve/reject emoji on a story message, handle approval
