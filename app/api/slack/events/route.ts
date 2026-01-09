@@ -728,18 +728,54 @@ async function viewStory(storyId: string, userId?: string, channelId?: string): 
 }
 
 /**
- * Snooze a story (no-op for now, could update status)
+ * Snooze a story for 24 hours (sets status to rejected with snooze note)
  */
 async function snoozeStory(storyId: string, userId?: string, channelId?: string): Promise<void> {
   console.log(`[Slack Events] Snooze story: ${storyId}`);
 
-  if (userId && channelId) {
-    const client = getSlackClient();
-    await client.chat.postEphemeral({
-      channel: channelId,
-      user: userId,
-      text: `⏰ Snoozed story ID: ${storyId} for 24 hours.\n(Snooze functionality coming in Phase 5)`,
+  try {
+    // Calculate snooze until time (24 hours from now)
+    const snoozeUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    
+    // Update story with snooze info
+    const story = await db.story.update({
+      where: { id: storyId },
+      data: {
+        status: 'rejected', // Mark as rejected for now (won't be picked up by execution)
+        userNotes: `Snoozed until ${snoozeUntil.toISOString()} via Slack`,
+      },
+      include: { project: true },
     });
+
+    if (userId && channelId) {
+      const client = getSlackClient();
+      
+      // Build confirmation message with links
+      let message = `⏰ *Snoozed:* ${story.title}\n\n`;
+      message += `This story has been snoozed for 24 hours and won't be executed until then.\n`;
+      message += `_Snooze expires: ${snoozeUntil.toLocaleString()}_\n\n`;
+      
+      // Add Linear link if available
+      if (story.linearIssueUrl) {
+        message += `<${story.linearIssueUrl}|📊 View in Linear> to un-snooze or adjust priority`;
+      }
+      
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: message,
+      });
+    }
+  } catch (error) {
+    console.error('[Slack Events] Error snoozing story:', error);
+    if (userId && channelId) {
+      const client = getSlackClient();
+      await client.chat.postEphemeral({
+        channel: channelId,
+        user: userId,
+        text: `❌ Error snoozing story. Please try again.`,
+      });
+    }
   }
 }
 
