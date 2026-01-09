@@ -202,6 +202,40 @@
   position: relative;
 }
 
+/* Stage Timeline Container - Desktop spreads evenly, mobile scrolls */
+.stage-timeline-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.stage-timeline-item {
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.stage-timeline-item .stage-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 10px;
+  font-size: 22px;
+}
+
+.stage-timeline-item .stage-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-timeline-item .stage-status {
+  font-size: 11px;
+}
+
 .stage {
   text-align: center;
   position: relative;
@@ -571,6 +605,17 @@
   .page-title {
     font-size: 22px;
   }
+  
+  /* Stage timeline: smaller icons on tablet */
+  .stage-timeline-item .stage-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  
+  .stage-timeline-item .stage-name {
+    font-size: 12px;
+  }
 }
 
 /* Mobile Breakpoint (< 768px) */
@@ -625,9 +670,39 @@
     width: 100%;
     justify-content: center;
   }
+  
+  /* Stage timeline: horizontal scroll on mobile */
+  .stage-timeline-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    gap: 8px;
+    padding-bottom: 8px;
+    justify-content: flex-start;
+  }
+  
+  .stage-timeline-item {
+    flex: 0 0 auto;
+    min-width: 70px;
+    scroll-snap-align: start;
+  }
+  
+  .stage-timeline-item .stage-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  
+  .stage-timeline-item .stage-name {
+    font-size: 11px;
+  }
+  
+  .stage-timeline-item .stage-status {
+    font-size: 10px;
+  }
 }
 
-/* Small Mobile (< 480px) */
+/* Small Mobile (< 480px) - covers iPhone 12 (390px) */
 @media (max-width: 479px) {
   .responsive-grid-5,
   .responsive-grid-4,
@@ -642,6 +717,38 @@
   
   .app-page {
     padding: 12px;
+  }
+  
+  .page-title {
+    font-size: 18px;
+  }
+  
+  .page-header-actions {
+    gap: 6px;
+  }
+  
+  .btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  /* Stage timeline: even smaller on small phones */
+  .stage-timeline-item {
+    min-width: 60px;
+  }
+  
+  .stage-timeline-item .stage-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .stage-timeline-item .stage-name {
+    font-size: 10px;
+  }
+  
+  .stage-timeline-item .stage-status {
+    font-size: 9px;
   }
 }
 

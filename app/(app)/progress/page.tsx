@@ -146,41 +146,19 @@ function StageTimeline({ stages }: { stages: StageData[] }) {
   return (
     <div className="card" style={{ padding: '24px', marginBottom: '20px' }}>
       <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>Journey to Paying Customers</h2>
-      <div style={{ 
-        display: 'flex', 
-        overflowX: 'auto', 
-        gap: '8px',
-        paddingBottom: '8px',
-        WebkitOverflowScrolling: 'touch',
-        scrollSnapType: 'x mandatory',
-      }}>
+      <div className="stage-timeline-container">
         {stages.map((stage, index) => (
           <div 
             key={stage.id} 
-            style={{ 
-              textAlign: 'center', 
-              minWidth: '100px',
-              flex: '0 0 auto',
-              scrollSnapAlign: 'start',
-              padding: '8px',
-            }}
+            className="stage-timeline-item"
           >
             <div 
               className={`stage-icon ${stage.complete ? 'completed' : stage.current ? 'current' : 'upcoming'}`}
-              style={{
-                width: '48px',
-                height: '48px',
-                margin: '0 auto 10px',
-                fontSize: '20px',
-              }}
             >
               {stageIcons[index] || '⭐'}
             </div>
-            <div className="stage-name" style={{ fontSize: '13px' }}>{stage.name}</div>
-            <div 
-              className={`stage-status ${stage.current ? 'active' : ''}`}
-              style={{ fontSize: '11px' }}
-            >
+            <div className="stage-name">{stage.name}</div>
+            <div className={`stage-status ${stage.current ? 'active' : ''}`}>
               {stage.complete ? '✓' : stage.current ? 'NOW' : `${76 + index * 5}+`}
             </div>
           </div>
