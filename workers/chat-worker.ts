@@ -850,7 +850,7 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
         }
 
         // Enqueue for execution
-        await enqueueStoryForExecution(story.id, 'P1', 'chat');
+        await enqueueStoryForExecution(story.id, 'P1', 'dashboard');
         console.log(`[Chat Worker] Enqueued story ${story.id} for execution`);
 
         // Append Linear link to HoP's response
