@@ -297,6 +297,58 @@ function extractSuggestedActions(content: string): SuggestedAction[] {
 }
 
 /**
+ * Detect if HoP wants to create a story for work execution
+ * Returns story details if detected, null otherwise
+ */
+interface StoryCreationRequest {
+  title: string;
+  description?: string;
+  agentType?: string;
+}
+
+function detectStoryCreationRequest(content: string): StoryCreationRequest | null {
+  // Patterns indicating HoP wants to create a story
+  const storyPatterns = [
+    /I'll create a story (?:for|to)\s+(.+?)(?:\.|$)/i,
+    /I'll create (?:a|an)\s+(.+?)\s+story/i,
+    /creating a story (?:for|to)\s+(.+?)(?:\.|$)/i,
+  ];
+
+  for (const pattern of storyPatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      const workDescription = match[1].trim();
+
+      // Determine agent type from content
+      let agentType = 'General';
+      if (/security|vulnerabilit|audit|npm/i.test(content)) agentType = 'Security';
+      else if (/seo|meta|search|visibility/i.test(content)) agentType = 'SEO';
+      else if (/performance|speed|core web vitals/i.test(content)) agentType = 'Performance';
+      else if (/build|implement|create|add|feature/i.test(content)) agentType = 'Code Generation';
+      else if (/test|testing|spec/i.test(content)) agentType = 'Testing';
+      else if (/fix|bug|issue/i.test(content)) agentType = 'Bug Fix';
+      else if (/analytics|tracking|events/i.test(content)) agentType = 'Analytics';
+      else if (/design|mockup|ui|ux/i.test(content)) agentType = 'Design';
+
+      // Extract bullet points as description
+      const bulletPoints = content.match(/^- .+$/gm);
+      const description = bulletPoints ? bulletPoints.join('\n') : workDescription;
+
+      // Create title from work description
+      const title = `${agentType}: ${workDescription.charAt(0).toUpperCase() + workDescription.slice(0, 80)}`;
+
+      return {
+        title,
+        description,
+        agentType,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Handle priority command (quick response, no Agent SDK needed)
  */
 async function handlePriorityCommand(
@@ -453,16 +505,15 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
       projectContext
     );
     
-    // Get spawnable agents (all available - no filtering)
-    const subagents = convertToSDKAgents();
+    // CHAT MODE: No spawnable agents - HoP creates stories instead
+    // This keeps chat fast (<1 second response) while work happens in background
+    console.log(`[Chat Worker] Running Agent SDK in chat mode (no spawnable agents)`);
 
-    console.log(`[Chat Worker] Running Agent SDK with ${Object.keys(subagents).length} spawnable agents`);
-
-    // SDK options
+    // SDK options - NO agents option = HoP cannot spawn, must create stories instead
     const sdkOptions: SDKOptions = {
       allowedTools: ['Task', 'Read', 'Grep', 'WebFetch'],
       tools: ['Task', 'Read', 'Grep', 'WebFetch'],
-      agents: subagents,
+      // agents: subagents,  // REMOVED - causes blocking, HoP should create stories instead
       maxTurns: 5,
       persistSession: false,
       includePartialMessages: true,
@@ -728,6 +779,103 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
     }
 
     console.log(`[Chat Worker] SDK stream finished for message ${messageId}, fullContent length: ${fullContent.length}`);
+
+    // Check if HoP wants to create a story for work execution
+    const storyRequest = detectStoryCreationRequest(fullContent);
+    if (storyRequest) {
+      console.log(`[Chat Worker] Detected story creation request: ${storyRequest.title}`);
+
+      try {
+        // Create story in database
+        const runId = randomUUID();
+        const story = await prisma.story.create({
+          data: {
+            workspaceId,
+            runId,
+            projectId: projectId || workspaceId,
+            title: storyRequest.title,
+            rationale: storyRequest.description || `Requested via chat: ${userContent}`,
+            priority: 'medium',
+            priorityLevel: 'P1',  // User explicitly requested via chat
+            priorityScore: 75,
+            policy: 'auto_safe',
+            status: 'pending',
+            advancesLaunchStage: false,
+          },
+        });
+
+        console.log(`[Chat Worker] Created story ${story.id} for chat request`);
+
+        // Create AgentSession for tracking in Agents tab
+        await prisma.agentSession.create({
+          data: {
+            storyId: story.id,
+            projectId: story.projectId,
+            agentName: storyRequest.agentType || 'General',
+            agentType: 'specialist',
+            status: 'pending',
+            thinkingTrace: [{
+              turn: 1,
+              thinking: `Requested from chat by user`,
+              action: 'chat_request',
+              prompt: userContent,
+              timestamp: new Date().toISOString()
+            }],
+            toolCalls: [],
+          },
+        });
+
+        // Create Linear issue
+        let linearUrl: string | null = null;
+        const linearTeamId = process.env.LINEAR_TEAM_ID;
+        if (linearTeamId) {
+          const linearTask = await createLinearTask({
+            teamId: linearTeamId,
+            title: story.title,
+            description: `**Type:** ${storyRequest.agentType || 'General'}\n\n**Description:**\n${story.rationale}\n\n**Requested from:** Chat\n**Priority:** P1`,
+            priority: 2,  // High
+          });
+
+          linearUrl = linearTask.url;
+
+          await prisma.story.update({
+            where: { id: story.id },
+            data: {
+              linearTaskId: linearTask.id,
+              linearIssueUrl: linearUrl,
+            },
+          });
+
+          console.log(`[Chat Worker] Created Linear issue: ${linearUrl}`);
+        }
+
+        // Enqueue for execution
+        await enqueueStoryForExecution(story.id, 'P1', 'chat');
+        console.log(`[Chat Worker] Enqueued story ${story.id} for execution`);
+
+        // Append Linear link to HoP's response
+        const trackingMessage = linearUrl
+          ? `\n\n✅ **Story created!** Track progress: ${linearUrl}`
+          : `\n\n✅ **Story created!** Story ID: ${story.id}`;
+
+        fullContent += trackingMessage;
+
+        // Publish the Linear link to user
+        await publishToStream(messageId, {
+          type: 'delta',
+          content: trackingMessage
+        });
+
+      } catch (storyError) {
+        console.error('[Chat Worker] Error creating story from chat request:', storyError);
+        const errorMessage = `\n\n⚠️  I understand what you need, but failed to create the tracking story. Error: ${storyError instanceof Error ? storyError.message : 'Unknown error'}`;
+        fullContent += errorMessage;
+        await publishToStream(messageId, {
+          type: 'delta',
+          content: errorMessage
+        });
+      }
+    }
 
     // Extract suggested actions from final content
     const suggestedActions = extractSuggestedActions(fullContent);
