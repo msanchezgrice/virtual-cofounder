@@ -1,14 +1,11 @@
-# Nixpacks configuration for Railway deployments
-# 
-# IMPORTANT: Start commands are set per-service in Railway dashboard:
-# - virtual-cofounder (scan): npm run worker:scan
-# - orchestrator-worker: npm run worker:orchestrator  
-# - execution-worker: npm run worker:execute
-#
-# Do NOT set a default start command here - let Railway dashboard control it.
+# Nixpacks configuration for Railway
+# Force Node.js 20 for compatibility with @octokit, @supabase, and other packages
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-10_x", "openssl"]
+
+[phases.install]
+cmds = ["npm ci"]
 
 [phases.build]
-# Skip Next.js build for workers - just install deps and generate Prisma
-cmds = ["npm ci", "npx prisma generate"]
-
-# No [start] section - each service sets its own command in Railway dashboard
+cmds = ["npx prisma generate"]
