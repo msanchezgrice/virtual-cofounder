@@ -19,7 +19,7 @@ import { Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { PrismaClient } from '@prisma/client';
 import { cloneRepo, createBranch, applyChanges, commitChanges, pushBranch, cleanup } from '../lib/git';
-import { createPullRequest, parseRepoUrl, getAuthenticatedCloneUrl } from '../lib/github';
+import { createPullRequest, parseRepoUrlWithInstallation, getAuthenticatedCloneUrl } from '../lib/github';
 import { sendSlackNotification } from '../lib/slack';
 import { updateLinearTaskStatus, getTeamWorkflowStates, addLinearComment } from '../lib/linear';
 import { featureFlags } from '../lib/config/feature-flags';
@@ -323,9 +323,8 @@ async function executeStorySDK(storyId: string): Promise<void> {
     await commitChanges(repoPath, `AI improvement: ${story.title}`);
     await pushBranch(repoPath, branchName);
 
-    // Create PR
-    const repoUrl = repo.startsWith('http') ? repo : `https://github.com/${repo}.git`;
-    const { owner, repo: repoName } = parseRepoUrl(repoUrl);
+    // Create PR - use async parser to get owner from GitHub App installation
+    const { owner, repo: repoName } = await parseRepoUrlWithInstallation(repo);
     
     const prBody = buildPRBody(story, codeGenResult);
     const prResult = await createPullRequest({
@@ -482,8 +481,8 @@ async function executeStoryLegacy(storyId: string): Promise<void> {
     await commitChanges(repoPath, `AI improvement: ${story.title}`);
     await pushBranch(repoPath, branchName);
 
-    const repoUrl = repo.startsWith('http') ? repo : `https://github.com/${repo}.git`;
-    const { owner, repo: repoName } = parseRepoUrl(repoUrl);
+    // Use async parser to get owner from GitHub App installation
+    const { owner, repo: repoName } = await parseRepoUrlWithInstallation(repo);
     
     const prResult = await createPullRequest({
       owner,

@@ -387,13 +387,14 @@ export async function getTeamProjects(teamId: string): Promise<Array<{ id: strin
 
 /**
  * Create a project for a team
+ * Note: Linear API now requires teamIds (array) instead of teamId (singular)
  */
 export async function createProject(teamId: string, name: string): Promise<{ id: string; name: string }> {
   const query = `
-    mutation CreateProject($teamId: String!, $name: String!) {
+    mutation CreateProject($teamIds: [String!]!, $name: String!) {
       projectCreate(
         input: {
-          teamId: $teamId
+          teamIds: $teamIds
           name: $name
         }
       ) {
@@ -411,7 +412,7 @@ export async function createProject(teamId: string, name: string): Promise<{ id:
       success: boolean;
       project: { id: string; name: string };
     };
-  }>(query, { teamId, name });
+  }>(query, { teamIds: [teamId], name });
 
   if (!data.projectCreate.success) {
     throw new Error(`Failed to create project: ${name}`);
