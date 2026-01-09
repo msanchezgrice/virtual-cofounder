@@ -4,16 +4,37 @@ import { agentRegistry, type AgentDefinition } from '@/lib/agents/index';
 
 export const dynamic = 'force-dynamic';
 
-// Agent display info
+// Agent display info for all 17 agents per MASTER-SPEC.md
 const AGENT_DISPLAY: Record<string, { icon: string; gradient: string }> = {
+  // Meta-Agent
   'head-of-product': { icon: '🧠', gradient: 'from-purple-500 to-indigo-600' },
+  
+  // State Management
+  'state-manager': { icon: '📋', gradient: 'from-slate-500 to-gray-600' },
+  
+  // Analysis & Ops
   'security': { icon: '🛡️', gradient: 'from-red-500 to-rose-600' },
   'analytics': { icon: '📊', gradient: 'from-blue-500 to-cyan-600' },
+  'research': { icon: '🔬', gradient: 'from-indigo-500 to-blue-600' },
+  
+  // Infrastructure
   'domain': { icon: '🌐', gradient: 'from-green-500 to-emerald-600' },
-  'seo': { icon: '🔎', gradient: 'from-purple-500 to-violet-600' },
   'deployment': { icon: '🚀', gradient: 'from-orange-500 to-amber-600' },
-  'codegen': { icon: '⚙️', gradient: 'from-emerald-500 to-green-600' },
   'performance': { icon: '⚡', gradient: 'from-yellow-500 to-orange-600' },
+  'accessibility': { icon: '♿', gradient: 'from-blue-400 to-indigo-500' },
+  'database': { icon: '🗃️', gradient: 'from-stone-500 to-stone-700' },
+  
+  // Code
+  'codegen': { icon: '⚙️', gradient: 'from-emerald-500 to-green-600' },
+  'test': { icon: '🧪', gradient: 'from-teal-500 to-cyan-600' },
+  'review': { icon: '👁️', gradient: 'from-violet-500 to-purple-600' },
+  'api': { icon: '🔌', gradient: 'from-sky-500 to-blue-600' },
+  
+  // Content
+  'seo': { icon: '🔎', gradient: 'from-purple-500 to-violet-600' },
+  'design': { icon: '🎨', gradient: 'from-pink-500 to-rose-600' },
+  'copy': { icon: '✍️', gradient: 'from-amber-500 to-yellow-600' },
+  'docs': { icon: '📝', gradient: 'from-gray-500 to-slate-600' },
 };
 
 export async function GET(

@@ -65,19 +65,67 @@ Your job is to:
 4. Create stories for the top-ranked work items
 5. Factor in user priorities (P0 = urgent, P1 = high, P2 = medium, P3 = low)
 
-Use the Task tool to spawn these specialist agents:
-- Task(agentName: "security", prompt: "...") for vulnerabilities, exposed secrets
-- Task(agentName: "analytics", prompt: "...") for tracking gaps
-- Task(agentName: "domain", prompt: "...") for SSL/DNS issues
-- Task(agentName: "seo", prompt: "...") for search visibility
-- Task(agentName: "deployment", prompt: "...") for build/deploy issues
-- Task(agentName: "performance", prompt: "...") for performance issues
+Use the Task tool to spawn these specialist agents (16 available):
+
+ANALYSIS & OPS AGENTS:
+- Task(agentName: "analytics", prompt: "...") - Check tracking setup, event instrumentation
+- Task(agentName: "research", prompt: "...") - Market research, competitor analysis
+
+INFRASTRUCTURE AGENTS:
+- Task(agentName: "security", prompt: "...") - Vulnerabilities, exposed secrets, npm audit
+- Task(agentName: "domain", prompt: "...") - SSL/DNS issues, domain health
+- Task(agentName: "deployment", prompt: "...") - Build/deploy issues, Vercel status
+- Task(agentName: "performance", prompt: "...") - Core Web Vitals, bundle sizes
+- Task(agentName: "accessibility", prompt: "...") - WCAG compliance, a11y checks
+- Task(agentName: "database", prompt: "...") - Schema optimization, migrations
+
+CODE AGENTS:
+- Task(agentName: "codegen", prompt: "...") - Write/modify code to fix issues
+- Task(agentName: "test", prompt: "...") - Generate tests for code changes
+- Task(agentName: "review", prompt: "...") - Review code for quality/security
+- Task(agentName: "api", prompt: "...") - Build/maintain API endpoints
+
+CONTENT AGENTS:
+- Task(agentName: "seo", prompt: "...") - SEO optimization, meta tags
+- Task(agentName: "design", prompt: "...") - UI/UX design, mockups
+- Task(agentName: "copy", prompt: "...") - Marketing copy, content
+- Task(agentName: "docs", prompt: "...") - Technical documentation
 
 For each project scan, spawn the relevant agents using the Task tool to get their analysis.
 Then consolidate their findings and prioritize the work.
 
 Output priority scores 0-100 and clear rationale.
 User priorities always override: P0 work goes to top of queue.`
+};
+
+// ============================================================================
+// STATE MANAGER AGENT (Per MASTER-SPEC.md Section 2b)
+// ============================================================================
+
+export const stateManagerAgent: AgentDefinition = {
+  name: 'State Manager',
+  role: 'state-manager',
+  type: 'ops',
+  model: 'claude-sonnet-4-5-20250929', // Fast, cheap
+  tools: [], // Read-only, no tools needed
+  maxTurns: 1, // Single turn only
+  canSpawnSubagents: false,
+  description: 'Aggregates project health and generates state assessments',
+  prompt: `You are a State Manager that summarizes project health.
+
+Given project scan results and work items, provide:
+1. A 1-2 sentence assessment of current health
+2. Launch stage (idea/mvp/alpha/beta/launch/growth)
+3. Launch score (0-100)
+4. 3-5 specific recommended actions (prioritized)
+
+Respond in JSON format:
+{
+  "ai_assessment": "One or two sentences about project health",
+  "launch_stage": "mvp",
+  "launch_score": 45,
+  "recommended_focus": ["action1", "action2", "action3"]
+}`
 };
 
 // ============================================================================
@@ -501,27 +549,35 @@ Follow REST best practices:
 // ============================================================================
 
 export const agentRegistry: Record<string, AgentDefinition> = {
+  // Meta-Agent (Orchestrator)
   'head-of-product': headOfProductAgent,
-  // Specialist (Analysis)
+  
+  // State Management
+  'state-manager': stateManagerAgent,
+  
+  // Analysis & Ops Agents
   'security': securityAgent,
   'analytics': analyticsAgent,
-  'domain': domainAgent,
-  'seo': seoAgent,
-  'deployment': deploymentAgent,
-  // Code
-  'codegen': codeGenerationAgent,
-  'test': testAgent,
-  'review': reviewAgent,
-  // Content
-  'design': designAgent,
-  'copy': copyAgent,
-  'docs': documentationAgent,
   'research': researchAgent,
-  // Infrastructure
+  
+  // Infrastructure Agents
+  'domain': domainAgent,
+  'deployment': deploymentAgent,
   'performance': performanceAgent,
   'accessibility': accessibilityAgent,
   'database': databaseAgent,
+  
+  // Code Agents
+  'codegen': codeGenerationAgent,
+  'test': testAgent,
+  'review': reviewAgent,
   'api': apiAgent,
+  
+  // Content Agents
+  'seo': seoAgent,
+  'design': designAgent,
+  'copy': copyAgent,
+  'docs': documentationAgent,
 };
 
 // Helper functions

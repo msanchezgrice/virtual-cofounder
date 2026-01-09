@@ -55,27 +55,39 @@ const TOOL_MAP: Record<string, string> = {
 
 /**
  * Convert our agent definitions to SDK format for subagent spawning
+ * 
+ * Per MASTER-SPEC.md Section 5 - Agent Registry, we have 17 total agents:
+ * - 1 meta-agent (Head of Product) - the orchestrator itself
+ * - 16 specialist agents that can be spawned
+ * 
+ * Spawnable agents by type:
+ * - Analysis/Ops: state-manager, analytics, research
+ * - Infrastructure: security, domain, deployment, performance, accessibility, database
+ * - Code: codegen, test, review, api
+ * - Content: seo, design, copy, docs
  */
 function convertToSDKAgents(): Record<string, SDKAgentDefinition> {
   const sdkAgents: Record<string, SDKAgentDefinition> = {};
   
-  // Only include analysis agents that HoP should spawn
-  const spawnableRoles = ['security', 'analytics', 'domain', 'seo', 'deployment', 'performance'];
+  // All agents except head-of-product can be spawned as subagents
+  const NON_SPAWNABLE_ROLES = ['head-of-product']; 
   
   for (const [role, agent] of Object.entries(agentRegistry)) {
-    if (spawnableRoles.includes(role)) {
+    if (!NON_SPAWNABLE_ROLES.includes(role)) {
       const sdkTools = agent.tools
         .map(t => TOOL_MAP[t])
         .filter(Boolean) as string[];
       
       sdkAgents[role] = {
-        description: `${agent.name}: ${agent.role} - ${agent.description || ''}`,
+        description: `${agent.name}: ${agent.description || agent.role}`,
         prompt: agent.prompt,
         model: MODEL_MAP[agent.model] || 'sonnet',
         tools: sdkTools.length > 0 ? sdkTools : ['Read', 'Grep'],
       };
     }
   }
+  
+  console.log(`[Orchestrator] Registered ${Object.keys(sdkAgents).length} spawnable agents: ${Object.keys(sdkAgents).join(', ')}`);
   
   return sdkAgents;
 }
@@ -220,36 +232,77 @@ function scoreToPriorityLevel(score: number): 'P0' | 'P1' | 'P2' | 'P3' {
 // ============================================================================
 
 /**
- * Determine which agents should analyze a project based on scan data and project state
+ * Determine which agents should analyze a project based on scan data and project state.
+ * Per MASTER-SPEC.md, we have 16 spawnable agents. Select relevant ones based on project state.
  */
 function getRelevantAgents(scanContext: ScanContext): string[] {
   const agents: string[] = [];
+  const { project } = scanContext;
+  const isActive = project.status.includes('ACTIVE');
+  const isPreLaunch = project.status.includes('Pre-Launch');
+  const hasDomain = !!project.domain;
+  const hasRepo = !!project.repoUrl;
 
-  // Domain agent - run if project has a domain
-  if (scanContext.project.domain) {
-    agents.push('domain');
-    agents.push('seo');
-  }
-
-  // Security agent - always run for active projects
-  if (scanContext.project.status.includes('ACTIVE') || scanContext.project.repoUrl) {
+  // INFRASTRUCTURE AGENTS
+  
+  // Security - always run for projects with repos or active
+  if (hasRepo || isActive) {
     agents.push('security');
   }
 
-  // Analytics agent - run if project is active or pre-launch
-  if (scanContext.project.status.includes('ACTIVE') || scanContext.project.status.includes('Pre-Launch')) {
-    agents.push('analytics');
+  // Domain - run if project has a domain
+  if (hasDomain) {
+    agents.push('domain');
   }
 
-  // Deployment agent - run if project has domain (deployed)
-  if (scanContext.project.domain) {
+  // Deployment - run for deployed projects
+  if (hasDomain) {
     agents.push('deployment');
   }
 
-  // Performance agent - run for active deployed projects
-  if (scanContext.project.domain && scanContext.project.status.includes('ACTIVE')) {
+  // Performance - run for active deployed projects
+  if (hasDomain && isActive) {
     agents.push('performance');
   }
+
+  // Accessibility - run for active deployed projects
+  if (hasDomain && isActive) {
+    agents.push('accessibility');
+  }
+
+  // Database - run if project has repo (likely has db)
+  if (hasRepo && isActive) {
+    agents.push('database');
+  }
+
+  // ANALYSIS & OPS AGENTS
+  
+  // Analytics - critical for pre-launch and active
+  if (isActive || isPreLaunch) {
+    agents.push('analytics');
+  }
+
+  // Research - run periodically for growth projects
+  if (project.status.includes('Growth')) {
+    agents.push('research');
+  }
+
+  // CONTENT AGENTS
+  
+  // SEO - run if project has domain
+  if (hasDomain) {
+    agents.push('seo');
+  }
+
+  // Docs - run for repos that need documentation
+  if (hasRepo && isActive) {
+    agents.push('docs');
+  }
+
+  // CODE AGENTS (typically triggered on-demand, not in regular scans)
+  // codegen, test, review, api - usually spawned for specific tasks
+  
+  // Design, copy - usually spawned on-demand for creative work
 
   return agents;
 }
@@ -272,15 +325,33 @@ Your workflow:
 3. Wait for each agent's findings
 4. Compile all findings and create prioritized work items
 
-HOW TO SPAWN AGENTS - Use the Task tool like this:
-- To run security analysis: Task with agentName="security", prompt="Analyze security for [project]..."
-- To run analytics check: Task with agentName="analytics", prompt="Check tracking for [project]..."
-- To run domain check: Task with agentName="domain", prompt="Check DNS/SSL for [project]..."
-- To run SEO analysis: Task with agentName="seo", prompt="Analyze SEO for [project]..."
-- To run deployment check: Task with agentName="deployment", prompt="Check deploy health for [project]..."
-- To run performance check: Task with agentName="performance", prompt="Analyze performance for [project]..."
+HOW TO SPAWN AGENTS - You have 16 specialist agents available via the Task tool:
 
-For EACH project, spawn at least 2-3 relevant agents based on its state.
+INFRASTRUCTURE AGENTS:
+- Task(agentName="security", prompt="...") - Security vulnerabilities, exposed secrets, npm audit
+- Task(agentName="domain", prompt="...") - SSL/DNS health, domain configuration
+- Task(agentName="deployment", prompt="...") - Build status, Vercel deployment health
+- Task(agentName="performance", prompt="...") - Core Web Vitals, bundle sizes, optimization
+- Task(agentName="accessibility", prompt="...") - WCAG compliance, a11y issues
+- Task(agentName="database", prompt="...") - Schema optimization, query performance, migrations
+
+ANALYSIS & OPS AGENTS:
+- Task(agentName="analytics", prompt="...") - Tracking setup, event instrumentation, PostHog/GA
+- Task(agentName="research", prompt="...") - Market research, competitor analysis
+
+CODE AGENTS:
+- Task(agentName="codegen", prompt="...") - Write/modify code to fix issues
+- Task(agentName="test", prompt="...") - Generate tests for code changes
+- Task(agentName="review", prompt="...") - Code review for quality/security
+- Task(agentName="api", prompt="...") - Build/maintain API endpoints
+
+CONTENT AGENTS:
+- Task(agentName="seo", prompt="...") - SEO optimization, meta tags, sitemaps
+- Task(agentName="design", prompt="...") - UI/UX design, mockups
+- Task(agentName="copy", prompt="...") - Marketing copy, content writing
+- Task(agentName="docs", prompt="...") - Technical documentation
+
+For EACH project, spawn 2-5 relevant agents based on its state and needs.
 Prioritize using: Impact (40%), Urgency (30%), Effort (20%), Confidence (10%).
 
 User priorities always override: P0 = Critical, P1 = High, P2 = Medium, P3 = Low.
@@ -290,7 +361,7 @@ After spawning agents and reviewing their findings, output a JSON summary:
   "findings": [
     {
       "projectId": "...",
-      "agent": "security|analytics|etc",
+      "agent": "security|analytics|codegen|design|etc",
       "issue": "Description",
       "action": "Fix recommendation",
       "severity": "critical|high|medium|low",
