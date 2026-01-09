@@ -242,6 +242,129 @@ function estimateCost(tokens: number): number {
 // ============================================================================
 
 /**
+ * Run any agent for a story via Agent SDK
+ * Routes to correct agent based on role (security, seo, codegen, etc.)
+ */
+async function runAgentForStory(
+  agentRole: string,
+  story: any,
+  repoPath: string,
+  options: { orchestratorRunId?: string }
+): Promise<CodeGenResult> {
+  // Build context based on agent type
+  const context = buildAgentContext(agentRole, story, repoPath);
+
+  console.log(`[${agentRole}] Running agent for story: ${story.title}`);
+
+  // Run agent via SDK - works for all 17 specialist agents
+  const result = await runAgentWithSDK(agentRole, context, {
+    projectId: story.projectId,
+    storyId: story.id,
+    orchestratorRunId: options.orchestratorRunId,
+    workingDirectory: repoPath,
+  });
+
+  // Parse code changes from agent output (for code/content agents)
+  const changes = parseCodeChanges(result.output);
+
+  // Check if agent ran tests and lint
+  const testsRun = result.session.toolCalls.some(tc => tc.tool === 'RunTests');
+  const lintPassed = result.session.toolCalls.some(tc => tc.tool === 'RunLinter');
+
+  console.log(`[${agentRole}] Agent completed: ${changes.length} changes, ${result.session.tokensUsed} tokens`);
+  console.log(`[${agentRole}] Tool calls: ${result.session.toolCalls.map(tc => tc.tool).join(', ')}`);
+
+  return {
+    changes,
+    explanation: result.output.slice(0, 500),
+    testsRun,
+    lintPassed,
+    tokensUsed: result.session.tokensUsed,
+    estimatedCost: estimateCost(result.session.tokensUsed),
+    thinkingTrace: (result.session as any).thinkingTrace || [],
+    toolCalls: result.session.toolCalls,
+  };
+}
+
+/**
+ * Build context for any agent type
+ * Adapts prompt based on whether it's analysis, code, or content agent
+ */
+function buildAgentContext(agentRole: string, story: any, repoPath: string): string {
+  const ANALYSIS_AGENTS = ['security', 'seo', 'performance', 'analytics', 'accessibility', 'domain', 'deployment', 'database', 'research'];
+  const CODE_AGENTS = ['codegen', 'test', 'review', 'api'];
+  const CONTENT_AGENTS = ['design', 'copy', 'docs'];
+
+  const isAnalysisAgent = ANALYSIS_AGENTS.includes(agentRole);
+  const isCodeAgent = CODE_AGENTS.includes(agentRole);
+  const isContentAgent = CONTENT_AGENTS.includes(agentRole);
+
+  if (isAnalysisAgent) {
+    // Analysis agents: Focus on findings, not code changes
+    return `You are working on this analysis task for project "${story.project.name}":
+
+TASK: ${story.title}
+
+RATIONALE: ${story.rationale}
+
+REPOSITORY PATH: ${repoPath}
+
+INSTRUCTIONS:
+1. Read relevant files to understand the current state
+2. Analyze according to your specialization (${agentRole})
+3. Provide detailed findings with specific examples
+4. Include actionable recommendations
+5. Prioritize findings by severity/impact
+
+OUTPUT FORMAT:
+Provide your analysis as a well-structured report with:
+- Executive Summary
+- Key Findings (with severity levels)
+- Detailed Analysis
+- Recommendations
+- Next Steps
+
+Focus on delivering insights, not code changes.`;
+
+  } else if (isCodeAgent || isContentAgent) {
+    // Code/Content agents: Focus on making changes
+    return `You are working on this task for project "${story.project.name}":
+
+TASK: ${story.title}
+
+RATIONALE: ${story.rationale}
+
+REPOSITORY PATH: ${repoPath}
+
+INSTRUCTIONS:
+1. First, read relevant files to understand the codebase structure
+2. Make minimal, targeted changes to accomplish the task
+3. Follow existing code patterns and conventions
+4. Run tests if available: npm test or yarn test
+5. Run linter if available: npm run lint or eslint
+
+OUTPUT YOUR CHANGES in this exact JSON format:
+{
+  "changes": [
+    {
+      "path": "relative/path/to/file.ts",
+      "content": "full new content of file",
+      "operation": "create|modify|delete"
+    }
+  ],
+  "explanation": "Brief explanation of changes made"
+}
+
+If no code changes are needed, explain why and return empty changes array.
+Do NOT include markdown code blocks in your JSON response.`;
+
+  } else {
+    // Fallback for unknown agent types
+    return buildCodeGenContext(story, repoPath);
+  }
+}
+
+/**
  * Execute story with Code Generation Agent (SDK mode)
  */
 async function executeStorySDK(storyId: string): Promise<void> {
@@ -256,6 +379,23 @@ async function executeStorySDK(storyId: string): Promise<void> {
     console.error(`[Execution] Story ${storyId} not found`);
     return;
   }
+
+  // Get agent type from AgentSession
+  const agentSession = await prisma.agentSession.findFirst({
+    where: { storyId: story.id },
+    orderBy: { startedAt: 'desc' },
+  });
+  const agentRole = agentSession?.agentName || 'codegen';
+  console.log(`[Execution] Agent role: ${agentRole}`);
+
+  // Determine agent category
+  const CODE_AGENTS = ['codegen', 'test', 'review', 'api'];
+  const ANALYSIS_AGENTS = ['security', 'seo', 'performance', 'analytics', 'accessibility', 'domain', 'deployment', 'database', 'research'];
+  const CONTENT_AGENTS = ['design', 'copy', 'docs'];
+
+  const isCodeAgent = CODE_AGENTS.includes(agentRole);
+  const isAnalysisAgent = ANALYSIS_AGENTS.includes(agentRole);
+  const isContentAgent = CONTENT_AGENTS.includes(agentRole);
 
   // Policy checks
   if (story.policy === 'suggest_only') {
@@ -279,8 +419,8 @@ async function executeStorySDK(storyId: string): Promise<void> {
     data: { status: 'in_progress' },
   });
   await updateLinearTaskStatusForStory(story.linearTaskId, 'in_progress');
-  await postLinearComment(story.linearTaskId, 
-    `**🤖 Code Generation Agent Started**\n\n` +
+  await postLinearComment(story.linearTaskId,
+    `**🤖 ${agentSession?.agentName || 'Agent'} Started**\n\n` +
     `Working on: ${story.title}\n\n` +
     `_Using Agent SDK with Read, Write, Edit, Bash tools_`
   );
@@ -297,94 +437,132 @@ async function executeStorySDK(storyId: string): Promise<void> {
     const branchName = `ai-improvement-${storyId.slice(0, 8)}`;
     await createBranch(repoPath, branchName);
 
-    // Run Code Generation Agent
-    const codeGenResult = await runCodeGenAgent(story, repoPath, {});
+    // Run agent via SDK - routes to correct agent based on role
+    const agentResult = await runAgentForStory(agentRole, story, repoPath, {});
 
     // Post thinking trace to Linear
-    if (codeGenResult.thinkingTrace.length > 0 || codeGenResult.toolCalls.length > 0) {
-      const thinkingTraceComment = formatThinkingTraceForLinear(codeGenResult);
+    if (agentResult.thinkingTrace.length > 0 || agentResult.toolCalls.length > 0) {
+      const thinkingTraceComment = formatThinkingTraceForLinear(agentResult);
       await postLinearComment(story.linearTaskId,
         `**🤔 Agent Thinking Trace**\n\n${thinkingTraceComment}`
       );
     }
 
-    // Apply changes
-    if (codeGenResult.changes.length > 0) {
-      await applyChanges(repoPath, codeGenResult.changes.map(c => ({
-        path: c.path,
-        content: c.content,
-      })));
-
+    // Handle different agent types
+    if (isAnalysisAgent) {
+      // Analysis agents: Post findings to Linear, no PR needed
       await postLinearComment(story.linearTaskId,
-        `**⚙️ Code Changes Generated**\n\n` +
-        `Files modified: ${codeGenResult.changes.length}\n` +
-        `Tokens used: ${codeGenResult.tokensUsed}\n` +
-        `Cost: $${codeGenResult.estimatedCost.toFixed(4)}\n\n` +
-        `\`\`\`\n${codeGenResult.explanation}\n\`\`\``
+        `**📊 Analysis Complete**\n\n` +
+        `${agentResult.explanation}\n\n` +
+        `Tokens used: ${agentResult.tokensUsed}\n` +
+        `Cost: $${agentResult.estimatedCost.toFixed(4)}`
       );
-    } else {
-      // No changes - create documentation file as fallback
-      const fallbackChanges = [{
-        path: 'AI_IMPROVEMENTS.md',
-        content: `# AI Analysis\n\nStory: ${story.title}\nAnalysis: ${codeGenResult.explanation}\n`,
-      }];
-      await applyChanges(repoPath, fallbackChanges);
-    }
 
-    // Commit and push
-    await commitChanges(repoPath, `AI improvement: ${story.title}`);
-    await pushBranch(repoPath, branchName);
-
-    // Create PR - use async parser to get owner from GitHub App installation
-    const { owner, repo: repoName } = await parseRepoUrlWithInstallation(repo);
-    
-    const prBody = buildPRBody(story, codeGenResult);
-    const prResult = await createPullRequest({
-      owner,
-      repo: repoName,
-      head: branchName,
-      base: 'main',
-      title: story.title,
-      body: prBody,
-    });
-
-    // Update story
-    await prisma.story.update({
-      where: { id: storyId },
-      data: {
-        status: 'completed',
-        executedAt: new Date(),
-        prUrl: prResult.url,
-      },
-    });
-
-    await updateLinearTaskStatusForStory(story.linearTaskId, 'completed');
-    await postLinearComment(story.linearTaskId,
-      `**✅ Pull Request Created**\n\n` +
-      `${prResult.url}\n\n` +
-      `Files changed: ${codeGenResult.changes.length}\n` +
-      `AI tokens: ${codeGenResult.tokensUsed}\n` +
-      `Estimated cost: $${codeGenResult.estimatedCost.toFixed(4)}`
-    );
-
-    // Slack notification
-    try {
-      await sendSlackNotification({
-        completionId: storyId,
-        projectName: story.project.name,
-        title: story.title,
-        rationale: story.rationale,
-        prUrl: prResult.url,
+      // Update story as completed (no PR for analysis)
+      await prisma.story.update({
+        where: { id: storyId },
+        data: {
+          status: 'completed',
+          executedAt: new Date(),
+        },
       });
-    } catch (e) {
-      console.error('[Execution] Slack notification failed:', e);
-    }
 
-    console.log(`[Execution] Story ${storyId} completed successfully`);
+      await updateLinearTaskStatusForStory(story.linearTaskId, 'completed');
+
+      // Slack notification
+      try {
+        await sendSlackNotification({
+          completionId: storyId,
+          projectName: story.project.name,
+          title: story.title,
+          rationale: `${agentRole} analysis completed: ${agentResult.explanation.substring(0, 200)}`,
+          prUrl: '', // No PR for analysis
+        });
+      } catch (e) {
+        console.error('[Execution] Slack notification failed:', e);
+      }
+
+      console.log(`[Execution] Analysis story ${storyId} completed successfully`);
+
+    } else {
+      // Code/Content agents: Apply changes and create PR
+      if (agentResult.changes.length > 0) {
+        await applyChanges(repoPath, agentResult.changes.map(c => ({
+          path: c.path,
+          content: c.content,
+        })));
+
+        await postLinearComment(story.linearTaskId,
+          `**⚙️ Code Changes Generated**\n\n` +
+          `Files modified: ${agentResult.changes.length}\n` +
+          `Tokens used: ${agentResult.tokensUsed}\n` +
+          `Cost: $${agentResult.estimatedCost.toFixed(4)}\n\n` +
+          `\`\`\`\n${agentResult.explanation}\n\`\`\``
+        );
+      } else {
+        // No changes - create documentation file as fallback
+        const fallbackChanges = [{
+          path: 'AI_IMPROVEMENTS.md',
+          content: `# AI Analysis\n\nStory: ${story.title}\nAnalysis: ${agentResult.explanation}\n`,
+        }];
+        await applyChanges(repoPath, fallbackChanges);
+      }
+
+      // Commit and push
+      await commitChanges(repoPath, `AI improvement: ${story.title}`);
+      await pushBranch(repoPath, branchName);
+
+      // Create PR - use async parser to get owner from GitHub App installation
+      const { owner, repo: repoName } = await parseRepoUrlWithInstallation(repo);
+
+      const prBody = buildPRBody(story, agentResult, agentRole);
+      const prResult = await createPullRequest({
+        owner,
+        repo: repoName,
+        head: branchName,
+        base: 'main',
+        title: story.title,
+        body: prBody,
+      });
+
+      // Update story
+      await prisma.story.update({
+        where: { id: storyId },
+        data: {
+          status: 'completed',
+          executedAt: new Date(),
+          prUrl: prResult.url,
+        },
+      });
+
+      await updateLinearTaskStatusForStory(story.linearTaskId, 'completed');
+      await postLinearComment(story.linearTaskId,
+        `**✅ Pull Request Created**\n\n` +
+        `${prResult.url}\n\n` +
+        `Files changed: ${agentResult.changes.length}\n` +
+        `AI tokens: ${agentResult.tokensUsed}\n` +
+        `Estimated cost: $${agentResult.estimatedCost.toFixed(4)}`
+      );
+
+      // Slack notification
+      try {
+        await sendSlackNotification({
+          completionId: storyId,
+          projectName: story.project.name,
+          title: story.title,
+          rationale: story.rationale,
+          prUrl: prResult.url,
+        });
+      } catch (e) {
+        console.error('[Execution] Slack notification failed:', e);
+      }
+
+      console.log(`[Execution] Story ${storyId} completed successfully`);
+    }
 
   } catch (error) {
     console.error(`[Execution] Error executing story ${storyId}:`, error);
-    
+
     await prisma.story.update({
       where: { id: storyId },
       data: { status: 'failed' },
@@ -394,7 +572,7 @@ async function executeStorySDK(storyId: string): Promise<void> {
     await postLinearComment(story.linearTaskId,
       `**❌ Execution Failed**\n\n` +
       `Error: ${error instanceof Error ? error.message : String(error)}\n\n` +
-      `_The Code Generation Agent encountered an issue_`
+      `_The ${agentRole} agent encountered an issue_`
     );
   } finally {
     if (repoPath) await cleanup(repoPath);
@@ -404,16 +582,19 @@ async function executeStorySDK(storyId: string): Promise<void> {
 /**
  * Build PR body with agent metadata and thinking trace
  */
-function buildPRBody(story: any, result: CodeGenResult): string {
+function buildPRBody(story: any, result: CodeGenResult, agentRole: string): string {
   // Build tool usage summary
   const toolSummary = result.toolCalls.length > 0
     ? result.toolCalls.map(tc => `\`${tc.tool}\``).join(', ')
     : 'None';
-  
+
   // Build thinking trace summary (first few entries)
   const thinkingSummary = result.thinkingTrace.length > 0
     ? result.thinkingTrace.slice(0, 3).map(t => `- Turn ${t.turn}: ${t.action}`).join('\n')
     : 'No thinking trace captured';
+
+  // Agent display name
+  const agentDisplayName = agentRole.charAt(0).toUpperCase() + agentRole.slice(1);
 
   return `## 🤖 AI-Generated Code Changes
 
@@ -424,7 +605,8 @@ function buildPRBody(story: any, result: CodeGenResult): string {
 ${story.rationale}
 
 ### Agent Details
-- **Model:** Claude Opus (Code Generation Agent)
+- **Agent:** ${agentDisplayName}
+- **Model:** Claude Opus via Agent SDK
 - **Tokens used:** ${result.tokensUsed}
 - **Estimated cost:** $${result.estimatedCost.toFixed(4)}
 - **Tests run:** ${result.testsRun ? '✅' : '⚠️ Not available'}

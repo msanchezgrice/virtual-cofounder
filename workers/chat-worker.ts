@@ -319,28 +319,72 @@ function detectStoryCreationRequest(content: string): StoryCreationRequest | nul
     if (match) {
       const workDescription = match[1].trim();
 
-      // Determine agent type from content
-      let agentType = 'General';
-      if (/security|vulnerabilit|audit|npm/i.test(content)) agentType = 'Security';
-      else if (/seo|meta|search|visibility/i.test(content)) agentType = 'SEO';
-      else if (/performance|speed|core web vitals/i.test(content)) agentType = 'Performance';
-      else if (/build|implement|create|add|feature/i.test(content)) agentType = 'Code Generation';
-      else if (/test|testing|spec/i.test(content)) agentType = 'Testing';
-      else if (/fix|bug|issue/i.test(content)) agentType = 'Bug Fix';
-      else if (/analytics|tracking|events/i.test(content)) agentType = 'Analytics';
-      else if (/design|mockup|ui|ux/i.test(content)) agentType = 'Design';
+      // Determine agent role from content - using agentRegistry keys
+      let agentRole = 'codegen';  // default
+      let agentDisplayName = 'Code Generation';
+
+      // Map content to agent roles from agentRegistry (all 17 specialist agents)
+      if (/security|vulnerabilit|audit|npm|secret/i.test(content)) {
+        agentRole = 'security';
+        agentDisplayName = 'Security';
+      } else if (/seo|meta|search|visibility|ranking/i.test(content)) {
+        agentRole = 'seo';
+        agentDisplayName = 'SEO';
+      } else if (/performance|speed|core web vitals|load time|optimize/i.test(content)) {
+        agentRole = 'performance';
+        agentDisplayName = 'Performance';
+      } else if (/accessibility|a11y|wcag|screen reader/i.test(content)) {
+        agentRole = 'accessibility';
+        agentDisplayName = 'Accessibility';
+      } else if (/analytics|tracking|events|telemetry/i.test(content)) {
+        agentRole = 'analytics';
+        agentDisplayName = 'Analytics';
+      } else if (/domain|dns|ssl|certificate/i.test(content)) {
+        agentRole = 'domain';
+        agentDisplayName = 'Domain';
+      } else if (/deploy|deployment|vercel|railway|build/i.test(content)) {
+        agentRole = 'deployment';
+        agentDisplayName = 'Deployment';
+      } else if (/database|db|schema|migration|prisma/i.test(content)) {
+        agentRole = 'database';
+        agentDisplayName = 'Database';
+      } else if (/api|endpoint|rest|graphql/i.test(content)) {
+        agentRole = 'api';
+        agentDisplayName = 'API';
+      } else if (/test|testing|spec|jest|cypress/i.test(content)) {
+        agentRole = 'test';
+        agentDisplayName = 'Testing';
+      } else if (/review|code review|refactor/i.test(content)) {
+        agentRole = 'review';
+        agentDisplayName = 'Review';
+      } else if (/design|mockup|ui|ux|figma/i.test(content)) {
+        agentRole = 'design';
+        agentDisplayName = 'Design';
+      } else if (/copy|content|writing|marketing/i.test(content)) {
+        agentRole = 'copy';
+        agentDisplayName = 'Copy';
+      } else if (/docs|documentation|readme|guide/i.test(content)) {
+        agentRole = 'docs';
+        agentDisplayName = 'Documentation';
+      } else if (/research|competitor|market|analysis/i.test(content)) {
+        agentRole = 'research';
+        agentDisplayName = 'Research';
+      } else if (/build|implement|create|add|feature|fix|bug/i.test(content)) {
+        agentRole = 'codegen';
+        agentDisplayName = 'Code Generation';
+      }
 
       // Extract bullet points as description
       const bulletPoints = content.match(/^- .+$/gm);
       const description = bulletPoints ? bulletPoints.join('\n') : workDescription;
 
       // Create title from work description
-      const title = `${agentType}: ${workDescription.charAt(0).toUpperCase() + workDescription.slice(0, 80)}`;
+      const title = `${agentDisplayName}: ${workDescription.charAt(0).toUpperCase() + workDescription.slice(0, 80)}`;
 
       return {
         title,
         description,
-        agentType,
+        agentType: agentRole,  // Store the agentRegistry key, not display name
       };
     }
   }
