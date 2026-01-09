@@ -491,18 +491,22 @@ async function runOrchestratorSDK(
 
         case 'tool_progress':
           // Track when HoP spawns a subagent via Task
+          // SDK uses subagent_type not agentName
           const toolMsg = message as { 
             type: 'tool_progress'; 
             tool_name?: string;
             name?: string;
-            tool_input?: { agentName?: string; prompt?: string };
-            input?: { agentName?: string; prompt?: string };
+            tool_input?: { agentName?: string; subagent_type?: string; prompt?: string; description?: string };
+            input?: { agentName?: string; subagent_type?: string; prompt?: string; description?: string };
           };
           const toolName = toolMsg.tool_name || toolMsg.name;
           const toolInput = toolMsg.tool_input || toolMsg.input;
-          console.log(`[Orchestrator] Tool event: ${message.type}, tool=${toolName}`);
-          if ((toolName === 'Task' || toolName === 'task') && toolInput?.agentName) {
-            const agentName = toolInput.agentName;
+          
+          // SDK uses subagent_type; our custom prompt may use agentName
+          const spawnedAgentType = toolInput?.subagent_type || toolInput?.agentName;
+          console.log(`[Orchestrator] Tool event: ${message.type}, tool=${toolName}, subagent=${spawnedAgentType}`);
+          if ((toolName === 'Task' || toolName === 'task') && spawnedAgentType) {
+            const agentName = spawnedAgentType;
             agentsSpawned.push(agentName);
             conversation.push(`[HoP] Spawned ${agentName} agent`);
             console.log(`[Orchestrator] HoP spawned: ${agentName}`);
@@ -510,8 +514,9 @@ async function runOrchestratorSDK(
             // Create agent session record for the spawned subagent
             const agentDef = agentRegistry[agentName];
             if (agentDef) {
-              // Find the project ID from the prompt context
-              const projectIdMatch = toolInput.prompt?.match(/ID:\s*([a-f0-9-]+)/i);
+              // Find the project ID from the prompt context (SDK uses description or prompt)
+              const taskPrompt = toolInput?.prompt || toolInput?.description || '';
+              const projectIdMatch = taskPrompt.match(/ID:\s*([a-f0-9-]+)/i);
               const projectId = projectIdMatch?.[1] || scanContexts[0]?.project.id;
               
               prisma.agentSession.create({
