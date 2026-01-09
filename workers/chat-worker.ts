@@ -564,6 +564,12 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
           break;
         }
         
+        // SDK sends user/system messages with tool results - these are informational
+        case 'user':
+        case 'system':
+          // These contain tool_result content, we don't need to process them
+          break;
+        
         default:
           console.log(`[Chat Worker] Unhandled message type: ${message.type}`);
           break;

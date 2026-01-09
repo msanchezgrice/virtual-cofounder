@@ -644,6 +644,12 @@ async function runOrchestratorSDK(
           }
           console.log(`[Orchestrator] Result: subtype=${resultMsg.subtype}, tokens=${totalTokens}, cost=$${estimatedCost.toFixed(4)}`);
           break;
+        
+        // SDK sends user/system messages with tool results - these are informational
+        case 'user':
+        case 'system':
+          // These contain tool_result content, we don't need to process them
+          break;
           
         default:
           console.log(`[Orchestrator] Unhandled message type: ${message.type}`, JSON.stringify(message).substring(0, 200));
