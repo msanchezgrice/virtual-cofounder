@@ -23,6 +23,9 @@ import {
 } from '@anthropic-ai/claude-agent-sdk';
 import { agentRegistry } from '../lib/agents/index';
 import { buildChatContext, parseQuickCommand } from '../lib/agents/chat';
+import { createLinearTask } from '../lib/linear';
+import { enqueueStoryForExecution } from '../lib/queue/execution';
+import { randomUUID } from 'crypto';
 
 // ============================================================================
 // SETUP
@@ -238,11 +241,17 @@ function extractSuggestedActions(content: string): SuggestedAction[] {
     if (pattern.test(content)) {
       const match = content.match(pattern);
       const action = match?.[1]?.trim() || '';
-      
-      actions.push(
-        { label: '✅ Yes, go ahead', value: `Yes, ${action}`, style: 'success' },
-        { label: '❌ No, not now', value: 'No, let\'s hold off on that', style: 'secondary' }
-      );
+
+      // Only create buttons if we extracted a meaningful action
+      if (action && action.length > 3) {
+        // Capitalize first letter of action for better display
+        const capitalizedAction = action.charAt(0).toUpperCase() + action.slice(1);
+
+        actions.push(
+          { label: `✅ ${capitalizedAction}`, value: `Yes, ${action}`, style: 'success' },
+          { label: '❌ Not now', value: 'No, let\'s hold off on that', style: 'secondary' }
+        );
+      }
       break;
     }
   }
@@ -411,8 +420,8 @@ async function handleApprovalCommand(job: Job<ChatJob>): Promise<void> {
 // ============================================================================
 
 async function processChat(job: Job<ChatJob>): Promise<void> {
-  const { messageId, userContent, workspaceId, conversationId } = job.data;
-  
+  const { messageId, userContent, workspaceId, conversationId, projectId } = job.data;
+
   console.log(`[Chat Worker] Processing message ${messageId}`);
   
   // Parse for quick commands first
@@ -444,11 +453,11 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
       projectContext
     );
     
-    // Get spawnable agents
+    // Get spawnable agents (all available - no filtering)
     const subagents = convertToSDKAgents();
-    
+
     console.log(`[Chat Worker] Running Agent SDK with ${Object.keys(subagents).length} spawnable agents`);
-    
+
     // SDK options
     const sdkOptions: SDKOptions = {
       allowedTools: ['Task', 'Read', 'Grep', 'WebFetch'],
@@ -516,21 +525,132 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
           const toolMsg = message as any;
           const toolName = toolMsg.tool_name || toolMsg.name;
           const toolInput = toolMsg.tool_input || toolMsg.input;
-          
+
           if (toolName) {
             if (!toolsUsed.includes(toolName)) {
               toolsUsed.push(toolName);
             }
             await publishToStream(messageId, { type: 'tool', tool: toolName, status: 'running' });
-            
-            // Check for subagent spawning
+
+            // Check for subagent spawning - CREATE STORY AND ENQUEUE IMMEDIATELY
             const spawnedAgent = toolInput?.subagent_type || toolInput?.agentName;
             if ((toolName === 'Task' || toolName === 'task') && spawnedAgent) {
-              await publishToStream(messageId, { 
-                type: 'agent_spawn', 
-                agent: spawnedAgent 
+              console.log(`[Chat Worker] Agent spawned: ${spawnedAgent}`);
+
+              // Publish spawn event first
+              await publishToStream(messageId, {
+                type: 'agent_spawn',
+                agent: spawnedAgent
               });
-              console.log(`[Chat Worker] Spawned subagent: ${spawnedAgent}`);
+
+              try {
+                // Get agent definition for context
+                const agentDef = agentRegistry[spawnedAgent];
+                const agentPrompt = toolInput?.prompt || toolInput?.description || '';
+
+                // Create story in database
+                const runId = randomUUID();
+                const story = await prisma.story.create({
+                  data: {
+                    workspaceId,
+                    runId,
+                    projectId: projectId || workspaceId, // fallback to workspace if no project
+                    title: `${agentDef?.name || spawnedAgent}: ${agentPrompt.substring(0, 100)}`,
+                    rationale: agentPrompt || `Requested via chat to spawn ${spawnedAgent} agent`,
+                    priority: 'medium',
+                    priorityLevel: 'P1', // User explicitly requested this in chat
+                    priorityScore: 75,
+                    policy: 'auto_safe', // Auto-execute since user explicitly requested
+                    status: 'pending',
+                    advancesLaunchStage: false,
+                  },
+                });
+
+                console.log(`[Chat Worker] Created story ${story.id} for ${spawnedAgent}`);
+
+                // Create AgentSession for tracking in Agents tab
+                try {
+                  await prisma.agentSession.create({
+                    data: {
+                      storyId: story.id,
+                      projectId: story.projectId,
+                      agentName: agentDef?.name || spawnedAgent,
+                      agentType: 'specialist',
+                      status: 'running',
+                      thinkingTrace: [{
+                        turn: 1,
+                        thinking: `Spawned from chat by user request`,
+                        action: 'spawn',
+                        prompt: agentPrompt,
+                        timestamp: new Date().toISOString()
+                      }],
+                      toolCalls: [],
+                    },
+                  });
+                  console.log(`[Chat Worker] Created AgentSession for ${spawnedAgent}`);
+                } catch (sessionError) {
+                  console.error('[Chat Worker] Failed to create AgentSession:', sessionError);
+                  // Continue anyway
+                }
+
+                // Create Linear issue
+                let linearUrl: string | null = null;
+                try {
+                  const linearTeamId = process.env.LINEAR_TEAM_ID;
+                  if (linearTeamId) {
+                    const linearTask = await createLinearTask({
+                      teamId: linearTeamId,
+                      title: story.title,
+                      description: `**Agent:** ${agentDef?.name || spawnedAgent}\n\n**Rationale:**\n${story.rationale}\n\n**Spawned from:** Chat\n**Priority:** P1`,
+                      priority: 2, // High priority (Linear uses 1=urgent, 2=high, 3=medium, 4=low)
+                    });
+
+                    linearUrl = linearTask.url;
+
+                    // Update story with Linear info
+                    await prisma.story.update({
+                      where: { id: story.id },
+                      data: {
+                        linearTaskId: linearTask.id,
+                        linearIssueUrl: linearUrl,
+                      },
+                    });
+
+                    console.log(`[Chat Worker] Created Linear issue: ${linearUrl}`);
+                  }
+                } catch (linearError) {
+                  console.error('[Chat Worker] Failed to create Linear issue:', linearError);
+                  // Continue anyway - story still exists
+                }
+
+                // Enqueue for execution
+                const jobId = await enqueueStoryForExecution(story.id, 'P1', 'dashboard');
+                console.log(`[Chat Worker] Enqueued story ${story.id} for execution (job: ${jobId})`);
+
+                // Send immediate response with story link
+                const storyMessage = linearUrl
+                  ? `✅ Spawned ${agentDef?.name || spawnedAgent} agent! Tracking in Linear: ${linearUrl}\n\nThe agent will execute in the background and update you when complete.`
+                  : `✅ Spawned ${agentDef?.name || spawnedAgent} agent! Story created (${story.id})\n\nThe agent will execute in the background.`;
+
+                await publishToStream(messageId, {
+                  type: 'delta',
+                  content: `\n\n${storyMessage}`
+                });
+
+                // Append to full content
+                fullContent += `\n\n${storyMessage}`;
+
+              } catch (storyError) {
+                console.error('[Chat Worker] Error creating story for spawned agent:', storyError);
+
+                // Still publish error to user
+                const errorMessage = `\n\n⚠️ Started ${spawnedAgent} agent but failed to create tracking story. The agent may still run but won't be tracked.`;
+                await publishToStream(messageId, {
+                  type: 'delta',
+                  content: errorMessage
+                });
+                fullContent += errorMessage;
+              }
             }
           }
           break;

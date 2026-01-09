@@ -469,9 +469,12 @@ async function runOrchestratorSDK(
 
     let finalOutput = '';
     let messageCount = 0;
-    
+
     // Track tool use for Task spawning
-    let currentToolUse: { name: string; inputJson: string; index: number } | null = null;
+    let currentToolUse: { name: string; inputJson: string; index: number; toolUseId?: string } | null = null;
+
+    // Map tool_use_id -> AgentSession for matching results
+    const spawnedAgentSessions = new Map<string, { sessionId: string; agentName: string; startTime: Date }>();
 
     console.log('[Orchestrator] Starting SDK message stream...');
 
@@ -503,6 +506,7 @@ async function runOrchestratorSDK(
               content_block?: {
                 type: string;
                 name?: string;
+                id?: string;  // tool_use_id
                 input?: Record<string, unknown>;
               };
               delta?: {
@@ -511,14 +515,20 @@ async function runOrchestratorSDK(
               };
             };
           };
-          
+
           // Check if this is a tool_use start event
-          if (streamMsg.event?.type === 'content_block_start' && 
+          if (streamMsg.event?.type === 'content_block_start' &&
               streamMsg.event.content_block?.type === 'tool_use') {
             const toolName = streamMsg.event.content_block.name || '';
-            console.log(`[Orchestrator] Tool use start: ${toolName}`);
+            const toolUseId = streamMsg.event.content_block.id;
+            console.log(`[Orchestrator] Tool use start: ${toolName}, id=${toolUseId}`);
             if (toolName === 'Task') {
-              currentToolUse = { name: toolName, inputJson: '', index: streamMsg.event.index || 0 };
+              currentToolUse = {
+                name: toolName,
+                inputJson: '',
+                index: streamMsg.event.index || 0,
+                toolUseId
+              };
             }
           }
           
@@ -538,19 +548,19 @@ async function runOrchestratorSDK(
                 prompt?: string;
               };
               const spawnedAgentType = toolInput.subagent_type;
-              
+
               if (currentToolUse.name === 'Task' && spawnedAgentType) {
                 agentsSpawned.push(spawnedAgentType);
                 conversation.push(`[HoP] Spawned ${spawnedAgentType} agent`);
-                console.log(`[Orchestrator] HoP spawned: ${spawnedAgentType}`);
-                
+                console.log(`[Orchestrator] HoP spawned: ${spawnedAgentType} (tool_use_id=${currentToolUse.toolUseId})`);
+
                 // Create agent session record
                 const agentDef = agentRegistry[spawnedAgentType];
                 if (agentDef) {
                   const taskPrompt = toolInput.prompt || toolInput.description || '';
                   const projectIdMatch = taskPrompt.match(/ID:\s*([a-f0-9-]+)/i);
                   const projectId = projectIdMatch?.[1] || scanContexts[0]?.project.id;
-                  
+
                   prisma.agentSession.create({
                     data: {
                       orchestratorRunId: options.orchestratorRunId,
@@ -558,11 +568,27 @@ async function runOrchestratorSDK(
                       agentName: agentDef.name,
                       agentType: 'specialist',
                       status: 'running',
-                      thinkingTrace: [{ turn: 1, thinking: `Spawned by Head of Product agent`, action: 'spawn' }],
+                      thinkingTrace: [{
+                        turn: 1,
+                        thinking: `Spawned by Head of Product agent`,
+                        action: 'spawn',
+                        toolUseId: currentToolUse.toolUseId,
+                        timestamp: new Date().toISOString()
+                      }],
                       toolCalls: [],
                     },
                   }).then(session => {
                     console.log(`[Orchestrator] Created session ${session.id} for ${spawnedAgentType}`);
+
+                    // Track this session by tool_use_id for matching results later
+                    if (currentToolUse?.toolUseId) {
+                      spawnedAgentSessions.set(currentToolUse.toolUseId, {
+                        sessionId: session.id,
+                        agentName: spawnedAgentType,
+                        startTime: new Date()
+                      });
+                      console.log(`[Orchestrator] Tracking session ${session.id} with tool_use_id=${currentToolUse.toolUseId}`);
+                    }
                   }).catch(err => {
                     console.error(`[Orchestrator] Failed to create session for ${spawnedAgentType}:`, err);
                   });
@@ -645,11 +671,90 @@ async function runOrchestratorSDK(
           console.log(`[Orchestrator] Result: subtype=${resultMsg.subtype}, tokens=${totalTokens}, cost=$${estimatedCost.toFixed(4)}`);
           break;
         
-        // SDK sends user/system messages with tool results - these are informational
+        // SDK sends user/system messages with tool results - CRITICAL FOR SUBAGENT OUTPUTS
         case 'user':
-        case 'system':
-          // These contain tool_result content, we don't need to process them
+        case 'system': {
+          const toolResultMsg = message as {
+            type: 'user' | 'system';
+            message?: {
+              role?: string;
+              content?: Array<{
+                type: string;
+                tool_use_id?: string;
+                content?: string | any;
+                text?: string;
+              }>;
+            };
+          };
+
+          // Log all user/system messages to see tool results
+          console.log(`[Orchestrator] ${message.type} message:`, JSON.stringify(toolResultMsg, null, 2).substring(0, 500));
+
+          // Check if this message contains tool results
+          const content = toolResultMsg.message?.content;
+          if (Array.isArray(content)) {
+            for (const block of content) {
+              // Look for tool_result blocks
+              if (block.type === 'tool_result' && block.tool_use_id) {
+                console.log(`[Orchestrator] ✅ Found tool_result for tool_use_id=${block.tool_use_id}`);
+
+                // Check if this is a result from a spawned subagent
+                const sessionInfo = spawnedAgentSessions.get(block.tool_use_id);
+                if (sessionInfo) {
+                  console.log(`[Orchestrator] 🎯 Matched to agent session: ${sessionInfo.sessionId} (${sessionInfo.agentName})`);
+
+                  // Extract the subagent's output
+                  const subagentOutput = typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
+                  const executionTime = Date.now() - sessionInfo.startTime.getTime();
+
+                  console.log(`[Orchestrator] Subagent ${sessionInfo.agentName} output (${subagentOutput.length} chars, ${executionTime}ms)`);
+                  console.log(`[Orchestrator] Output preview: ${subagentOutput.substring(0, 200)}...`);
+
+                  // Parse findings from subagent output (similar to how we parse HoP output)
+                  try {
+                    // Try to extract structured findings from the output
+                    const findings = parseFindingsFromAgentOutput(subagentOutput, sessionInfo.agentName);
+                    console.log(`[Orchestrator] Extracted ${findings.length} findings from ${sessionInfo.agentName}`);
+
+                    // Update the AgentSession with results
+                    prisma.agentSession.update({
+                      where: { id: sessionInfo.sessionId },
+                      data: {
+                        status: 'completed',
+                        completedAt: new Date(),
+                        thinkingTrace: {
+                          push: {
+                            turn: 2,
+                            thinking: 'Completed analysis',
+                            action: 'complete',
+                            output: subagentOutput.substring(0, 1000), // Store preview
+                            timestamp: new Date().toISOString(),
+                            durationMs: executionTime
+                          }
+                        }
+                      },
+                    }).then(() => {
+                      console.log(`[Orchestrator] ✅ Updated session ${sessionInfo.sessionId} to completed`);
+                    }).catch(err => {
+                      console.error(`[Orchestrator] ❌ Failed to update session ${sessionInfo.sessionId}:`, err);
+                    });
+
+                    // Add findings to the global findings list
+                    allFindings.push(...findings);
+
+                    // Clean up tracking map
+                    spawnedAgentSessions.delete(block.tool_use_id);
+                  } catch (err) {
+                    console.error(`[Orchestrator] Error parsing subagent output:`, err);
+                  }
+                } else {
+                  console.log(`[Orchestrator] ⚠️ No session found for tool_use_id=${block.tool_use_id}`);
+                }
+              }
+            }
+          }
           break;
+        }
           
         default:
           console.log(`[Orchestrator] Unhandled message type: ${message.type}`, JSON.stringify(message).substring(0, 200));
@@ -659,6 +764,36 @@ async function runOrchestratorSDK(
 
     console.log(`[Orchestrator] Stream complete. Messages: ${messageCount}, Agents spawned: ${agentsSpawned.length}`);
     conversation.push(`[HoP] Completed analysis`);
+
+    // Check for agents that were spawned but never completed
+    if (spawnedAgentSessions.size > 0) {
+      console.warn(`[Orchestrator] ⚠️ ${spawnedAgentSessions.size} agents were spawned but never completed:`);
+      const uncompletedAgents = Array.from(spawnedAgentSessions.entries());
+      for (const [toolUseId, info] of uncompletedAgents) {
+        console.warn(`  - ${info.agentName} (session=${info.sessionId}, tool_use_id=${toolUseId})`);
+        console.warn(`    Started: ${info.startTime.toISOString()}, Runtime: ${Date.now() - info.startTime.getTime()}ms`);
+
+        // Mark these sessions as failed
+        await prisma.agentSession.update({
+          where: { id: info.sessionId },
+          data: {
+            status: 'failed',
+            completedAt: new Date(),
+            thinkingTrace: {
+              push: {
+                turn: 2,
+                thinking: 'Agent was spawned but never received tool_result from SDK',
+                action: 'timeout',
+                timestamp: new Date().toISOString()
+              }
+            }
+          }
+        }).catch(err => {
+          console.error(`Failed to mark session ${info.sessionId} as failed:`, err);
+        });
+      }
+      conversation.push(`⚠️ Warning: ${spawnedAgentSessions.size} agents did not complete`);
+    }
 
     // Parse findings from HoP's final output
     const parsedFindings = parseFindingsFromOutput(finalOutput, scanContexts);
@@ -727,6 +862,55 @@ function parseFindingsFromOutput(output: string, scanContexts: ScanContext[]): A
     return [];
   } catch {
     console.warn('[Orchestrator] Failed to parse findings from HoP output');
+    return [];
+  }
+}
+
+/**
+ * Parse findings from subagent output
+ */
+function parseFindingsFromAgentOutput(output: string, agentName: string): AgentFinding[] {
+  try {
+    // Try to find JSON findings in the output
+    const jsonMatch = output.match(/\{[\s\S]*"findings"[\s\S]*\}/) ||
+                     output.match(/\[[\s\S]*\{[\s\S]*"issue"[\s\S]*\}[\s\S]*\]/);
+
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      // Handle array format
+      if (Array.isArray(parsed)) {
+        return parsed.map((f: any) => ({
+          agent: agentName,
+          projectId: f.projectId || '',
+          issue: f.issue || '',
+          action: f.action || '',
+          severity: f.severity || 'medium',
+          effort: f.effort || 'medium',
+          impact: f.impact || 'medium',
+          confidence: f.confidence || 0.7,
+        }));
+      }
+
+      // Handle object with findings array
+      if (parsed.findings && Array.isArray(parsed.findings)) {
+        return parsed.findings.map((f: any) => ({
+          agent: agentName,
+          projectId: f.projectId || '',
+          issue: f.issue || '',
+          action: f.action || '',
+          severity: f.severity || 'medium',
+          effort: f.effort || 'medium',
+          impact: f.impact || 'medium',
+          confidence: f.confidence || 0.7,
+        }));
+      }
+    }
+
+    console.log(`[Orchestrator] No structured findings found in ${agentName} output, will parse manually if needed`);
+    return [];
+  } catch (err) {
+    console.warn(`[Orchestrator] Failed to parse findings from ${agentName} output:`, err);
     return [];
   }
 }
