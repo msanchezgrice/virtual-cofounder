@@ -92,7 +92,17 @@ export async function GET(request: NextRequest) {
         },
         status: { in: ['pending', 'approved', 'in_progress'] },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        rationale: true,
+        projectId: true,
+        status: true,
+        priorityLevel: true,
+        priorityScore: true,
+        linearTaskId: true,
+        prUrl: true,
+        createdAt: true,
         project: {
           select: { id: true, name: true },
         },

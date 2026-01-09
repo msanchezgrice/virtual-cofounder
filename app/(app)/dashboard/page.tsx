@@ -11,6 +11,7 @@ interface Story {
   priorityLevel: string | null;
   priorityScore: number;
   status: string;
+  linearTaskId: string | null;
   project: {
     id: string;
     name: string;
@@ -135,8 +136,7 @@ function FocusStoryItem({ story }: { story: Story }) {
   const priorityStyle = getPriorityStyle(story.priorityLevel);
   
   return (
-    <Link
-      href={`/stories/${story.id}`}
+    <div
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -144,17 +144,7 @@ function FocusStoryItem({ story }: { story: Story }) {
         padding: '12px',
         background: 'var(--bg-warm, #F9F3ED)',
         borderRadius: '8px',
-        textDecoration: 'none',
-        color: 'inherit',
-        transition: 'background 0.2s, transform 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = '#F3EDE7';
-        e.currentTarget.style.transform = 'translateX(4px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'var(--bg-warm, #F9F3ED)';
-        e.currentTarget.style.transform = 'translateX(0)';
+        transition: 'background 0.2s',
       }}
     >
       <span
@@ -170,13 +160,44 @@ function FocusStoryItem({ story }: { story: Story }) {
       >
         {story.priorityLevel || 'P2'}
       </span>
-      <span style={{ flex: 1, fontWeight: 500, color: 'var(--text-primary, #1C1917)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <Link
+        href={`/stories/${story.id}`}
+        style={{ 
+          flex: 1, 
+          fontWeight: 500, 
+          color: 'var(--text-primary, #1C1917)', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          whiteSpace: 'nowrap',
+          textDecoration: 'none',
+        }}
+      >
         {story.title}
-      </span>
+      </Link>
       <span style={{ fontSize: '13px', color: 'var(--text-muted, #A8A29E)', flexShrink: 0 }}>
         {story.project.name}
       </span>
-    </Link>
+      {story.linearTaskId && (
+        <a
+          href={`https://linear.app/issue/${story.linearTaskId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            padding: '4px 8px',
+            fontSize: '12px',
+            background: 'rgba(0,0,0,0.05)',
+            borderRadius: '4px',
+            textDecoration: 'none',
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+          }}
+          title="View in Linear"
+        >
+          📋
+        </a>
+      )}
+    </div>
   );
 }
 

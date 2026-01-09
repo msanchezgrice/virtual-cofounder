@@ -264,8 +264,37 @@ function WorkProgress({ summary }: { summary: WorkSummary }) {
   );
 }
 
-function Recommendations({ items }: { items: string[] }) {
+function Recommendations({ items, projectId, onActionStarted }: { items: string[], projectId?: string, onActionStarted?: () => void }) {
+  const [startingIndex, setStartingIndex] = useState<number | null>(null);
+  const [startedItems, setStartedItems] = useState<Set<number>>(new Set());
+  
   if (items.length === 0) return null;
+  
+  const handleStart = async (item: string, index: number) => {
+    setStartingIndex(index);
+    try {
+      // Create a priority signal for this recommended action
+      const response = await fetch('/api/priorities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          priorityLevel: index === 0 ? 'P0' : 'P1',
+          source: 'dashboard',
+          rawContent: `[P${index === 0 ? '0' : '1'}] ${item}`,
+        }),
+      });
+      
+      if (response.ok) {
+        setStartedItems(prev => new Set(prev).add(index));
+        onActionStarted?.();
+      }
+    } catch (error) {
+      console.error('Failed to start action:', error);
+    } finally {
+      setStartingIndex(null);
+    }
+  };
   
   return (
     <div className="card" style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.05))' }}>
@@ -292,7 +321,26 @@ function Recommendations({ items }: { items: string[] }) {
               <div style={{ fontWeight: 500 }}>{item}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>+5 pts • {index === 0 ? 'Critical for launch' : 'Recommended'}</div>
             </div>
-            <button className="btn btn-primary btn-sm">Start</button>
+            {startedItems.has(index) ? (
+              <span style={{ 
+                padding: '4px 12px', 
+                background: '#D1FAE5', 
+                color: '#065F46', 
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 600,
+              }}>
+                ✓ Added
+              </span>
+            ) : (
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => handleStart(item, index)}
+                disabled={startingIndex !== null}
+              >
+                {startingIndex === index ? '...' : 'Start'}
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -403,7 +451,11 @@ export default function ProgressPage() {
           <LaunchScore score={data.score} />
           <WorkProgress summary={data.workSummary} />
           <LaunchChecklist items={data.checklist} />
-          <Recommendations items={data.recommendations} />
+          <Recommendations 
+            items={data.recommendations} 
+            projectId={effectiveProjectId}
+            onActionStarted={() => refresh()}
+          />
         </>
       )}
     </div>

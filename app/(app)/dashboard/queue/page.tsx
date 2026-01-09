@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
 interface Story {
@@ -327,7 +328,12 @@ export default function ExecutionQueuePage() {
                     #{(page - 1) * pagination.limit + index + (executing ? 2 : 1)}
                   </div>
                   {getPriorityBadge(story.priorityLevel)}
-                  <span style={{ flex: 1, fontWeight: 500 }}>{story.title}</span>
+                  <Link 
+                    href={`/stories/${story.id}`}
+                    style={{ flex: 1, fontWeight: 500, textDecoration: 'none', color: 'var(--text-primary)' }}
+                  >
+                    {story.title}
+                  </Link>
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                     {story.project.name}
                   </span>
@@ -335,6 +341,25 @@ export default function ExecutionQueuePage() {
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'DM Mono', monospace" }}>
                       {story.priorityScore}pts
                     </span>
+                  )}
+                  {story.linearTaskId && (
+                    <a
+                      href={`https://linear.app/issue/${story.linearTaskId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        background: 'var(--bg-warm)',
+                        borderRadius: '4px',
+                        textDecoration: 'none',
+                        color: 'var(--text-muted)',
+                      }}
+                      title="View in Linear"
+                    >
+                      📋
+                    </a>
                   )}
                   <button
                     onClick={() => handlePrioritize(story.id)}

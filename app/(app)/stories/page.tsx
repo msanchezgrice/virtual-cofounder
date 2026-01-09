@@ -283,7 +283,11 @@ export default function StoriesPage() {
         <>
           <div className="space-y-4">
             {stories.map((story) => (
-              <div key={story.id} className="bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow">
+              <Link 
+                key={story.id} 
+                href={`/stories/${story.id}`}
+                className="block bg-white rounded-lg p-6 shadow hover:shadow-md transition-shadow cursor-pointer"
+              >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -321,8 +325,9 @@ export default function StoriesPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      📋 View in Linear
+                      📋 Linear
                     </a>
                   )}
 
@@ -332,6 +337,7 @@ export default function StoriesPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       🔀 View PR
                     </a>
@@ -349,7 +355,7 @@ export default function StoriesPage() {
                     </span>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           

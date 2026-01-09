@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApiCache, invalidateCache } from '@/lib/hooks/useApiCache';
 
 interface Story {
@@ -12,6 +14,7 @@ interface Story {
   priorityLevel: 'P0' | 'P1' | 'P2' | 'P3' | null;
   priorityScore: number | null;
   linearTaskId: string | null;
+  prUrl: string | null;
   createdAt: string;
   project?: {
     id: string;
@@ -316,13 +319,23 @@ export default function PrioritiesPage() {
                   <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Impact</th>
                   <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Confidence</th>
                   <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Score</th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>Links</th>
                 </tr>
               </thead>
               <tbody>
                 {stories.map((story, index) => {
                   const globalIndex = (page - 1) * pagination.limit + index;
                   return (
-                    <tr key={story.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <tr 
+                      key={story.id} 
+                      style={{ 
+                        borderBottom: '1px solid var(--border-light)',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-warm)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
                       <td style={{ 
                         padding: '16px 8px', 
                         fontWeight: 600, 
@@ -332,11 +345,16 @@ export default function PrioritiesPage() {
                         {globalIndex + 1}
                       </td>
                       <td style={{ padding: '16px 8px' }}>
-                        <div style={{ fontWeight: 500 }}>{story.title}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          {story.rationale?.slice(0, 50) || 'No description'}
-                          {story.rationale && story.rationale.length > 50 ? '...' : ''}
-                        </div>
+                        <Link 
+                          href={`/stories/${story.id}`}
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{story.title}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            {story.rationale?.slice(0, 50) || 'No description'}
+                            {story.rationale && story.rationale.length > 50 ? '...' : ''}
+                          </div>
+                        </Link>
                       </td>
                       <td style={{ padding: '16px 8px', fontSize: '13px' }}>
                         {story.project?.name || 'Unknown'}
@@ -358,6 +376,48 @@ export default function PrioritiesPage() {
                         fontSize: '16px',
                       }}>
                         {story.priorityScore || 50}
+                      </td>
+                      <td style={{ padding: '16px 8px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                          {story.linearTaskId && (
+                            <a
+                              href={`https://linear.app/issue/${story.linearTaskId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                background: 'var(--bg-warm)',
+                                borderRadius: '4px',
+                                textDecoration: 'none',
+                                color: 'var(--text-muted)',
+                              }}
+                              title="View in Linear"
+                            >
+                              📋
+                            </a>
+                          )}
+                          {story.prUrl && (
+                            <a
+                              href={story.prUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                background: 'var(--bg-warm)',
+                                borderRadius: '4px',
+                                textDecoration: 'none',
+                                color: 'var(--text-muted)',
+                              }}
+                              title="View Pull Request"
+                            >
+                              🔀
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

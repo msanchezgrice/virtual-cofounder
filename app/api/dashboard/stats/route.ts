@@ -54,6 +54,7 @@ export async function GET() {
           priorityLevel: true,
           priorityScore: true,
           status: true,
+          linearTaskId: true,
           project: {
             select: { id: true, name: true },
           },
