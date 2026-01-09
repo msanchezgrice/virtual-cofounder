@@ -201,7 +201,7 @@ function AssistantMessage({
   onAction: (value: string) => void;
   isLatest: boolean;
 }) {
-  const hasPriorities = message.metadata?.priorities?.length > 0;
+  const hasPriorities = (message.metadata?.priorities?.length ?? 0) > 0;
   const suggestedActions: SuggestedAction[] = message.metadata?.suggestedActions || [];
   const showActions = isLatest && suggestedActions.length > 0 && !message.isStreaming;
   
