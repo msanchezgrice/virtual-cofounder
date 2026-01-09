@@ -58,7 +58,6 @@ interface QueueResponse {
 export default function ExecutionQueuePage() {
   const [page, setPage] = useState(1);
   const [workerActive, setWorkerActive] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedProject, setSelectedProject] = useState<string>('');
 
   // Cache projects for filtering dropdown
@@ -77,20 +76,21 @@ export default function ExecutionQueuePage() {
     return url;
   }, [page, selectedProject]);
 
-  // Use cached API with short TTL for real-time feel but still benefit from caching
-  const { data, loading, refresh } = useApiCache<QueueResponse>(
+  // Use cached API with short TTL and aggressive polling for real-time feel
+  // - 10 second cache TTL (shorter for queue since it changes frequently)
+  // - 5 second polling interval (only when tab is visible)
+  // - Auto-refresh when tab becomes visible
+  const { data, loading, refresh, lastUpdated } = useApiCache<QueueResponse>(
     apiUrl,
-    { ttl: 30 * 1000, backgroundRefresh: true } // 30 second cache with background refresh
+    { 
+      ttl: 10 * 1000, // 10 second cache
+      backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 5000, // Poll every 5 seconds when tab is visible
+    }
   );
 
-  // Auto-refresh every 15 seconds (using cached data in between)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRefreshKey(k => k + 1);
-      refresh();
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [refresh]);
+  // Note: Removed manual setInterval - useApiCache now handles polling internally
 
   // Reset page when project filter changes
   useEffect(() => {
@@ -217,17 +217,38 @@ export default function ExecutionQueuePage() {
     <div className="app-page">
       {/* Header */}
       <div className="page-header">
-        <h1 className="page-title">
-          Execution Queue
-          <span style={{
-            marginLeft: '8px',
-            fontSize: '14px',
-            fontWeight: 400,
-            color: 'var(--text-muted)',
-          }}>
-            ({stats.total})
-          </span>
-        </h1>
+        <div>
+          <h1 className="page-title">
+            Execution Queue
+            <span style={{
+              marginLeft: '8px',
+              fontSize: '14px',
+              fontWeight: 400,
+              color: 'var(--text-muted)',
+            }}>
+              ({stats.total})
+            </span>
+          </h1>
+          {lastUpdated && (
+            <div style={{ 
+              fontSize: '11px', 
+              color: 'var(--text-muted)', 
+              marginTop: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              <span style={{ 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                background: 'var(--accent-green)',
+                animation: 'pulse 2s infinite',
+              }} />
+              Auto-syncing • Updated {getTimeAgo(new Date(lastUpdated).toISOString())}
+            </div>
+          )}
+        </div>
         <div className="page-header-actions">
           <select
             value={selectedProject}

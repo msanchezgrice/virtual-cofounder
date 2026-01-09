@@ -305,7 +305,7 @@ export default function ScansPage() {
     return `/api/scans?${params.toString()}`;
   }, [selectedProject]);
 
-  // Fetch data with caching
+  // Fetch data with responsive caching
   const { data: projectsData } = useApiCache<ProjectsResponse>(
     '/api/projects',
     { ttl: 5 * 60 * 1000 }
@@ -313,7 +313,12 @@ export default function ScansPage() {
 
   const { data: scansData, loading, refresh } = useApiCache<ScansResponse>(
     scansUrl,
-    { ttl: 2 * 60 * 1000, backgroundRefresh: true }
+    { 
+      ttl: 60 * 1000, // 1 minute cache (reduced from 2 minutes)
+      backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 30000, // Poll every 30 seconds
+    }
   );
 
   const projects = projectsData?.projects ?? [];

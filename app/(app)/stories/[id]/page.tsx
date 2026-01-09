@@ -112,7 +112,12 @@ export default function StoryDetailPage() {
   
   const { data, loading, error, refresh } = useApiCache<StoryResponse>(
     `/api/stories/${storyId}`,
-    { ttl: 60 * 1000 }
+    { 
+      ttl: 30 * 1000, // 30 second cache
+      backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 10000, // Poll every 10 seconds for status updates
+    }
   );
   
   const story = data?.story;

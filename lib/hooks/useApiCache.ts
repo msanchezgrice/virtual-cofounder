@@ -7,6 +7,8 @@
  * - Automatic cache invalidation
  * - Deduplication of in-flight requests
  * - Background refresh option
+ * - Visibility-based refresh (refresh when tab becomes active)
+ * - Cross-tab cache invalidation via BroadcastChannel
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -26,6 +28,10 @@ type CacheOptions = {
   backgroundRefresh?: boolean;
   /** Skip cache and force fresh fetch */
   skipCache?: boolean;
+  /** Refresh when tab becomes visible (default: true) */
+  refreshOnFocus?: boolean;
+  /** Polling interval in ms (0 = disabled) */
+  pollingInterval?: number;
 };
 
 // In-flight request deduplication
@@ -92,7 +98,28 @@ function setInCache<T>(key: string, data: T, ttl: number): void {
   }
 }
 
-export function invalidateCache(urlPattern?: string): void {
+// BroadcastChannel for cross-tab cache invalidation
+let cacheInvalidationChannel: BroadcastChannel | null = null;
+const cacheListeners = new Set<(pattern?: string) => void>();
+
+function getCacheChannel(): BroadcastChannel | null {
+  if (typeof window === 'undefined') return null;
+  if (!cacheInvalidationChannel && typeof BroadcastChannel !== 'undefined') {
+    try {
+      cacheInvalidationChannel = new BroadcastChannel('api_cache_invalidation');
+      cacheInvalidationChannel.onmessage = (event) => {
+        const pattern = event.data?.pattern;
+        // Notify all listeners about the invalidation
+        cacheListeners.forEach(listener => listener(pattern));
+      };
+    } catch {
+      // BroadcastChannel not supported
+    }
+  }
+  return cacheInvalidationChannel;
+}
+
+export function invalidateCache(urlPattern?: string, broadcast = true): void {
   if (typeof window !== 'undefined' && window.sessionStorage) {
     const keysToRemove: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
@@ -116,6 +143,23 @@ export function invalidateCache(urlPattern?: string): void {
   } else {
     memoryCache.clear();
   }
+
+  // Broadcast invalidation to other tabs
+  if (broadcast) {
+    const channel = getCacheChannel();
+    channel?.postMessage({ pattern: urlPattern });
+  }
+}
+
+/**
+ * Subscribe to cache invalidation events (used internally by hooks)
+ */
+function subscribeToCacheInvalidation(callback: (pattern?: string) => void): () => void {
+  cacheListeners.add(callback);
+  getCacheChannel(); // Ensure channel is initialized
+  return () => {
+    cacheListeners.delete(callback);
+  };
 }
 
 export function useApiCache<T>(
@@ -127,19 +171,24 @@ export function useApiCache<T>(
   error: Error | null;
   refresh: () => Promise<void>;
   invalidate: () => void;
+  lastUpdated: number | null;
 } {
   const {
     ttl = DEFAULT_TTL,
     dailyCache = false,
     backgroundRefresh = false,
     skipCache = false,
+    refreshOnFocus = true,
+    pollingInterval = 0,
   } = options;
 
   const effectiveTtl = dailyCache ? DAY_TTL : ttl;
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const mountedRef = useRef(true);
+  const lastFocusRefreshRef = useRef<number>(0);
 
   const fetchData = useCallback(async (isBackground = false) => {
     if (!url) {
@@ -156,6 +205,7 @@ export function useApiCache<T>(
       if (cached) {
         setData(cached.data);
         setLoading(false);
+        setLastUpdated(cached.timestamp);
 
         // If backgroundRefresh and cache is > 50% stale, refresh in background
         if (backgroundRefresh) {
@@ -177,6 +227,7 @@ export function useApiCache<T>(
         if (mountedRef.current) {
           setData(result);
           setLoading(false);
+          setLastUpdated(Date.now());
         }
       } catch (e) {
         if (mountedRef.current) {
@@ -204,6 +255,7 @@ export function useApiCache<T>(
         if (mountedRef.current) {
           setData(result);
           setError(null);
+          setLastUpdated(Date.now());
         }
         return result;
       })
@@ -250,6 +302,7 @@ export function useApiCache<T>(
     }
   }, [url]);
 
+  // Initial fetch
   useEffect(() => {
     mountedRef.current = true;
     fetchData();
@@ -258,7 +311,56 @@ export function useApiCache<T>(
     };
   }, [fetchData]);
 
-  return { data, loading, error, refresh, invalidate };
+  // Visibility change handler - refresh when tab becomes visible
+  useEffect(() => {
+    if (!refreshOnFocus || typeof document === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && mountedRef.current) {
+        const now = Date.now();
+        // Throttle: don't refresh if last refresh was < 2 seconds ago
+        if (now - lastFocusRefreshRef.current > 2000) {
+          lastFocusRefreshRef.current = now;
+          // Do a background refresh to avoid loading spinner
+          fetchData(true);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshOnFocus, fetchData]);
+
+  // Polling interval
+  useEffect(() => {
+    if (pollingInterval <= 0 || !url) return;
+
+    const interval = setInterval(() => {
+      if (mountedRef.current && document.visibilityState === 'visible') {
+        fetchData(true); // Background refresh for polling
+      }
+    }, pollingInterval);
+
+    return () => clearInterval(interval);
+  }, [pollingInterval, url, fetchData]);
+
+  // Cross-tab cache invalidation listener
+  useEffect(() => {
+    if (!url) return;
+
+    const unsubscribe = subscribeToCacheInvalidation((pattern?: string) => {
+      if (!pattern || url.includes(pattern)) {
+        // Cache was invalidated in another tab, refresh
+        fetchData(true);
+      }
+    });
+
+    return unsubscribe;
+  }, [url, fetchData]);
+
+  return { data, loading, error, refresh, invalidate, lastUpdated };
 }
 
 /**

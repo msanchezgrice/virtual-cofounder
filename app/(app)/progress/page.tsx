@@ -409,10 +409,15 @@ export default function ProgressPage() {
     return projects.length > 0 ? projects[0].id : '';
   }, [selectedProjectId, projects]);
 
-  // Fetch progress data for selected project with caching
+  // Fetch progress data for selected project with responsive caching
   const { data: progressData, loading: progressLoading, error: progressError, refresh } = useApiCache<ProgressData>(
     effectiveProjectId ? `/api/projects/${effectiveProjectId}/progress` : null,
-    { ttl: 3 * 60 * 1000, backgroundRefresh: true }
+    { 
+      ttl: 60 * 1000, // 1 minute cache (reduced from 3 minutes)
+      backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 30000, // Poll every 30 seconds
+    }
   );
 
   const data = progressData || (effectiveProjectId ? PLACEHOLDER_DATA : null);

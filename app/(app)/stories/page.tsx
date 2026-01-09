@@ -138,10 +138,12 @@ export default function StoriesPage() {
     return `/api/stories?${params.toString()}`;
   }, [page, filter]);
 
-  // Fetch stories with caching
+  // Fetch stories with responsive caching
   const { data, loading, refresh } = useApiCache<StoriesResponse>(apiUrl, {
-    ttl: 2 * 60 * 1000,
+    ttl: 30 * 1000, // 30 second cache (reduced from 2 minutes)
     backgroundRefresh: true,
+    refreshOnFocus: true, // Refresh when tab becomes visible
+    pollingInterval: 15000, // Poll every 15 seconds
   });
 
   const stories = data?.stories ?? [];

@@ -192,8 +192,10 @@ export default function ProjectsPage() {
   const { data, loading, error, refresh } = useApiCache<ProjectsResponse>(
     '/api/projects/with-stats',
     {
-      ttl: 5 * 60 * 1000, // 5 minutes
+      ttl: 60 * 1000, // 1 minute cache (reduced from 5 minutes)
       backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 30000, // Poll every 30 seconds
     }
   );
 

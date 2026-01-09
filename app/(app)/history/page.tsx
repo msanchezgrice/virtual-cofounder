@@ -168,10 +168,12 @@ export default function HistoryPage() {
     return `/api/activity?${params.toString()}`;
   }, [page, activityFilter, projectFilter]);
 
-  // Use single cached API call instead of 4 separate calls
+  // Use single cached API call with responsive caching
   const { data, loading, refresh } = useApiCache<ActivityResponse>(apiUrl, {
-    ttl: 2 * 60 * 1000, // 2 minutes for activity
+    ttl: 30 * 1000, // 30 second cache (reduced from 2 minutes)
     backgroundRefresh: true,
+    refreshOnFocus: true, // Refresh when tab becomes visible
+    pollingInterval: 15000, // Poll every 15 seconds
   });
 
   const activities = data?.activities ?? [];

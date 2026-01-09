@@ -73,14 +73,23 @@ export default function PrioritiesPage() {
     return url;
   }, [selectedProject, page]);
 
-  // Cache priorities with shorter TTL and background refresh
+  // Cache priorities with short TTL and aggressive polling for real-time feel
+  // - 30 second cache TTL (reduced for better responsiveness)
+  // - 10 second polling interval
+  // - Auto-refresh when tab becomes visible
   const { 
     data: prioritiesData, 
     loading: prioritiesLoading, 
-    refresh 
+    refresh,
+    lastUpdated 
   } = useApiCache<PrioritiesResponse>(
     prioritiesUrl,
-    { ttl: 60 * 1000, backgroundRefresh: true } // 1 minute cache
+    { 
+      ttl: 30 * 1000, // 30 second cache
+      backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 10000, // Poll every 10 seconds
+    }
   );
 
   // Reset page when project filter changes

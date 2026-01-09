@@ -283,12 +283,17 @@ function TodaysFocus({ stories, loading }: { stories: Story[]; loading: boolean 
 }
 
 export default function DashboardPage() {
-  // Use cached API hook - caches for 5 minutes, with background refresh
-  const { data, loading, refresh } = useApiCache<DashboardResponse>(
+  // Use cached API hook with shorter TTL for more responsive updates
+  // - 60 second cache TTL (reduced from 5 minutes)
+  // - 30 second polling interval
+  // - Auto-refresh when tab becomes visible
+  const { data, loading, refresh, lastUpdated } = useApiCache<DashboardResponse>(
     '/api/dashboard/stats',
     {
-      ttl: 5 * 60 * 1000, // 5 minutes
+      ttl: 60 * 1000, // 60 seconds cache
       backgroundRefresh: true,
+      refreshOnFocus: true, // Refresh when tab becomes visible
+      pollingInterval: 30000, // Poll every 30 seconds
     }
   );
 
