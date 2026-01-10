@@ -100,30 +100,75 @@ Remember: You're a cofounder they can chat with, not a report generator.`;
 export function buildChatContext(
   conversationHistory: Array<{ role: string; content: string }>,
   projectContext?: {
-    activeProjects: Array<{ name: string; status: string }>;
+    currentProject?: {
+      name: string;
+      status: string;
+      domain: string | null;
+      repo: string | null;
+      launchStage?: string;
+      launchScore?: number;
+      scanScores?: any;
+      aiAssessment?: string | null;
+      recommendedFocus?: string[];
+      snapshotAt?: Date;
+    } | null;
+    activeProjects?: Array<{ name: string; status: string }>;
     recentStories: Array<{ title: string; priority: string; status: string }>;
     prioritySignals: Array<{ level: string; content: string }>;
   }
 ): string {
   let context = chatModePrompt;
-  
+
   if (projectContext) {
     context += `\n\n---\nCURRENT CONTEXT:\n`;
-    
-    if (projectContext.activeProjects.length > 0) {
+
+    // Show current project if available (single project mode)
+    if (projectContext.currentProject) {
+      const proj = projectContext.currentProject;
+      context += `\n**Current Project: ${proj.name}**\n`;
+      context += `Status: ${proj.status}\n`;
+      if (proj.domain) context += `Domain: ${proj.domain}\n`;
+      if (proj.repo) context += `Repository: ${proj.repo}\n`;
+
+      // Include snapshot data if available
+      if (proj.launchStage && proj.launchScore !== undefined) {
+        context += `\n**Launch Readiness:**\n`;
+        context += `- Stage: ${proj.launchStage} (Score: ${proj.launchScore}/100)\n`;
+
+        if (proj.scanScores && typeof proj.scanScores === 'object') {
+          const scores = proj.scanScores as { overall?: number; [key: string]: any };
+          if (scores.overall !== undefined) {
+            context += `- Health Score: ${scores.overall}/100\n`;
+          }
+        }
+
+        if (proj.aiAssessment) {
+          context += `\n**AI Assessment:**\n${proj.aiAssessment}\n`;
+        }
+
+        if (proj.recommendedFocus && proj.recommendedFocus.length > 0) {
+          context += `\n**Recommended Focus:**\n`;
+          proj.recommendedFocus.forEach((item, i) => {
+            context += `${i + 1}. ${item}\n`;
+          });
+        }
+      }
+    }
+    // Fallback: show multiple projects if no specific project selected
+    else if (projectContext.activeProjects && projectContext.activeProjects.length > 0) {
       context += `\nActive Projects:\n`;
       for (const p of projectContext.activeProjects) {
         context += `- ${p.name} (${p.status})\n`;
       }
     }
-    
+
     if (projectContext.recentStories.length > 0) {
       context += `\nRecent Work Items:\n`;
       for (const s of projectContext.recentStories) {
         context += `- [${s.priority}] ${s.title} - ${s.status}\n`;
       }
     }
-    
+
     if (projectContext.prioritySignals.length > 0) {
       context += `\nActive Priority Signals:\n`;
       for (const p of projectContext.prioritySignals) {
@@ -131,7 +176,7 @@ export function buildChatContext(
       }
     }
   }
-  
+
   return context;
 }
 

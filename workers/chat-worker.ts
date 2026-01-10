@@ -157,7 +157,72 @@ async function getConversationHistory(workspaceId: string, conversationId: strin
 /**
  * Get project context for the agent
  */
-async function getProjectContext(workspaceId: string) {
+async function getProjectContext(workspaceId: string, projectId?: string) {
+  // If projectId is provided, get specific project context with latest snapshot
+  if (projectId) {
+    const [project, snapshot, stories, signals] = await Promise.all([
+      prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+          name: true,
+          status: true,
+          domain: true,
+          repo: true,
+        },
+      }),
+      prisma.projectSnapshot.findFirst({
+        where: { projectId },
+        orderBy: { snapshotAt: 'desc' },
+        select: {
+          launchStage: true,
+          launchScore: true,
+          scanScores: true,
+          workSummary: true,
+          aiAssessment: true,
+          recommendedFocus: true,
+          snapshotAt: true,
+        },
+      }),
+      prisma.story.findMany({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { title: true, priorityLevel: true, status: true },
+      }),
+      prisma.prioritySignal.findMany({
+        where: { workspaceId, projectId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { priority: true, rawText: true },
+      }),
+    ]);
+
+    return {
+      currentProject: project ? {
+        name: project.name,
+        status: project.status,
+        domain: project.domain,
+        repo: project.repo,
+        // Include snapshot data if available
+        launchStage: snapshot?.launchStage,
+        launchScore: snapshot?.launchScore,
+        scanScores: snapshot?.scanScores as any,
+        aiAssessment: snapshot?.aiAssessment,
+        recommendedFocus: snapshot?.recommendedFocus,
+        snapshotAt: snapshot?.snapshotAt,
+      } : null,
+      recentStories: stories.map(s => ({
+        title: s.title,
+        priority: s.priorityLevel || 'P2',
+        status: s.status
+      })),
+      prioritySignals: signals
+        .filter(s => s.priority && s.rawText)
+        .map(s => ({ level: s.priority!, content: s.rawText! })),
+    };
+  }
+
+  // Fallback: get all projects if no specific projectId
   const [projects, stories, signals] = await Promise.all([
     prisma.project.findMany({
       where: { workspaceId },
@@ -177,13 +242,13 @@ async function getProjectContext(workspaceId: string) {
       select: { priority: true, rawText: true },
     }),
   ]);
-  
+
   return {
     activeProjects: projects.map(p => ({ name: p.name, status: p.status })),
-    recentStories: stories.map(s => ({ 
-      title: s.title, 
-      priority: s.priorityLevel || 'P2', 
-      status: s.status 
+    recentStories: stories.map(s => ({
+      title: s.title,
+      priority: s.priorityLevel || 'P2',
+      status: s.status
     })),
     prioritySignals: signals
       .filter(s => s.priority && s.rawText)
@@ -542,7 +607,7 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
   // For general messages, use the Agent SDK
   try {
     const history = await getConversationHistory(workspaceId, conversationId);
-    const projectContext = await getProjectContext(workspaceId);
+    const projectContext = await getProjectContext(workspaceId, projectId);
     const prompt = buildAgentPrompt(
       history.map(h => ({ role: h.role, content: h.content })),
       userContent,
