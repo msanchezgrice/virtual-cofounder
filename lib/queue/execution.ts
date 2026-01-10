@@ -35,16 +35,16 @@ export function getPriorityNumber(priority: string): number {
 
 /**
  * Enqueue a story for execution
- * 
+ *
  * @param storyId - The story ID to execute
  * @param priority - Optional priority level (P0-P3), defaults to story's priority
- * @param source - Where the approval came from (linear, slack, dashboard)
+ * @param source - Where the approval came from (linear, slack, dashboard, chat)
  * @returns The job ID if successful
  */
 export async function enqueueStoryForExecution(
   storyId: string,
   priority?: string,
-  source?: 'linear' | 'slack' | 'dashboard'
+  source?: 'linear' | 'slack' | 'dashboard' | 'chat'
 ): Promise<string | null> {
   const connection = getRedisConnection();
   

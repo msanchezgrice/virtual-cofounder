@@ -12,6 +12,11 @@ import { scanSEO } from '@/lib/scanners/seo';
 import { scanPerformance } from '@/lib/scanners/performance';
 import { scanNpmAudit } from '@/lib/scanners/security-npm';
 import { scanSecrets } from '@/lib/scanners/security-secrets';
+import { PrismaClient } from '@prisma/client';
+import { enqueueStoryForExecution } from '@/lib/queue/execution';
+import { randomUUID } from 'crypto';
+
+const prisma = new PrismaClient();
 
 // ============================================================================
 // TOOL INTERFACES
@@ -103,11 +108,127 @@ export const updateLinearTaskTool: ToolDefinition = {
     try {
       const issueId = input.issueId || context.linearTaskId;
       if (!issueId) throw new Error('No Linear issue ID provided');
-      
+
       await updateLinearTaskStatus(issueId, input.status);
       return JSON.stringify({ success: true });
     } catch (error) {
       return JSON.stringify({ success: false, error: (error as Error).message });
+    }
+  },
+};
+
+// ============================================================================
+// STORY TOOLS
+// ============================================================================
+
+export const createStoryTool: ToolDefinition = {
+  name: 'CreateStory',
+  description: 'Create a tracked story with Linear integration and queue it for execution. Use this when the user requests work that should be tracked and executed by a specialist agent.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        description: 'Clear, actionable title for the story (e.g., "Add email capture form to homepage")'
+      },
+      rationale: {
+        type: 'string',
+        description: 'Detailed explanation of what needs to be done and why'
+      },
+      priority: {
+        type: 'string',
+        enum: ['P0', 'P1', 'P2', 'P3'],
+        description: 'Priority level: P0=urgent, P1=high, P2=medium, P3=low'
+      },
+      agentType: {
+        type: 'string',
+        description: 'Type of specialist agent needed (e.g., "frontend", "api", "database")'
+      },
+    },
+    required: ['title', 'rationale', 'priority'],
+  },
+  async execute(input, context) {
+    try {
+      if (!context.projectId) {
+        return JSON.stringify({
+          success: false,
+          error: 'No projectId in context - cannot create story without a project'
+        });
+      }
+
+      if (!context.workspaceId) {
+        return JSON.stringify({
+          success: false,
+          error: 'No workspaceId in context'
+        });
+      }
+
+      // Map priority to numeric values
+      const priorityMap: Record<string, number> = { P0: 90, P1: 75, P2: 50, P3: 25 };
+      const priorityScore = priorityMap[input.priority] || 50;
+
+      // Create Story record
+      const runId = randomUUID();
+      const story = await prisma.story.create({
+        data: {
+          workspaceId: context.workspaceId,
+          runId,
+          projectId: context.projectId,
+          title: input.title,
+          rationale: input.rationale,
+          priority: input.priority === 'P0' ? 'urgent' : input.priority === 'P1' ? 'high' : 'medium',
+          priorityLevel: input.priority,
+          priorityScore,
+          policy: 'auto_safe',
+          status: 'pending',
+          userApproved: true,
+          advancesLaunchStage: false,
+        },
+      });
+
+      console.log(`[CreateStory Tool] Created story ${story.id}: ${input.title}`);
+
+      // Create Linear issue
+      let linearUrl: string | null = null;
+      const teamId = await getDefaultTeamId();
+
+      if (teamId) {
+        const linearTask = await createLinearTask({
+          teamId,
+          title: input.title,
+          description: `**Type:** ${input.agentType || 'General'}\n\n**Description:**\n${input.rationale}\n\n**Requested from:** Chat\n**Priority:** ${input.priority}`,
+          priority: input.priority === 'P0' ? 1 : input.priority === 'P1' ? 2 : 3,
+        });
+
+        linearUrl = linearTask.url;
+
+        await prisma.story.update({
+          where: { id: story.id },
+          data: {
+            linearTaskId: linearTask.id,
+            linearIssueUrl: linearUrl,
+          },
+        });
+
+        console.log(`[CreateStory Tool] Created Linear issue: ${linearUrl}`);
+      }
+
+      // Enqueue for execution
+      await enqueueStoryForExecution(story.id, input.priority, 'chat');
+      console.log(`[CreateStory Tool] Enqueued story ${story.id} for execution`);
+
+      return JSON.stringify({
+        success: true,
+        storyId: story.id,
+        linearUrl: linearUrl,
+        message: `Story "${input.title}" created and queued for execution. ${linearUrl ? `Track progress: ${linearUrl}` : ''}`
+      });
+    } catch (error) {
+      console.error('[CreateStory Tool] Error:', error);
+      return JSON.stringify({
+        success: false,
+        error: (error as Error).message
+      });
     }
   },
 };
@@ -342,6 +463,7 @@ export const takeScreenshotTool: ToolDefinition = {
 // ============================================================================
 
 export const customTools: Record<string, ToolDefinition> = {
+  CreateStory: createStoryTool,
   CreateLinearTask: createLinearTaskTool,
   AddLinearComment: addLinearCommentTool,
   UpdateLinearTask: updateLinearTaskTool,
