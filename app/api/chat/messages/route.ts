@@ -49,14 +49,19 @@ export async function GET(req: Request) {
     }
 
     if (before) {
-      where.createdAt = { 
+      where.createdAt = {
         ...where.createdAt,
         lt: new Date(before),
       };
     }
 
+    // If projectId is specified, filter user messages by project
+    // but include ALL assistant messages (they respond to user messages in this conversation)
     if (projectId) {
-      where.projectId = projectId;
+      where.OR = [
+        { role: 'assistant' }, // All assistant messages in conversation
+        { projectId }, // User messages for this project
+      ];
     }
 
     // Fetch messages (newest first for pagination, will reverse for display)

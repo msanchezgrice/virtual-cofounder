@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         content: '',
         contentType: 'text',
         source: 'web',
+        projectId,
         isProcessing: true,
         metadata: command.type !== 'none' ? { respondingTo: command } : undefined,
       },
