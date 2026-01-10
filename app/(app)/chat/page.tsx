@@ -445,9 +445,10 @@ export default function ChatPage() {
 
   // Load history on mount and when project changes
   useEffect(() => {
-    loadHistory('24h');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProjectId]); // Only reload when projectId changes, not when loadHistory is recreated
+    if (selectedProjectId) {
+      loadHistory('24h');
+    }
+  }, [selectedProjectId, loadHistory]);
   
   // Auto-scroll to bottom when messages change
   useEffect(() => {
