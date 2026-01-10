@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAgentChat, type ChatMessage } from '@/lib/hooks/useAgentChat';
 
 // Quick command chips (default, can be overridden by agent)
@@ -242,6 +243,7 @@ function AssistantMessage({
             <>
               <div className="markdown-content">
                 <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
                   components={{
                     p: ({ children }) => (
                       <p style={{ margin: '0 0 12px 0', lineHeight: 1.6 }}>{children}</p>
@@ -432,6 +434,7 @@ export default function ChatPage() {
     stop,
     clearError,
     loadHistory,
+    setMessages,
   } = useAgentChat({
     projectId: selectedProjectId || undefined,
     onError: (err) => console.error('[Chat] Error:', err),
@@ -446,9 +449,11 @@ export default function ChatPage() {
   // Load history on mount and when project changes
   useEffect(() => {
     if (selectedProjectId) {
+      // Clear old messages before loading new project's history
+      setMessages([]);
       loadHistory('24h');
     }
-  }, [selectedProjectId, loadHistory]);
+  }, [selectedProjectId, loadHistory, setMessages]);
   
   // Auto-scroll to bottom when messages change
   useEffect(() => {
