@@ -962,36 +962,17 @@ async function processChat(job: Job<ChatJob>): Promise<void> {
         await enqueueStoryForExecution(story.id, 'P1', 'dashboard');
         console.log(`[Chat Worker] Enqueued story ${story.id} for execution`);
 
-        // Create a separate assistant message with the Linear link
-        // This ensures it appears in chat UI even after SSE stream closes
+        // Append Linear link to HoP's response
         const trackingMessage = linearUrl
-          ? `✅ **Story created!** Track progress: ${linearUrl}`
-          : `✅ **Story created!** Story ID: ${story.id}`;
+          ? `\n\n✅ **Story created!** Track progress: ${linearUrl}`
+          : `\n\n✅ **Story created!** Story ID: ${story.id}`;
 
-        const linkedMessage = await prisma.chatMessage.create({
-          data: {
-            workspaceId,
-            conversationId,
-            role: 'assistant',
-            content: trackingMessage,
-            contentType: 'text',
-            source: 'web',
-            isProcessing: false,
-            metadata: {
-              type: 'linear_link',
-              storyId: story.id,
-              linearUrl: linearUrl || undefined,
-            },
-          },
-        });
+        fullContent += trackingMessage;
 
-        console.log(`[Chat Worker] Created Linear link message: ${linkedMessage.id}`);
-
-        // Publish notification that new message is available
-        // Frontend will see this and fetch the new message
+        // Publish the Linear link to user
         await publishToStream(messageId, {
-          type: 'new_message',
-          messageId: linkedMessage.id,
+          type: 'delta',
+          content: trackingMessage
         });
 
       } catch (storyError) {
