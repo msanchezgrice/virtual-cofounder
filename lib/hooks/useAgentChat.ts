@@ -188,19 +188,33 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
               
             case 'actions':
               // Update suggested actions
-              setMessages(prev => prev.map(m => 
-                m.id === assistantMessage.id 
-                  ? { 
-                      ...m, 
-                      metadata: { 
-                        ...m.metadata, 
-                        suggestedActions: eventData.actions 
-                      } 
+              setMessages(prev => prev.map(m =>
+                m.id === assistantMessage.id
+                  ? {
+                      ...m,
+                      metadata: {
+                        ...m.metadata,
+                        suggestedActions: eventData.actions
+                      }
                     }
                   : m
               ));
               break;
-              
+
+            case 'new_message':
+              // A new message (like Linear link) was created after stream
+              // Fetch and append it to the conversation
+              console.log('[useAgentChat] New message available:', eventData.messageId);
+              fetch(`/api/chat/messages/${eventData.messageId}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data.message) {
+                    setMessages(prev => [...prev, data.message]);
+                  }
+                })
+                .catch(err => console.error('[useAgentChat] Error fetching new message:', err));
+              break;
+
             case 'done':
               // Finalize message
               setMessages(prev => prev.map(m => 
